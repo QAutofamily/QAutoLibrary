@@ -19,6 +19,7 @@ WarningDirectoryNotFound = "QautoRobot: Method directory could not be found: "
 LibraryScope = 'TEST SUITE'
 LibraryAttributeName = "QAutoRobot"
 
+
 class QAutoRobot(CommonUtils):
     """
     Robot library for dynamically adding all qautorobot methods to robot runnable state or in robot project libraries
