@@ -58,6 +58,7 @@ class QAutoRobot(CommonUtils):
 
         self.set_file_operation_methods()
 
+        sys.path.append(os.getcwd())
         # Set directory methods into library
         for directory in self.directory:
             sys.path.append(directory)
