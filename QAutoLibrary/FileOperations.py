@@ -26,8 +26,8 @@ APPENDING_MODE = 'ab'
 
 def __open(path_to_file, mode):
     """
-     Returns opened file object
-     Contains information about file encoding
+    Returns opened file object
+    Contains information about file encoding
 
     :param path_to_file: path to file
     :param mode: opening mode
