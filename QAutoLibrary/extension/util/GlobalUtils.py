@@ -36,6 +36,9 @@ def throw_error(error_msg):
 
 
 class Singleton(type):
+    """
+    Singleton class for making singleton classes
+    """
     _instances = {}
 
     def __call__(cls, *args, **kwargs):  # @NoSelf
@@ -52,6 +55,51 @@ class GlobalUtils(object):
     PNG = ".png"
     ROBOT = ".robot"
 
+    # Testing script TESTDATA variable
+    TESTDATA = "TESTDATA"
+
+    LINUX = "linux"
+    WINDOWS = "windows"
+
+    # QAutoLibrary project directory paths
+    SITE_PACKAGES_QAUTOLIBRARY_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    WEBDRIVERS_PATH = os.path.join(SITE_PACKAGES_QAUTOLIBRARY_PATH, "webdrivers")
+
+    QAUTOLIBRARY_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    CONFIG_PATH = os.path.join(QAUTOLIBRARY_PATH, "config")
+    EXTENSION_PATH = os.path.join(QAUTOLIBRARY_PATH, "extension")
+    JS_HELPERS_PATH = os.path.join(EXTENSION_PATH, "js_helpers")
+
+    # Webdriver paths
+    RESOURCES_GECKO32_PATH = os.path.join(WEBDRIVERS_PATH, "geckodriver_win32")
+    RESOURCES_GECKO64_PATH = os.path.join(WEBDRIVERS_PATH, "geckodriver_win64")
+    RESOURCES_LINUX_GECKO64_PATH = os.path.join(WEBDRIVERS_PATH, "geckodriver_linux64")
+    RESOURCES_LINUX_CHROME64_PATH = os.path.join(WEBDRIVERS_PATH, "chromedriver_linux64")
+    RESOURCES_CHROME32_PATH = os.path.join(WEBDRIVERS_PATH, "chromedriver_win32")
+    RESOURCES_EDGE_PATH = os.path.join(WEBDRIVERS_PATH, "edge_win")
+    RESOURCES_IE_PATH = os.path.join(WEBDRIVERS_PATH, "ie_win")
+
+    BROWSER_CONFIG_FILE_FRAMEWORK = os.path.join(CONFIG_PATH, "browser_config.xml")
+
+    # JS helpers used in QAutoSelenium methods
+    DRAG_DROP_HELPER = os.path.join(JS_HELPERS_PATH, "drag_and_drop_helper.js")
+    JQUERY_LOADER_HELPER = os.path.join(JS_HELPERS_PATH, "jquery_load_helper.js")
+
+    # Appium and node paths in user qautorobot folder
+    APPIUM_PATH = os.path.join(os.path.expanduser("~"), "qautorobot", "Appium", "node_modules", "appium")
+    NODE_JS_PATH = os.path.join(os.path.expanduser("~"), "qautorobot", "Appium", "Node.exe")
+
+    SCREENSHOTS_XML_FILE = "screenshots.xml"
+
+    # QAutoLibrary testing project directory's
+    PM_FOLDER_NAME = "pagemodel"
+    TESTS_FOLDER_NAME = "tests"
+    PYTHON_VAR_FOLDER_NAME = "variables"
+    SCRIPTS_FOLDER_NAME = "scripts"
+    DATA_FOLDER_NAME = "data"
+    MEASUREMENTS_FOLDER_NAME = "measurements"
+    COMMON_LIB_FOLDER_NAME = "common_lib"
+
     TOOL_CACHE = "tool_cache"
     GECKODRIVER_LOG = os.path.join(TOOL_CACHE, "geckodriver.log")
     COMPARE_SCREENSHOT = os.path.join(TOOL_CACHE, "compare_screenshot.png")
@@ -67,41 +115,6 @@ class GlobalUtils(object):
     # Project configs
     BROWSER_CONFIG_FILE = os.path.join(PROJECT_CONFIG_DIR, "browser_settings.xml")
     PROJECT_SETTINGS_FILE = os.path.join(PROJECT_CONFIG_DIR, "project_settings.xml")
-
-    TESTDATA = "TESTDATA"
-
-    LINUX = "linux"
-    WINDOWS = "windows"
-
-    WEBFRAMEWORK_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    RESOURCES_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "resources"))
-
-    SITE_PACKAGES_QAUTOLIBRARY_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-    WEBDRIVERS_PATH = os.path.join(SITE_PACKAGES_QAUTOLIBRARY_PATH, "webdrivers")
-    RESOURCES_GECKO32_PATH = os.path.join(WEBDRIVERS_PATH, "geckodriver_win32")
-    RESOURCES_GECKO64_PATH = os.path.join(WEBDRIVERS_PATH, "geckodriver_win64")
-    RESOURCES_LINUX_GECKO64_PATH = os.path.join(WEBDRIVERS_PATH, "geckodriver_linux64")
-    RESOURCES_LINUX_CHROME64_PATH = os.path.join(WEBDRIVERS_PATH, "chromedriver_linux64")
-    RESOURCES_CHROME32_PATH = os.path.join(WEBDRIVERS_PATH, "chromedriver_win32")
-    RESOURCES_EDGE_PATH = os.path.join(WEBDRIVERS_PATH, "edge_win")
-    RESOURCES_IE_PATH = os.path.join(WEBDRIVERS_PATH, "ie_win")
-
-
-    BROWSER_CONFIG_FILE_FRAMEWORK = os.path.join(WEBFRAMEWORK_PATH, "config", "browser_config.xml")
-
-    DRAG_DROP_HELPER = os.path.join(RESOURCES_PATH, "js_helpers", "drag_and_drop_helper.js")
-    JQUERY_LOADER_HELPER = os.path.join(RESOURCES_PATH, "js_helpers", "jquery_load_helper.js")
-
-    APPIUM_PATH = os.path.join(os.path.expanduser("~"), "qautorobot", "Appium", "node_modules", "appium")
-    NODE_JS_PATH = os.path.join(os.path.expanduser("~"), "qautorobot", "Appium", "Node.exe")
-
-    SCREENSHOTS_XML_FILE = "screenshots.xml"
-
-    PM_FOLDER_NAME = "pagemodel"
-    TESTS_FOLDER_NAME = "tests"
-    PYTHON_VAR_FOLDER_NAME = "variables"
-    SCRIPTS_FOLDER_NAME = "scripts"
-    DATA_FOLDER_NAME = "data"
 
     COMMON_PARAMETERS_FOLDER_NAME = os.path.join(DATA_FOLDER_NAME, "common_parameters")
     SCREENSHOTS_FOLDER_NAME = os.path.join(DATA_FOLDER_NAME, "screenshots")
@@ -122,13 +135,11 @@ class GlobalUtils(object):
     SOAP_RESPONSE_FOLDER_NAME = os.path.join(SOAP_FOLDER_NAME, "response")
     SOAP_DEBUG_FOLDER_NAME = os.path.join(SOAP_FOLDER_NAME, "debug")
 
-    MEASUREMENTS_FOLDER_NAME = "measurements"
-    COMMON_LIB_FOLDER_NAME = "common_lib"
-
     NAVIGATION_DATA_PREFIX = "navigation_"
     RESOURCE_DATA_PREFIX = "resource_"
     MEMORY_DATA_PREFIX = "memory_"
 
+    # Browser names for selenium
     BROWSER_NAME = "browser_name"
     BROWSER_NAMES = ["ie", "ff", "gc", "op", "ac", "aa", "me", "sf"]
     BROWSER_FULL_NAMES = {
