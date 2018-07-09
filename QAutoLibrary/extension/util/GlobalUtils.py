@@ -89,6 +89,8 @@ class GlobalUtils(object):
     APPIUM_PATH = os.path.join(os.path.expanduser("~"), "qautorobot", "Appium", "node_modules", "appium")
     NODE_JS_PATH = os.path.join(os.path.expanduser("~"), "qautorobot", "Appium", "Node.exe")
 
+    SCREENSHOTS_XML_FILE = "screenshots.xml"
+
     # QAutoLibrary testing project directory's
     PM_FOLDER_NAME = "pagemodel"
     TESTS_FOLDER_NAME = "tests"

@@ -27,6 +27,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from simplejson import loads, dumps
 from urllib3.exceptions import ConnectionError
 
+
+from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, get_file_content
 from QAutoLibrary.extension.mobile.android_util_functions import AndroidUtilFunctions
 from QAutoLibrary.extension.util.common_methods_helpers import CommonMethodsHelpers, DebugLog
 from QAutoLibrary.extension.webdriver_cache.webdriver_cache import DriverCache
@@ -34,13 +36,7 @@ from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils
 from QAutoLibrary.extension.webdriver_cache.browser import create_driver
 from QAutoLibrary.extension.config import get_config_value
 from QAutoLibrary.extension.util.webtimings import get_measurements as webtimings_get_measurements
-from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, get_file_content
-
-#TODO decide how to fix this
-try:
-    from QAutoLibrary.extension import XmlScreenshotParser
-except:
-    pass
+from QAutoLibrary.extension.parsers.xml_screenshot_parser import XmlScreenshotParser
 
 
 class CommonMethods(object):
@@ -1262,7 +1258,8 @@ class CommonMethods(object):
 
         self.wait_until_element_is_visible(element)
 
-        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser, ref_scr_name)
+        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser,
+                                                                                        ref_scr_name)
 
         if get_config_value("runtime_similarity") != '':
             similarity = get_config_value("runtime_similarity")
@@ -1281,7 +1278,6 @@ class CommonMethods(object):
 
         CommonUtils()._handle_screenshot_comparison(ref_scr_file_name_path, ref_scr_x,
                                                     ref_scr_y, ref_scr_w, ref_scr_h, similarity)
-
 
     def execute_javascript(self, js_script, log=True):
         """
@@ -5385,8 +5381,13 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
         print ("Comparing screenshots... Screenshots match. Reference screenshot: %s. "
                "Similarity level is %s.") % (ref_scr_file_name, str(100 - difference) + "%")
 
-    @classmethod
-    def _get_browser_and_resolution(cls):
+    @staticmethod
+    def _get_browser_and_resolution():
+        """
+        Get browser name and resolution
+
+        :return: Borwser name and screenresolution
+        """
         # Get screen resolution and browser name
         browser_name = get_config_value(GlobalUtils.BROWSER_NAME)
         if browser_name == "aa":
@@ -5394,10 +5395,10 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
             screen_res = str(display_size[0]) + "x" + str(display_size[1])
         else:
             import wx
+            app = wx.App(False)
             display_size = wx.DisplaySize()
             screen_res = str(display_size[0]) + "x" + str(display_size[1])
         return browser_name, screen_res
-
 
     def _split_screenshot_name(self, ref_scr_name):
         """
@@ -5407,7 +5408,6 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
         :return: tuple (temp_new_name, end_part_split, resolution_part_split, browser_part_split)
 
         """
-
         ref_scr_name = str(ref_scr_name).strip().split(".png")[0]
         screenshot_to_be_updated_split = ref_scr_name.split("_")
         end_part_split = screenshot_to_be_updated_split[len(screenshot_to_be_updated_split) - 1]
@@ -5653,7 +5653,3 @@ class Timer:
         if self.__running:
             self.stop()
         return self.__stop_time - self.__start_time
-
-
-if __name__ == "__main__":
-    pm = CommonUtils()
