@@ -27,6 +27,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from simplejson import loads, dumps
 from urllib3.exceptions import ConnectionError
 
+
+from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, get_file_content
 from QAutoLibrary.extension.mobile.android_util_functions import AndroidUtilFunctions
 from QAutoLibrary.extension.util.common_methods_helpers import CommonMethodsHelpers, DebugLog
 from QAutoLibrary.extension.webdriver_cache.webdriver_cache import DriverCache
@@ -34,10 +36,7 @@ from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils
 from QAutoLibrary.extension.webdriver_cache.browser import create_driver
 from QAutoLibrary.extension.config import get_config_value
 from QAutoLibrary.extension.util.webtimings import get_measurements as webtimings_get_measurements
-from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, get_file_content
-
 from QAutoLibrary.extension.parsers.xml_screenshot_parser import XmlScreenshotParser
-
 
 
 class CommonMethods(object):
@@ -1259,7 +1258,8 @@ class CommonMethods(object):
 
         self.wait_until_element_is_visible(element)
 
-        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser, ref_scr_name)
+        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser,
+                                                                                        ref_scr_name)
 
         if get_config_value("runtime_similarity") != '':
             similarity = get_config_value("runtime_similarity")
@@ -1278,7 +1278,6 @@ class CommonMethods(object):
 
         CommonUtils()._handle_screenshot_comparison(ref_scr_file_name_path, ref_scr_x,
                                                     ref_scr_y, ref_scr_w, ref_scr_h, similarity)
-
 
     def execute_javascript(self, js_script, log=True):
         """
