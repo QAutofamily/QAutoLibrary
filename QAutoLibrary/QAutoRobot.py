@@ -1,5 +1,6 @@
 import os
 import sys
+import imp
 from types import FunctionType
 
 from QAutoLibrary import FileOperations
@@ -43,6 +44,25 @@ class QAutoRobot(CommonUtils):
         # Set all dynamic imports
         self.dynamically_import_librarys()
 
+    def update_project_modules(self):
+        """
+        Update project modules
+
+        :return: None
+        """
+        for directory in self.directory:
+            library_files = self.get_library_files_in_directory(directory)
+
+            for _file in library_files:
+                module = ".".join([directory, _file.replace(".py", "")])
+                if module in sys.modules:
+                    try:
+                        full_path = os.path.join(os.getcwd(), directory, _file)
+                        imp.load_source(module, full_path)
+                    except Exception, e:
+                        print "Failed to reload module: %s\n%s" % (module, repr(e))
+        self.dynamically_import_librarys()
+
     def dynamically_import_librarys(self):
         """
         Dynamically add all library methods to library
@@ -75,7 +95,7 @@ class QAutoRobot(CommonUtils):
             # Get method
             _method = getattr(FileOperations, _method_name)
             # Set testdata method into library
-            self.set_attribute_if_not_exists(self, _method_name, _method)
+            self.set_attribute(self, _method_name, _method)
 
     def set_testdata_methods(self):
         """
@@ -91,9 +111,9 @@ class QAutoRobot(CommonUtils):
             # Get method
             _method = getattr(testdata, _method_name)
             # Set testdata method into library
-            self.set_attribute_if_not_exists(self, _method_name, _method)
+            self.set_attribute(self, _method_name, _method)
 
-    def set_module_methods(self, dir):
+    def set_module_methods(self, directory):
         """
         Set all module methods from path to class
 
@@ -102,16 +122,11 @@ class QAutoRobot(CommonUtils):
         """
         # Find all library files from the directory
         # If folder does not exist abort setting modules
-        try:
-            library_files = [_file for _file in os.listdir(dir) if _file.endswith(".py") and not _file.startswith("__")]
-        except OSError as e:
-            self.warning(WarningDirectoryNotFound + str(e))
-            return
+        library_files = self.get_library_files_in_directory(directory)
 
         for library in library_files:
             library = os.path.basename(library).replace(".py", "")
-            _import = "{}.{}".format(os.path.basename(dir), library)
-
+            _import = "{}.{}".format(os.path.basename(directory), library)
             # Import keyword module
             _module = __import__(_import, fromlist=[''])
             # Get keyword library from module
@@ -127,13 +142,13 @@ class QAutoRobot(CommonUtils):
                     _library_method_name = _library_method_name.replace(x, "")
                 _library_method_name = _library_method_name + "_" + _method_name
                 # Set method with library name + method name
-                self.set_attribute_if_not_exists(self, _library_method_name, _method)
+                self.set_attribute(self, _library_method_name, _method)
                 # Set method with library name + . + method name
-                self.set_attribute_if_not_exists(self, library + "." + _method_name, _method)
+                self.set_attribute(self, library + "." + _method_name, _method)
                 # Set method with method name
-                self.set_attribute_if_not_exists(self, _method_name, _method)
+                self.set_attribute(self, _method_name, _method)
 
-    def set_attribute_if_not_exists(self, _class, _name, _attr):
+    def set_attribute(self, _class, _name, _attr):
         """
         Checks that attribute does not exist. If id does not add it to class
 
@@ -144,6 +159,7 @@ class QAutoRobot(CommonUtils):
         """
         try:
             attr = getattr(_class, _name)
+            setattr(_class, _name, _attr)
             # TODO decide how to implement this (might need way to disable)
             # self.warning(WarningMethodAlreadyBound.format(_name, attr, _attr))
         except AttributeError:
@@ -211,3 +227,15 @@ class QAutoRobot(CommonUtils):
         :return: Global testdata object
         """
         return get_global_testdata()
+
+    def get_library_files_in_directory(self, directory):
+        """
+        Get all library files in directory
+
+        :return: Library files list
+        """
+        try:
+            return [_file for _file in os.listdir(directory) if _file.endswith(".py") and not _file.startswith("__")]
+        except OSError as e:
+            self.warning(WarningDirectoryNotFound + str(e))
+            return False
