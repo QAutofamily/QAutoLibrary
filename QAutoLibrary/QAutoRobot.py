@@ -252,6 +252,13 @@ class QAutoRobot(CommonUtils):
         return documentation
 
     def run_keyword(self, method_name, args):
+        """
+        Run QAutoRobot project keywords
+
+        :param method_name: String method name
+        :param args: String arguments
+        :return: Method return
+        """
         _method = self.KEYWORDS[method_name]
 
         if args:
