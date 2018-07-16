@@ -33,7 +33,7 @@ class QAutoRobot(CommonUtils):
         """
         During initilization adds dynamically all library methods to library
         """
-        super(CommonUtils, self).__init__()
+        super(QAutoRobot, self).__init__()
 
         # Test data file to use in library
         self.test_data_file = testdata
@@ -252,6 +252,13 @@ class QAutoRobot(CommonUtils):
         return documentation
 
     def run_keyword(self, method_name, args):
+        """
+        Run QAutoRobot project keywords
+
+        :param method_name: String method name
+        :param args: String arguments
+        :return: Method return
+        """
         _method = self.KEYWORDS[method_name]
 
         if args:
