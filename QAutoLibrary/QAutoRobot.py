@@ -33,7 +33,7 @@ class QAutoRobot(CommonUtils):
         """
         During initilization adds dynamically all library methods to library
         """
-        super(CommonUtils, self).__init__()
+        super(QAutoRobot, self).__init__()
 
         # Test data file to use in library
         self.test_data_file = testdata
