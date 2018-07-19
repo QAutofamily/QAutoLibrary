@@ -1,6 +1,7 @@
 import os
 import sys
 import imp
+import inspect
 from types import FunctionType
 
 from QAutoLibrary import FileOperations
@@ -78,6 +79,7 @@ class QAutoRobot(CommonUtils):
         else:
             self.warning(WarningNoTestData)
 
+        # Set all methods that are used in file operations
         self.set_file_operation_methods()
 
         sys.path.append(os.getcwd())
@@ -128,25 +130,60 @@ class QAutoRobot(CommonUtils):
         library_files = self.get_library_files_in_directory(directory)
 
         for library in library_files:
-            library = os.path.basename(library).replace(".py", "")
-            _import = "{}.{}".format(os.path.basename(directory), library)
-            # Import keyword module
-            _module = __import__(_import, fromlist=[''])
-            # Get keyword library from module
-            _class = getattr(_module, library.capitalize())
-            # Library class for python lib object
-            library_class = _class()
-            # List of method names in python lib object (ignore private methods)
-            method_names = self.get_class_method_names(_class)
-            for _method_name in method_names:
-                # Get method
-                _method = getattr(library_class, _method_name)
-                # Set python library object
-                self.set_attribute(self, library, library_class, rename_duplicate=False)
-                # Set method with library name + . + method name
-                self.set_attribute(self, library + "." + _method_name, _method, rename_duplicate=True)
-                # Set method with method name
-                self.set_attribute(self, _method_name, _method, rename_duplicate=True)
+            try:
+                # Make library name from
+                library = os.path.basename(library).replace(".py", "")
+                # Import library module
+                _import = "{}.{}".format(os.path.basename(directory), library)
+                # Import keyword module
+                _module = __import__(_import, fromlist=[''])
+                # Find library name from module
+                library_name = self.find_library_class_name_from_module(_module, library)
+                if not library_name:
+                    break
+                # Get keyword library from module
+                _class = getattr(_module, library_name)
+                self.set_library_module_methods(library, _class)
+            except Exception as e:
+                self.warning(library+ ": " + str(e))
+
+    def find_library_class_name_from_module(self, _module, library):
+        """
+        Find class name to use from module
+
+        :param _module: Python module to find classes from
+        :param library: Library class name
+        :return: Class name or None
+        """
+        clsmembers = inspect.getmembers(_module, inspect.isclass)
+        clsmembers = [x[0] for x in clsmembers if library.lower() in x[0].lower()]
+        clsmembers = [x for x in clsmembers if library.lower() == x.lower()]
+        try:
+            return clsmembers[0]
+        except IndexError:
+            return None
+
+    def set_library_module_methods(self, library, _class):
+        """
+        Set library methods to qautorobot
+
+        :param library: Library class name
+        :param _class: Library class object
+        :return: None
+        """
+        # Library class for python lib object
+        library_class = _class()
+        # List of method names in python lib object (ignore private methods)
+        method_names = self.get_class_method_names(_class)
+        for _method_name in method_names:
+            # Get method
+            _method = getattr(library_class, _method_name)
+            # Set python library object
+            self.set_attribute(self, library, library_class, rename_duplicate=False)
+            # Set method with library name + . + method name
+            self.set_attribute(self, library + "." + _method_name, _method, rename_duplicate=True)
+            # Set method with method name
+            self.set_attribute(self, _method_name, _method, rename_duplicate=True)
 
     def set_attribute(self, _class, _name, _attr, rename_duplicate=True, depth=0):
         """
