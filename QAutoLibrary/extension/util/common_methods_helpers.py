@@ -12,6 +12,7 @@
 """
 import unittest
 from datetime import datetime
+from robot.api import logger
 
 from selenium.common.exceptions import StaleElementReferenceException, ElementNotVisibleException, \
     ElementNotSelectableException, TimeoutException
@@ -118,6 +119,4 @@ class DebugLog(object):
 
     @staticmethod
     def log(msg):
-        if msg.startswith("* "):
-            msg = msg.lstrip("* ")
-        print "* %s %s" % (DebugLog.get_timestamp(), msg)
+        logger.info(msg, html=True)
