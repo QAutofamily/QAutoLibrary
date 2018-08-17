@@ -349,7 +349,7 @@ class QAutoRobot(CommonUtils):
                                                                                        test_case, test_case)
         return documentation
 
-    def run_keyword(self, method_name, args):
+    def run_keyword(self, method_name, *args, **kwargs):
         """
         Run QAutoRobot project keywords
 
@@ -358,13 +358,7 @@ class QAutoRobot(CommonUtils):
         :return: Method return
         """
         _method = self.KEYWORDS[method_name]
-
-        if args:
-            _return = _method(eval(args))
-        else:
-            _return = _method()
-
-        return _return
+        return _method(*args, **kwargs)
 
     def start_recording(self, test_case):
         """
