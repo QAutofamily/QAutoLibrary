@@ -13,11 +13,11 @@ from QAutoLibrary.extension.parsers.parameter_parser import set_parameter_file
 from QAutoLibrary.extension.util.GlobalUtils import Singleton
 
 DefaultDirectory = ["pagemodel", "common_lib"]
-MethodNameStrip = ["component_", "common_lib_"]
 TestReportFolder = "test_reports"
+
 WarningNoTestData = "QautoRobot: Not using TestData"
-WarningMethodAlreadyBound = '\nQautoRobot: Attribute "{0}" already bound:\n{1} (bound)\n{2} (not bound)\n'
 WarningDirectoryNotFound = "QautoRobot: Method directory could not be found: "
+
 LibraryScope = 'TEST SUITE'
 LibraryAttributeName = "QAutoRobot"
 
@@ -73,6 +73,8 @@ class QAutoRobot(CommonUtils):
     def dynamically_import_librarys(self):
         """
         Dynamically add all library methods to library
+
+        :return: None
         """
         sys.modules[LibraryAttributeName] = self
 
@@ -123,6 +125,12 @@ class QAutoRobot(CommonUtils):
             self.set_attribute(self, _method_name, _method)
 
     def remove_module_methods(self, directory):
+        """
+        Remove methods and libary's in given directory from class
+
+        :param directory: Directory where library files are
+        :return: None
+        """
         library_files = self.get_library_files_in_directory(directory)
 
         for library in library_files:
@@ -170,7 +178,7 @@ class QAutoRobot(CommonUtils):
                 _class = getattr(_module, library_name)
                 self.set_library_module_methods(library, _class)
             except Exception as e:
-                self.warning(library+ ": " + str(e))
+                self.warning(library + ": " + str(e))
 
     def find_library_class_name_from_module(self, _module, library):
         """
@@ -193,7 +201,7 @@ class QAutoRobot(CommonUtils):
 
         :param library: Library class name
         :param _class: Library class object
-        :return:
+        :return: None
         """
         # List of method names in python lib object (ignore private methods)
         method_names = self.get_class_method_names(_class)
@@ -274,7 +282,6 @@ class QAutoRobot(CommonUtils):
             _name = _name[:-1]
         return _name + str(depth)
 
-
     @staticmethod
     def get_class_methods(_class):
         """
@@ -341,7 +348,7 @@ class QAutoRobot(CommonUtils):
                                                                                        test_case, test_case)
         return documentation
 
-    def run_keyword(self, method_name, args):
+    def run_keyword(self, method_name, *args, **kwargs):
         """
         Run QAutoRobot project keywords
 
@@ -350,13 +357,7 @@ class QAutoRobot(CommonUtils):
         :return: Method return
         """
         _method = self.KEYWORDS[method_name]
-
-        if args:
-            _return = _method(eval(args))
-        else:
-            _return = _method()
-
-        return _return
+        return _method(*args, **kwargs)
 
     def start_recording(self, test_case):
         """
