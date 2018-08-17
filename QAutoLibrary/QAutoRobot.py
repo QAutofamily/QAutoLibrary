@@ -64,10 +64,10 @@ class QAutoRobot(CommonUtils):
                         imp.load_source(module, full_path)
                     except Exception, e:
                         print "Failed to reload module: %s\n%s" % (module, repr(e))
-
+                        
         for directory in self.directory:
             self.remove_module_methods(directory)
-
+            
         self.dynamically_import_librarys()
 
     def dynamically_import_librarys(self):
@@ -195,7 +195,6 @@ class QAutoRobot(CommonUtils):
             return clsmembers[0]
         except IndexError:
             return None
-
     def remove_library_module_methods(self, library, _class):
         """
         Remove library module_methods from class
@@ -235,7 +234,7 @@ class QAutoRobot(CommonUtils):
             self.set_attribute(self, library + "." + _method_name, _method, rename_duplicate=True)
             # Set method with method name
             self.set_attribute(self, _method_name, _method, rename_duplicate=True)
-
+            
     @staticmethod
     def remove_attribute(_class, _name):
         """
