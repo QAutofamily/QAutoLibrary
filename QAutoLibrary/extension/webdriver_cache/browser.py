@@ -21,6 +21,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils, throw_error
 from QAutoLibrary.extension.config import get_config_value
+from robot.libraries.BuiltIn import BuiltIn
 
 
 class Browsers:
@@ -235,6 +236,11 @@ def create_driver(browser_name):
                 os.environ["PATH"] += os.pathsep + os.path.join(GlobalUtils.RESOURCES_LINUX_CHROME64_PATH)
 
         _driver = webdriver.Chrome(chrome_options=options)
+        try:
+            selenium_library = BuiltIn().get_library_instance("SeleniumLibrary")
+            selenium_library.register_driver(_driver, "default_gc")
+        except:
+            pass
         return _driver
     elif browser_name == GlobalUtils.BROWSER_NAMES[Browsers.FIREFOX]:
         profile = webdriver.FirefoxProfile()
@@ -276,6 +282,11 @@ def create_driver(browser_name):
                 if not os.path.join(GlobalUtils.RESOURCES_GECKO64_PATH) in os.environ["PATH"]:
                     os.environ["PATH"] += os.pathsep + os.path.join(GlobalUtils.RESOURCES_GECKO64_PATH)
                 _driver = webdriver.Firefox(firefox_profile=profile, capabilities=firefox_capabilities)
+                try:
+                    selenium_library = BuiltIn().get_library_instance("SeleniumLibrary")
+                    selenium_library.register_driver(_driver, "default_ff")
+                except:
+                    pass
             else:
                 raise e
         return _driver
