@@ -24,11 +24,11 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.remote.webelement import WebElement
+
 from simplejson import loads, dumps
 from urllib3.exceptions import ConnectionError
 
-
-from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, get_file_content
 from QAutoLibrary.extension.mobile.android_util_functions import AndroidUtilFunctions
 from QAutoLibrary.extension.util.common_methods_helpers import CommonMethodsHelpers, DebugLog
 from QAutoLibrary.extension.webdriver_cache.webdriver_cache import DriverCache
@@ -36,8 +36,18 @@ from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils
 from QAutoLibrary.extension.webdriver_cache.browser import create_driver
 from QAutoLibrary.extension.config import get_config_value
 from QAutoLibrary.extension.util.webtimings import get_measurements as webtimings_get_measurements
+from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, get_file_content
 from QAutoLibrary.extension.parsers.xml_screenshot_parser import XmlScreenshotParser
 
+from QAutoLibrary.QAutoElement import QAutoElement
+
+#TODO decide how to fix this
+try:
+    from QAutoLibrary.extension import XmlScreenshotParser
+except:
+    pass
+
+ERROR_UNSUPPORTED_ELEMENT_TYPE = "Element type is unsupported"
 
 class CommonMethods(object):
     """
@@ -45,11 +55,21 @@ class CommonMethods(object):
     """
     def __init__(self, driver_cache=None):
         self.driver_cache = driver_cache and driver_cache or DriverCache()
-        self.ignore_failure = False
         self.screenshot_parser = None
 
-    def ignore_fail(self, enable=True):
-        self.ignore_failure = enable
+    def find_element_if_not_webelement(self, element):
+        """
+
+        :param element:
+        :return:
+        """
+        element_type = type(element)
+        if element_type in [QAutoElement, tuple]:
+            return self.find_element(element)
+        elif element_type == WebElement:
+            return element
+        else:
+            self.fail(ERROR_UNSUPPORTED_ELEMENT_TYPE)
 
     def fail(self, message):
         """
@@ -65,10 +85,7 @@ class CommonMethods(object):
             | ``self.common_utils.fail("My message")``
 
         """
-        if not self.ignore_failure:
-            raise AssertionError(message)
-        else:
-            print message
+        raise AssertionError(message)
 
     def warning(self, message):
         """
@@ -130,8 +147,7 @@ class CommonMethods(object):
             if not element:
                 print "Web element must be given, if using element screenshot"
                 return False
-            if type(element) == tuple:
-                element = self.find_element(element)
+            element = self.find_element_if_not_webelement(element)
 
             element_loc = element.location
             element_size = element.size
@@ -300,10 +316,8 @@ class CommonMethods(object):
 
     def _click_element(self, element, to_print=True):
         printout = ""
-        if type(element) == tuple:
-            web_element = self.find_element(element)
-        else:
-            web_element = element
+
+        web_element = self.find_element_if_not_webelement(element)
         try:
             if web_element.text != "":
                 printout = "* Clicking at '%s'" % web_element.text
@@ -351,10 +365,7 @@ class CommonMethods(object):
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            web_element = self.find_element(element)
-        else:
-            web_element = element
+        web_element = self.find_element_if_not_webelement(element)
         if to_print:
             try:
                 if web_element.text != "":
@@ -393,10 +404,7 @@ class CommonMethods(object):
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            web_element = self.find_element(element)
-        else:
-            web_element = element
+        web_element = self.find_element_if_not_webelement(element)
         if to_print:
             try:
                 if web_element.text != "":
@@ -439,10 +447,7 @@ class CommonMethods(object):
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            web_element = self.find_element(element)
-        else:
-            web_element = element
+        web_element = self.find_element_if_not_webelement(element)
         if to_print:
             try:
                 if web_element.text != "":
@@ -485,10 +490,7 @@ class CommonMethods(object):
                                             self.driver_cache._get_current_driver(), msg)
 
     def _input_text(self, element, value, to_print=True):
-        if type(element) == tuple:
-            web_element = self.find_element(element)
-        else:
-            web_element = element
+        web_element = self.find_element_if_not_webelement(element)
         if to_print:
             try:
                 element_information = repr(element)
@@ -527,10 +529,7 @@ class CommonMethods(object):
 
         """
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            web_element = self.find_element(element)
-        else:
-            web_element = element
+        web_element = self.find_element_if_not_webelement(element)
         if to_print:
             try:
                 element_information = repr(element)
@@ -1059,7 +1058,7 @@ class CommonMethods(object):
         """
         if not timeout:
             try:
-                if type(element) == tuple:
+                if type(element) in [tuple, QAutoElement]:
                     elements = self.find_elements(element)
                     return len(elements) > 0 and elements[0].is_displayed()
                 else:
@@ -1102,7 +1101,7 @@ class CommonMethods(object):
         """
         if not timeout:
             try:
-                if type(element) == tuple:
+                if type(element) in [tuple, QAutoElement]:
                     elements = self.find_elements(element)
                     return len(elements) > 0 and not(elements[0].is_enabled())
                 else:
@@ -1145,7 +1144,7 @@ class CommonMethods(object):
         """
         if not timeout:
             try:
-                if type(element) == tuple:
+                if type(element) in [tuple, QAutoElement]:
                     elements = self.find_elements(element)
                     return len(elements) > 0 and elements[0].is_enabled()
                 else:
@@ -1180,8 +1179,7 @@ class CommonMethods(object):
             | ``value = self.common_utils.get_text(self.trial.TRIAL)``
         """
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         return element.text
 
 
@@ -1258,16 +1256,15 @@ class CommonMethods(object):
 
         self.wait_until_element_is_visible(element)
 
-        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser,
-                                                                                        ref_scr_name)
+        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser, ref_scr_name)
 
         if get_config_value("runtime_similarity") != '':
             similarity = get_config_value("runtime_similarity")
         else:
             similarity = int(xml_meta_data['similarity'])
 
-        if type(element) == tuple:
-            element = self.find_element(element)
+
+        element = self.find_element_if_not_webelement(element)
 
         element_loc = element.location
         element_size = element.size
@@ -1278,6 +1275,7 @@ class CommonMethods(object):
 
         CommonUtils()._handle_screenshot_comparison(ref_scr_file_name_path, ref_scr_x,
                                                     ref_scr_y, ref_scr_w, ref_scr_h, similarity)
+
 
     def execute_javascript(self, js_script, log=True):
         """
@@ -1419,8 +1417,7 @@ class CommonMethods(object):
 
         """
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         print "Element text length: ", len(element.text)
         return len(element.text)
 
@@ -1555,8 +1552,7 @@ class WebMethods(CommonMethods):
             | using web element
             | ``self.common_utils.get_selected_list_value(self.elements.ID_DROPDOWN)``
         """
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         return Select(element).first_selected_option.get_attribute('value')
 
 
@@ -1578,8 +1574,7 @@ class WebMethods(CommonMethods):
             | using web element
             | ``self.common_utils.get_selected_list_label(self.elements.ID_DROPDOWN)``
         """
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         return Select(element).first_selected_option.text
 
 
@@ -1602,8 +1597,7 @@ class WebMethods(CommonMethods):
             | ``self.common_utils.select_from_list_by_value(self.elements.ID_DROPDOWN, 10)``
         """
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         element = Select(element)
         try:
             DebugLog.log("* Selecting '%s' from dropdown list" % value)
@@ -1636,8 +1630,7 @@ class WebMethods(CommonMethods):
                                             self.driver_cache._get_current_driver(), msg)
 
     def _select_from_list_by_label(self, element, text):
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         element = Select(element)
         try:
             DebugLog.log("* Selecting '%s' from dropdown list" % text)
@@ -1765,8 +1758,7 @@ class WebMethods(CommonMethods):
         """
         self.wait_until_element_is_visible(element)
         values = []
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         for value in Select(element).options:
             values.append(self.get_text(value))
         return values
@@ -1820,8 +1812,7 @@ class WebMethods(CommonMethods):
             | ``self.common_utils.get_attribute(self.elements.ID_DROPDOWN, "name")``
         """
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         return element.get_attribute(attr)
 
 
@@ -1969,8 +1960,7 @@ class WebMethods(CommonMethods):
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         try:
             DebugLog.log("* Mouse over '%s' by offset(%s,%s)" % (element.text, xoffset, yoffset))
         except:
@@ -1997,8 +1987,7 @@ class WebMethods(CommonMethods):
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         try:
             DebugLog.log("* Right click at '%s'" % element.text)
         except:
@@ -2028,8 +2017,7 @@ class WebMethods(CommonMethods):
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         try:
             DebugLog.log("* Right click at '%s' by offset(%s,%s)" % (element.text, xoffset, yoffset))
         except:
@@ -2056,8 +2044,7 @@ class WebMethods(CommonMethods):
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         try:
             DebugLog.log("* Mouse click down '%s'" % element.text)
         except:
@@ -2083,8 +2070,7 @@ class WebMethods(CommonMethods):
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         try:
             DebugLog.log("* Mouse click up '%s'" % element.text)
         except:
@@ -2114,8 +2100,7 @@ class WebMethods(CommonMethods):
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            draggable = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         try:
             DebugLog.log("* Drag and drop '%s' by offset(%s,%s)" % (draggable.text, xoffset, yoffset))
         except:
@@ -2500,12 +2485,7 @@ class WebMethods(CommonMethods):
             | ``self.common_utils.select_frame(self.home.IFRAME)``
         """
         driver = self.driver_cache._get_current_driver()
-        if type(element) == tuple:
-            element = self.find_element(element)
-    #    if type(element) == str:
-    #        print "* Switching to '%s' frame" % element
-    #    else:
-    #        print "* Switching to '%s' frame" % element.text
+        element = self.find_element_if_not_webelement(element)
         DebugLog.log("* Switching frame to")
         driver.switch_to_frame(element)
 
@@ -2629,8 +2609,7 @@ class WebMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         row = "TBODY/TR"
         cell = "TD"
@@ -2695,9 +2674,7 @@ class WebMethods(CommonMethods):
         """
 
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row == "" or row is None:
             row = "TBODY/TR"
@@ -2741,9 +2718,7 @@ class WebMethods(CommonMethods):
         """
 
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row == "" or row is None:
             row = "TBODY/TR"
@@ -2788,9 +2763,7 @@ class WebMethods(CommonMethods):
         """
 
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row == "" or row is None:
             row = "TBODY/TR"
@@ -2835,9 +2808,7 @@ class WebMethods(CommonMethods):
         """
 
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row == "" or row is None:
             row = "TBODY/TR"
@@ -2882,9 +2853,7 @@ class WebMethods(CommonMethods):
         """
 
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row == "" or row is None:
             row = "TBODY/TR"
@@ -2930,9 +2899,7 @@ class WebMethods(CommonMethods):
         """
 
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row == "" or row is None:
             row = "TBODY/TR"
@@ -2978,9 +2945,7 @@ class WebMethods(CommonMethods):
         """
 
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row == "" or row is None:
             row = "TBODY/TR"
@@ -3033,9 +2998,7 @@ class WebMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         element_row = element.find_elements(By.XPATH, "TBODY/TR")[int(row) - 1]
         table_text = element_row.find_elements(By.XPATH, cell)[int(column) - 1].text
@@ -3065,9 +3028,7 @@ class WebMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         element_row = element.find_elements(By.XPATH, "TBODY/TR")[int(row) - 1]
         self.click_element(element_row.find_elements(By.XPATH, cell)[int(column) - 1])
@@ -3094,9 +3055,7 @@ class WebMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         element_row = element.find_elements(By.XPATH, "TBODY/TR")[int(row) - 1]
         self.click_element(element_row.find_element(By.XPATH, element_path))
@@ -3128,9 +3087,7 @@ class WebMethods(CommonMethods):
         """
 
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row is None or row == "":
             row = "LI"
@@ -3181,9 +3138,7 @@ class WebMethods(CommonMethods):
         """
 
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row is None or row == "":
             row = "LI"
@@ -3235,9 +3190,7 @@ class WebMethods(CommonMethods):
         """
 
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row is None or row == "":
             row = "LI"
@@ -3289,9 +3242,7 @@ class WebMethods(CommonMethods):
         """
 
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row is None or row == "":
             row = "LI"
@@ -3342,9 +3293,7 @@ class WebMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row is None or row == "":
             row = "LI"
@@ -3395,9 +3344,7 @@ class WebMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         if row is None or row == "":
             row = "LI"
@@ -3627,9 +3574,7 @@ class AndroidMethods(CommonMethods):
         :return: midpoint coordinates of an android element
 
         """
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         element_size = element.size
         element_location = element.location
@@ -3651,9 +3596,7 @@ class AndroidMethods(CommonMethods):
         :param element: Element representation (By, value) or WebElement
         :return: coordinates top left and bottom right corner of an android element
         """
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         element_size = element.size
         element_location = element.location
@@ -3700,9 +3643,7 @@ class AndroidMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         driver = self.driver_cache._get_current_driver()
 
@@ -3732,9 +3673,7 @@ class AndroidMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         driver = self.driver_cache._get_current_driver()
 
@@ -3763,9 +3702,7 @@ class AndroidMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         driver = self.driver_cache._get_current_driver()
 
@@ -3795,9 +3732,7 @@ class AndroidMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         driver = self.driver_cache._get_current_driver()
 
@@ -3827,9 +3762,7 @@ class AndroidMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         driver = self.driver_cache._get_current_driver()
         element_center = self.get_android_element_center(element)
@@ -3859,9 +3792,7 @@ class AndroidMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         driver = self.driver_cache._get_current_driver()
         screen_size = driver.get_window_size()
@@ -3892,9 +3823,7 @@ class AndroidMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         driver = self.driver_cache._get_current_driver()
         element_center = self.get_android_element_center(element)
@@ -3924,9 +3853,7 @@ class AndroidMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         driver = self.driver_cache._get_current_driver()
         screen_size = driver.get_window_size()
@@ -3957,9 +3884,7 @@ class AndroidMethods(CommonMethods):
 
         """
         self.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         driver = self.driver_cache._get_current_driver()
 
@@ -4429,9 +4354,7 @@ class Asserts(object):
 
         """
         self._wm.wait_until_element_is_visible(element)
-
-        if type(element) == tuple:
-            element = self._wm.find_element(element)
+        element = self.find_element_if_not_webelement(element)
 
         element_row = element.find_elements(By.XPATH, "TBODY/TR")[int(row) - 1]
         msgpass = "* Text found from table: %s" % text
@@ -4584,8 +4507,8 @@ class Asserts(object):
             | ``self.verify_text_length(self.FEATURELIST_FEATURE, u'13')``
         """
         self._wm.wait_until_element_is_visible(element)
-        if type(element) == tuple:
-            element = self._wm.find_element(element)
+        element = self.find_element_if_not_webelement(element)
+
         msgpass = "* Text length is same as expected"
         msg = "Text length is different than expected"
         CommonMethodsHelpers.assert_equal(str(expected_length), str(len(element.text)), msgpass, msg)
@@ -5108,10 +5031,10 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(draggable)
-        if type(draggable) == tuple:
-            draggable = self.find_element(draggable)
-        if type(droppable) == tuple:
-            droppable = self.find_element(droppable)
+
+        draggable = self.find_element_if_not_webelement(draggable)
+        droppable = self.find_element_if_not_webelement(droppable)
+
         actions.drag_and_drop(draggable, droppable).perform()
 
 
@@ -5127,10 +5050,9 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
 
         """
         self.wait_until_element_is_visible(draggable)
-        if type(draggable) == tuple:
-            draggable = self.find_element(draggable)
-        if type(droppable) == tuple:
-            droppable = self.find_element(droppable)
+        draggable = self.find_element_if_not_webelement(draggable)
+        droppable = self.find_element_if_not_webelement(droppable)
+
         # load jquery helper
         jquery_helper = get_file_content(GlobalUtils.JQUERY_LOADER_HELPER)
         driver = self.get_current_driver()
@@ -5253,8 +5175,7 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
         try:
             self.wait_until_element_is_visible(element)
 
-            if type(element) == tuple:
-                element = self.find_element(element)
+            element = self.find_element_if_not_webelement(element)
 
             element_loc = element.location
             element_size = element.size
@@ -5381,13 +5302,8 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
         print ("Comparing screenshots... Screenshots match. Reference screenshot: %s. "
                "Similarity level is %s.") % (ref_scr_file_name, str(100 - difference) + "%")
 
-    @staticmethod
-    def _get_browser_and_resolution():
-        """
-        Get browser name and resolution
-
-        :return: Borwser name and screenresolution
-        """
+    @classmethod
+    def _get_browser_and_resolution(cls):
         # Get screen resolution and browser name
         browser_name = get_config_value(GlobalUtils.BROWSER_NAME)
         if browser_name == "aa":
@@ -5395,10 +5311,10 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
             screen_res = str(display_size[0]) + "x" + str(display_size[1])
         else:
             import wx
-            app = wx.App(False)
             display_size = wx.DisplaySize()
             screen_res = str(display_size[0]) + "x" + str(display_size[1])
         return browser_name, screen_res
+
 
     def _split_screenshot_name(self, ref_scr_name):
         """
@@ -5408,6 +5324,7 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
         :return: tuple (temp_new_name, end_part_split, resolution_part_split, browser_part_split)
 
         """
+
         ref_scr_name = str(ref_scr_name).strip().split(".png")[0]
         screenshot_to_be_updated_split = ref_scr_name.split("_")
         end_part_split = screenshot_to_be_updated_split[len(screenshot_to_be_updated_split) - 1]
@@ -5653,3 +5570,7 @@ class Timer:
         if self.__running:
             self.stop()
         return self.__stop_time - self.__start_time
+
+
+if __name__ == "__main__":
+    pm = CommonUtils()
