@@ -37,6 +37,7 @@ from QAutoLibrary.extension.webdriver_cache.browser import create_driver
 from QAutoLibrary.extension.config import get_config_value
 from QAutoLibrary.extension.util.webtimings import get_measurements as webtimings_get_measurements
 from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, get_file_content
+from QAutoLibrary.extension.parsers.xml_screenshot_parser import XmlScreenshotParser
 
 from QAutoLibrary.QAutoElement import QAutoElement
 
