@@ -571,13 +571,11 @@ class CommonMethods(object):
             | ``self.common_utils.wait_until_element_is_visible(self.trial.TRIAL, 10)``
 
         """
+        element = self.find_element_if_not_webelement(element)
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         if not msg:
-            if type(element) == tuple:
-                msg = "Element {By: '%s', value: '%s'} is not visible after %s seconds" % (element[0], element[1], timeout)
-            else:
-                msg = "Element '%s' is not visible after %s seconds" % (element.text, timeout)
+            msg = "Element '%s' is not visible after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
@@ -607,13 +605,11 @@ class CommonMethods(object):
             | using timeout
             | ``self.common_utils.wait_until_element_is_not_visible(self.trial.TRIAL, 10)``
         """
+        element = self.find_element_if_not_webelement(element)
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         if not msg:
-            if type(element) == tuple:
-                msg = "Element {By: '%s', value: '%s'} is visible after %s seconds" % (element[0], element[1], timeout)
-            else:
-                msg = "Element '%s' is visible after %s seconds" % (element.text, timeout)
+            msg = "Element '%s' is visible after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: not self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
@@ -644,13 +640,11 @@ class CommonMethods(object):
             | ``self.common_utils.wait_until_element_is_disabled(self.trial.TRIAL, 10)``
 
         """
+        element = self.find_element_if_not_webelement(element)
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         if not msg:
-            if type(element) == tuple:
-                msg = "Element {By: '%s', value: '%s'} is not disabled after %s seconds" % (element[0], element[1], timeout)
-            else:
-                msg = "Element '%s' is not disabled after %s seconds" % (element.text, timeout)
+            msg = "Element '%s' is not disabled after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_disabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
@@ -681,13 +675,11 @@ class CommonMethods(object):
             | ``self.common_utils.wait_until_element_is_enabled(self.trial.TRIAL, 10)``
 
         """
+        element = self.find_element_if_not_webelement(element)
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         if not msg:
-            if type(element) == tuple:
-                msg = "Element {By: '%s', value: '%s'} is not enabled after %s seconds" % (element[0], element[1], timeout)
-            else:
-                msg = "Element '%s' is not enabled after %s seconds" % (element.text, timeout)
+            msg = "Element '%s' is not enabled after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_enabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
@@ -1785,8 +1777,7 @@ class WebMethods(CommonMethods):
         """
         self.wait_until_element_is_visible(element)
         values = []
-        if type(element) == tuple:
-            element = self.find_element(element)
+        element = self.find_element_if_not_webelement(element)
         for value in Select(element).options:
             values.append(self.get_attribute(value, "value"))
         return values
@@ -1905,14 +1896,12 @@ class WebMethods(CommonMethods):
             | using timeout
             | ``self.common_utils.wait_until_table_size_changes(self.demo.tableTest, 10)``
         """
+        element = self.find_element_if_not_webelement(element)
         size = self.get_table_size(element)
         if not timeout:
             timeout = get_config_value("default_timeout")
         if not msg:
-            if type(element) == tuple:
-                msg = "Element {By: '%s', value: '%s'} size is not changed after %s seconds" % (element[0], element[1], timeout)
-            else:
-                msg = "Element '%s' size is not changed after %s seconds" % (element.text, timeout)
+            msg = "Element '%s' size is not changed after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_table_size(element)[0] != size[0],
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
@@ -3617,7 +3606,7 @@ class AndroidMethods(CommonMethods):
         """
 
         value = ""
-        if type(element) == tuple:
+        if type(element) in [tuple, QAutoElement]:
             element = self.find_element(element)
             value = re.sub("[']", '_', element[1])
 
@@ -4049,7 +4038,7 @@ class CanvasMethods(object):
 
     def _is_visible_canvas(self, element):
         try:
-            if type(element) == tuple:
+            if type(element) in [tuple, QAutoElement]:
                 # only canvas element visibility is checked at the moment
                 value = element[1]
                 canvas_id = ""
@@ -4090,14 +4079,11 @@ class CanvasMethods(object):
         :param timeout: Using default timeout
 
         """
+        element = self.find_element_if_not_webelement(element)
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         if not msg:
-            if type(element) == tuple:
-                msg = "Element {By: '%s', value: '%s'} is not visible for %s seconds" % (element[0], element[1], timeout)
-            else:
-                # base canvas element
-                msg = "Element '%s' is not visible for %s seconds" % (element.text, timeout)
+            msg = "Element '%s' is not visible for %s seconds" % (element.text, timeout)
 
         CommonMethodsHelpers.webdriver_wait(lambda driver: self._is_visible_canvas(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
