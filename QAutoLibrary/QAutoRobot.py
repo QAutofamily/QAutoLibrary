@@ -12,10 +12,9 @@ from QAutoLibrary.extension.testdata.testdata import get_global_testdata, TestDa
 from QAutoLibrary.extension.parsers.parameter_parser import set_parameter_file
 from QAutoLibrary.extension.util.GlobalUtils import Singleton
 
-DefaultDirectory = ["pagemodel", "common_lib"]
+DefaultDirectory = ["pagemodel"]
 TestReportFolder = "test_reports"
 
-WarningNoTestData = "QautoRobot: Not using TestData"
 WarningDirectoryNotFound = "QautoRobot: Method directory could not be found: "
 
 LibraryScope = 'TEST SUITE'
@@ -83,7 +82,7 @@ class QAutoRobot(CommonUtils):
             set_parameter_file(self.test_data_file)
             self.set_testdata_methods()
         else:
-            self.warning(WarningNoTestData)
+            pass
 
         # Set all methods that are used in file operations
         self.set_file_operation_methods()
@@ -97,15 +96,13 @@ class QAutoRobot(CommonUtils):
 
     def set_file_operation_methods(self):
         """
-        Set testdata methods from global testdata to class
+        Set file methods from file operatiosn to class
 
         :return: None
         """
         method_names = self.get_class_method_names(FileOperations)
         for _method_name in method_names:
-            # Get method
             _method = getattr(FileOperations, _method_name)
-            # Set testdata method into library
             self.set_attribute(self, _method_name, _method)
 
     def set_testdata_methods(self):
@@ -119,9 +116,7 @@ class QAutoRobot(CommonUtils):
 
         method_names = self.get_class_method_names(TestData)
         for _method_name in method_names:
-            # Get method
             _method = getattr(testdata, _method_name)
-            # Set testdata method into library
             self.set_attribute(self, _method_name, _method)
 
     def remove_module_methods(self, directory):
