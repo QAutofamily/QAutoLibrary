@@ -13,8 +13,10 @@
 import time
 
 from QAutoLibrary.extension.config import get_config_value
-from QAutoLibrary.extension.screencast import vlc
-
+try:
+    from QAutoLibrary.extension.screencast import vlc
+except:
+    print("VLC not installed: Please install vlc")
 
 ## Video recorder class
 # VLC player is needed to be installed
