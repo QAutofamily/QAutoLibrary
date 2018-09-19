@@ -7,9 +7,6 @@ from QAutoLibrary.extension.mobile import android_util_functions
 from QAutoLibrary.extension.parsers import parameter_parser
 from QAutoLibrary.extension.parsers import xmltodict
 
-from QAutoLibrary.extension.screencast import vlc
-from QAutoLibrary.extension.screencast import vlc_recorder
-
 from QAutoLibrary.extension.testdata import testdata
 
 from QAutoLibrary.extension.util import common_methods_helpers
