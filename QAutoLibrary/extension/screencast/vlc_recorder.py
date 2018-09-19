@@ -50,12 +50,15 @@ class VlcRecorder:
     # Initialize vlc, player objects and setting default path to file
     def __init__(self, path):
         # setting default file
-        self.vlc = vlc.Instance("-I dummy")
-        self.player = vlc.libvlc_media_player_new(self.vlc)
-        ext = get_config_value("browser_capture_screen_cast_codec").lower()
-        if ext == '' or ext not in ["ogg", "mp4", "webm"]:
-            ext = "ogg"
-        self.path_to_file = path
+        try:
+            self.vlc = vlc.Instance("-I dummy")
+            self.player = vlc.libvlc_media_player_new(self.vlc)
+            ext = get_config_value("browser_capture_screen_cast_codec").lower()
+            if ext == '' or ext not in ["ogg", "mp4", "webm"]:
+                ext = "ogg"
+            self.path_to_file = path
+        except:
+            print("VLC not installed: Please install vlc")
 
     ## Set current file
     # @param path_to_file: absolute path to file
