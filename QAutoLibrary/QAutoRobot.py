@@ -365,9 +365,12 @@ class QAutoRobot(CommonUtils):
 
         :return: None
         """
-        record_path = os.path.join(os.getcwd(), TestReportFolder, test_case.replace(" ", "_") + ".ogg")
-        self.recorder = VlcRecorder(record_path)
-        self.recorder.start()
+        try:
+            record_path = os.path.join(os.getcwd(), TestReportFolder, test_case.replace(" ", "_") + ".ogg")
+            self.recorder = VlcRecorder(record_path)
+            self.recorder.start()
+        except:
+            print("VLC not installed: Please install vlc")
 
     def stop_recording(self):
         """
@@ -375,5 +378,8 @@ class QAutoRobot(CommonUtils):
 
         :return: Path to recording file
         """
-        self.recorder.stop()
-        return self.recorder.get_file()
+        try:
+            self.recorder.stop()
+            return self.recorder.get_file()
+        except:
+            print("VLC not installed: Please install vlc")
