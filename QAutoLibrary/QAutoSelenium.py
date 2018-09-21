@@ -571,11 +571,13 @@ class CommonMethods(object):
             | ``self.common_utils.wait_until_element_is_visible(self.trial.TRIAL, 10)``
 
         """
-        element = self.find_element_if_not_webelement(element)
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         if not msg:
-            msg = "Element '%s' is not visible after %s seconds" % (element.text, timeout)
+            if type(element) in [tuple, QAutoElement]:
+                msg = "Element '%s' is not visible for %s seconds" % (element[0], timeout)
+            else:
+                msg = "Element '%s' is not visible for %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
@@ -605,11 +607,13 @@ class CommonMethods(object):
             | using timeout
             | ``self.common_utils.wait_until_element_is_not_visible(self.trial.TRIAL, 10)``
         """
-        element = self.find_element_if_not_webelement(element)
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         if not msg:
-            msg = "Element '%s' is visible after %s seconds" % (element.text, timeout)
+            if type(element) in [tuple, QAutoElement]:
+                msg = "Element '%s' is visible for %s seconds" % (element[0], timeout)
+            else:
+                msg = "Element '%s' is visible for %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: not self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
@@ -640,11 +644,13 @@ class CommonMethods(object):
             | ``self.common_utils.wait_until_element_is_disabled(self.trial.TRIAL, 10)``
 
         """
-        element = self.find_element_if_not_webelement(element)
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         if not msg:
-            msg = "Element '%s' is not disabled after %s seconds" % (element.text, timeout)
+            if type(element) in [tuple, QAutoElement]:
+                msg = "Element '%s' is not disabled after %s seconds" % (element[0], timeout)
+            else:
+                msg = "Element '%s' is not disabled after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_disabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
@@ -675,11 +681,13 @@ class CommonMethods(object):
             | ``self.common_utils.wait_until_element_is_enabled(self.trial.TRIAL, 10)``
 
         """
-        element = self.find_element_if_not_webelement(element)
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         if not msg:
-            msg = "Element '%s' is not enabled after %s seconds" % (element.text, timeout)
+            if type(element) in [tuple, QAutoElement]:
+                msg = "Element '%s' is not enabled after %s seconds" % (element[0], timeout)
+            else:
+                msg = "Element '%s' is not enabled after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_enabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
@@ -1896,12 +1904,14 @@ class WebMethods(CommonMethods):
             | using timeout
             | ``self.common_utils.wait_until_table_size_changes(self.demo.tableTest, 10)``
         """
-        element = self.find_element_if_not_webelement(element)
         size = self.get_table_size(element)
         if not timeout:
             timeout = get_config_value("default_timeout")
         if not msg:
-            msg = "Element '%s' size is not changed after %s seconds" % (element.text, timeout)
+            if type(element) in [tuple, QAutoElement]:
+                msg = "Element '%s' size is not changed after %s seconds" % (element[0], timeout)
+            else:
+                msg = "Element '%s' size is not changed after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_table_size(element)[0] != size[0],
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
@@ -4079,11 +4089,13 @@ class CanvasMethods(object):
         :param timeout: Using default timeout
 
         """
-        element = self.find_element_if_not_webelement(element)
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         if not msg:
-            msg = "Element '%s' is not visible for %s seconds" % (element.text, timeout)
+            if type(element) in [tuple, QAutoElement]:
+                msg = "Element '%s' is not visible for %s seconds" % (element[0], timeout)
+            else:
+                msg = "Element '%s' is not visible for %s seconds" % (element.text, timeout)
 
         CommonMethodsHelpers.webdriver_wait(lambda driver: self._is_visible_canvas(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
