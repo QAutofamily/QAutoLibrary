@@ -94,8 +94,7 @@ class CommonMethodsHelpers(object):
         info = "%s %s\nexpected: '%s', actual '%s'" % (DebugLog.get_timestamp(), msg, expected, actual)
         unittest.TestCase("assertEqual").assertEqual(expected, actual, info)
         try:
-            if msgpass:
-                DebugLog.log(msgpass)
+            DebugLog.log(info)
         except:
             pass
 
