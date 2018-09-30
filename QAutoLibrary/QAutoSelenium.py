@@ -575,7 +575,7 @@ class CommonMethods(object):
             timeout = get_config_value(("default_timeout"))
         if not msg:
             if type(element) in [tuple, QAutoElement]:
-                msg = "Element '%s' is not visible for %s seconds" % (element[0], timeout)
+                msg = "Element '%s' is not visible for %s seconds" % (element[1], timeout)
             else:
                 msg = "Element '%s' is not visible for %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_visible(element),
@@ -611,7 +611,7 @@ class CommonMethods(object):
             timeout = get_config_value(("default_timeout"))
         if not msg:
             if type(element) in [tuple, QAutoElement]:
-                msg = "Element '%s' is visible for %s seconds" % (element[0], timeout)
+                msg = "Element '%s' is visible for %s seconds" % (element[1], timeout)
             else:
                 msg = "Element '%s' is visible for %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: not self.is_visible(element),
@@ -648,7 +648,7 @@ class CommonMethods(object):
             timeout = get_config_value(("default_timeout"))
         if not msg:
             if type(element) in [tuple, QAutoElement]:
-                msg = "Element '%s' is not disabled after %s seconds" % (element[0], timeout)
+                msg = "Element '%s' is not disabled after %s seconds" % (element[1], timeout)
             else:
                 msg = "Element '%s' is not disabled after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_disabled(element),
@@ -685,7 +685,7 @@ class CommonMethods(object):
             timeout = get_config_value(("default_timeout"))
         if not msg:
             if type(element) in [tuple, QAutoElement]:
-                msg = "Element '%s' is not enabled after %s seconds" % (element[0], timeout)
+                msg = "Element '%s' is not enabled after %s seconds" % (element[1], timeout)
             else:
                 msg = "Element '%s' is not enabled after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_enabled(element),
@@ -1909,7 +1909,7 @@ class WebMethods(CommonMethods):
             timeout = get_config_value("default_timeout")
         if not msg:
             if type(element) in [tuple, QAutoElement]:
-                msg = "Element '%s' size is not changed after %s seconds" % (element[0], timeout)
+                msg = "Element '%s' size is not changed after %s seconds" % (element[1], timeout)
             else:
                 msg = "Element '%s' size is not changed after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_table_size(element)[0] != size[0],
@@ -4093,7 +4093,7 @@ class CanvasMethods(object):
             timeout = get_config_value(("default_timeout"))
         if not msg:
             if type(element) in [tuple, QAutoElement]:
-                msg = "Element '%s' is not visible for %s seconds" % (element[0], timeout)
+                msg = "Element '%s' is not visible for %s seconds" % (element[1], timeout)
             else:
                 msg = "Element '%s' is not visible for %s seconds" % (element.text, timeout)
 
