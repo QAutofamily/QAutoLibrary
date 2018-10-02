@@ -267,6 +267,9 @@ class CommonMethods(object):
         driver = self.driver_cache._get_current_driver()
         dimensions = driver.get_window_size()
 
+        print("Searched element coordinates: " + str(self.last_element.coordinates))
+        print("Searched element size: " + str(self.last_element.size))
+
         # check if coordinates are empty or outside current screen
         if x and y and w and h and dimensions.get("height") > int(x) and dimensions.get("width") > int(y):
             width = int(w) / 2
@@ -301,11 +304,14 @@ class CommonMethods(object):
 
             print("Locator id: " + locator_id)
             print("Locator class: " + locator_class)
-            print("Locator xpath " + locator_xpath)
-            print("Element tag name " + element_tag_name)
-            print("Element text " + element_text)
+            print("Locator xpath: " + locator_xpath)
+            print("Element tag name: " + element_tag_name)
+            print("Element text: " + element_text)
 
             return [locator_id, locator_class, locator_xpath, element_tag_name, element_text]
+        else:
+            print("Element not found")
+            return None
 
     def find_element_with_coordinates(self, x, y):
         """
