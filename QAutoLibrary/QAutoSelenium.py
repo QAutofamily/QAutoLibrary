@@ -103,9 +103,10 @@ class CommonMethods(object):
 
     def find_element_if_not_webelement(self, element):
         """
+        **Find element if its not selenium web element**
 
-        :param element:
-        :return:
+        :param element: element to find
+        :return: Web element
         """
         element_type = type(element)
         if element_type in [QAutoElement, tuple]:
@@ -256,8 +257,9 @@ class CommonMethods(object):
 
     def find_last_searched_element_details(self):
         """
+        **Find element with last searched elements information**
 
-        :return:
+        :return: Element details or none
         """
         x = self.last_element.coordinates[0]
         y = self.last_element.coordinates[1]
@@ -267,6 +269,7 @@ class CommonMethods(object):
         driver = self.driver_cache._get_current_driver()
         dimensions = driver.get_window_size()
 
+        print("Searched element locator: " + str(self.last_element.locator))
         print("Searched element coordinates: " + str(self.last_element.coordinates))
         print("Searched element size: " + str(self.last_element.size))
 
@@ -294,28 +297,28 @@ class CommonMethods(object):
 
                 xpath = xpath
             except WebDriverException as e:
-                self.fail(str(e))
+                print(str(e))
+            else:
+                locator_id = element.get_attribute('id')
+                locator_class = element.get_attribute('class')
+                locator_xpath = xpath
+                element_tag_name = element.tag_name
+                element_text = element.text
 
-            locator_id = element.get_attribute('id')
-            locator_class = element.get_attribute('class')
-            locator_xpath = xpath
-            element_tag_name = element.tag_name
-            element_text = element.text
+                print("Found element id: " + locator_id)
+                print("Found element class: " + locator_class)
+                print("Found element xpath: " + locator_xpath)
+                print("Found element tag name: " + element_tag_name)
+                print("Found element text: " + element_text)
 
-            print("Locator id: " + locator_id)
-            print("Locator class: " + locator_class)
-            print("Locator xpath: " + locator_xpath)
-            print("Element tag name: " + element_tag_name)
-            print("Element text: " + element_text)
+                return [locator_id, locator_class, locator_xpath, element_tag_name, element_text]
 
-            return [locator_id, locator_class, locator_xpath, element_tag_name, element_text]
-        else:
-            print("Element not found")
-            return None
+        print("Element not found")
+        return None
 
     def find_element_with_coordinates(self, x, y):
         """
-        Finds web element with coordinates
+        **Finds web element with coordinates**
 
         :param x: x position
         :param y: y position
