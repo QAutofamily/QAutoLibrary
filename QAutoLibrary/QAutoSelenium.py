@@ -49,6 +49,49 @@ except:
 
 ERROR_UNSUPPORTED_ELEMENT_TYPE = "Element type is unsupported"
 
+JS_GET_XPATH_POSITION = """
+function getNodeNumber(current) {
+    var childNodes = current.parentNode.childNodes;
+    var total = 0;
+    var index = -1;
+    for (var i = 0; i < childNodes.length; i++) {
+        var child = childNodes[i];
+        if (child.nodeName == current.nodeName) {
+            if (child == current) {
+              index = total;
+            }
+            total++;
+        }
+    }
+    return index;
+}
+
+function getTestabilityPath(nodeName, testAttr, testAttrValue){
+    return '/' + nodeName + '[@' + testAttr + '="' + testAttrValue + '"]';
+}
+
+function getRelativeXpath(current, testAttr){
+    if (testAttr){
+        var testAttrValue = current.getAttribute(testAttr);
+        if (testAttrValue){
+            return getTestabilityPath(current.nodeName.toLowerCase(), testAttr, testAttrValue);
+        }
+    }
+    if (current.parentNode == null){
+        return '/' + current.nodeName.toLowerCase();
+    }
+    var index = getNodeNumber(current);
+    var currentPath = '/' + current.nodeName.toLowerCase();
+    if (index >= 0) {
+        currentPath += '[' + (index + 1) + ']';
+    }
+    return currentPath;
+}
+
+return getRelativeXpath(arguments[0], arguments[1]);
+"""
+
+
 class CommonMethods(object):
     """
     **Class that contains common methods**
@@ -56,12 +99,14 @@ class CommonMethods(object):
     def __init__(self, driver_cache=None):
         self.driver_cache = driver_cache and driver_cache or DriverCache()
         self.screenshot_parser = None
+        self.last_element = None
 
     def find_element_if_not_webelement(self, element):
         """
+        **Find element if its not selenium web element**
 
-        :param element:
-        :return:
+        :param element: element to find
+        :return: Web element
         """
         element_type = type(element)
         if element_type in [QAutoElement, tuple]:
@@ -210,6 +255,79 @@ class CommonMethods(object):
 
         return False
 
+    def find_last_searched_element_details(self):
+        """
+        **Find element with last searched elements information**
+
+        :return: Element details or none
+        """
+        x = self.last_element.coordinates[0]
+        y = self.last_element.coordinates[1]
+        w = self.last_element.size[0]
+        h = self.last_element.size[1]
+
+        driver = self.driver_cache._get_current_driver()
+        dimensions = driver.get_window_size()
+
+        print("Searched element locator: " + str(self.last_element.locator))
+        print("Searched element coordinates: " + str(self.last_element.coordinates))
+        print("Searched element size: " + str(self.last_element.size))
+        print("")
+
+        # check if coordinates are empty or outside current screen
+        if x and y and w and h and dimensions.get("height") > int(x) and dimensions.get("width") > int(y):
+            width = int(w) / 2
+            height = int(h) / 2
+            new_x = int(x) + width
+            new_y = int(y) + height
+
+            element = self.find_element_with_coordinates(new_x, new_y)
+
+            xpath = ""
+            try:
+                current = element
+                path = ''
+                while current.tag_name.lower() != "html":
+                    current_path = driver.execute_script(JS_GET_XPATH_POSITION, current)
+                    path = current_path + path
+                    xpath = '/' + path
+                    elements = driver.find_elements_by_xpath(xpath)
+                    if len(elements) == 1 and element == elements[0]:
+                        break
+                    current = driver.execute_script("return arguments[0].parentNode", current)
+
+                xpath = xpath
+            except WebDriverException as e:
+                print(str(e))
+            else:
+                locator_id = element.get_attribute('id')
+                locator_class = element.get_attribute('class')
+                locator_xpath = xpath
+                element_tag_name = element.tag_name
+                element_text = element.text
+
+                print("Found element id: " + locator_id)
+                print("Found element class: " + locator_class)
+                print("Found element xpath: " + locator_xpath)
+                print("Found element tag name: " + element_tag_name)
+                print("Found element text: " + element_text)
+
+                return [locator_id, locator_class, locator_xpath, element_tag_name, element_text]
+
+        print("Element not found")
+        return None
+
+    def find_element_with_coordinates(self, x, y):
+        """
+        **Finds web element with coordinates**
+
+        :param x: x position
+        :param y: y position
+        :return: Web element
+        """
+        driver = self.driver_cache._get_current_driver()
+        elem_str = "return document.elementFromPoint(" + str(x) + ", " + str(y) + ")"
+        return driver.execute_script(elem_str)
 
     def find_element(self, element):
         """
@@ -223,6 +341,7 @@ class CommonMethods(object):
             | ``element = self.find_element((By.LINK_TEXT, u'Trial'))``
 
         """
+        self.last_element = element
         driver = self.driver_cache._get_current_driver()
         by = element[0]
         value = element[1]
@@ -261,6 +380,7 @@ class CommonMethods(object):
             | ``all_elements = self.find_elements((By.CSS_SELECTOR, u"img"))``
 
         """
+        self.last_element = element
         driver = self.driver_cache._get_current_driver()
         by = element[0]
         value = element[1]
@@ -1056,6 +1176,7 @@ class CommonMethods(object):
             | ``self.common_utils.is_visible(self.trial.TRIAL, 10)``
 
         """
+        self.last_element = element
         if not timeout:
             try:
                 if type(element) in [tuple, QAutoElement]:
@@ -1099,6 +1220,7 @@ class CommonMethods(object):
             | ``self.common_utils.is_disabled(self.trial.TRIAL, 10)``
 
         """
+        self.last_element = element
         if not timeout:
             try:
                 if type(element) in [tuple, QAutoElement]:
@@ -1142,6 +1264,7 @@ class CommonMethods(object):
             | ``self.common_utils.is_enabled(self.trial.TRIAL, 10)``
 
         """
+        self.last_element = element
         if not timeout:
             try:
                 if type(element) in [tuple, QAutoElement]:
