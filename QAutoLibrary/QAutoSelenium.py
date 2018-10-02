@@ -272,6 +272,7 @@ class CommonMethods(object):
         print("Searched element locator: " + str(self.last_element.locator))
         print("Searched element coordinates: " + str(self.last_element.coordinates))
         print("Searched element size: " + str(self.last_element.size))
+        print("")
 
         # check if coordinates are empty or outside current screen
         if x and y and w and h and dimensions.get("height") > int(x) and dimensions.get("width") > int(y):
