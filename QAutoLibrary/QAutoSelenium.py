@@ -2222,7 +2222,7 @@ class WebMethods(CommonMethods):
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
+        draggable = self.find_element_if_not_webelement(element)
         try:
             DebugLog.log("* Drag and drop '%s' by offset(%s,%s)" % (draggable.text, xoffset, yoffset))
         except:
