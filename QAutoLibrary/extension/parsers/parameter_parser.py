@@ -20,7 +20,6 @@ from xml.sax.saxutils import escape
 
 from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils, throw_error
 from QAutoLibrary.extension.util.testdata_xml_utils import XmlTestDataFunctions
-from QAutoLibrary.extension.testdata import testdata
 
 # This global variable used by get_parameter and get_parameter_dict. See 'ParameterParser' class
 __PARAMETER_PARSER = None

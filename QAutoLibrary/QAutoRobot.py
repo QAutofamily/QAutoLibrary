@@ -4,13 +4,9 @@ import imp
 import inspect
 from types import FunctionType
 
-from QAutoLibrary import FileOperations
 from QAutoLibrary.QAutoSelenium import CommonUtils
 
 from QAutoLibrary.extension.screencast.vlc_recorder import VlcRecorder
-from QAutoLibrary.extension.testdata.testdata import get_global_testdata, TestData
-from QAutoLibrary.extension.parsers.parameter_parser import set_parameter_file
-from QAutoLibrary.extension.util.GlobalUtils import Singleton
 
 DefaultDirectory = ["pagemodel"]
 TestReportFolder = "test_reports"
@@ -25,7 +21,6 @@ class QAutoRobot(CommonUtils):
     """
     Robot library for dynamically adding all qautorobot methods to robot runnable state or in robot project libraries
     """
-    __metaclass__ = Singleton
     ROBOT_LIBRARY_SCOPE = LibraryScope
     KEYWORDS = {}
 
@@ -35,38 +30,12 @@ class QAutoRobot(CommonUtils):
         """
         super(QAutoRobot, self).__init__()
 
-        # Test data file to use in library
-        self.test_data_file = testdata
-
         # Set directory's to add
         self.default_directory = DefaultDirectory
         self.shared_directory = [x for x in shared_directory]
         self.directory = self.default_directory + self.shared_directory
 
         # Set all dynamic imports
-        self.dynamically_import_librarys()
-
-    def update_project_modules(self):
-        """
-        Update project modules
-
-        :return: None
-        """
-        for directory in self.directory:
-            library_files = self.get_library_files_in_directory(directory)
-
-            for _file in library_files:
-                module = ".".join([directory, _file.replace(".py", "")])
-                if module in sys.modules:
-                    try:
-                        full_path = os.path.join(os.getcwd(), directory, _file)
-                        imp.load_source(module, full_path)
-                    except Exception, e:
-                        print "Failed to reload module: %s\n%s" % (module, repr(e))
-                        
-        for directory in self.directory:
-            self.remove_module_methods(directory)
-            
         self.dynamically_import_librarys()
 
     def dynamically_import_librarys(self):
@@ -77,74 +46,12 @@ class QAutoRobot(CommonUtils):
         """
         sys.modules[LibraryAttributeName] = self
 
-        # Set test data methods to library if test data file set
-        if self.test_data_file:
-            set_parameter_file(self.test_data_file)
-            self.set_testdata_methods()
-        else:
-            pass
-
-        # Set all methods that are used in file operations
-        self.set_file_operation_methods()
-
         sys.path.append(os.getcwd())
         # Set directory methods into library
         for directory in self.directory:
             # Append path to 1 up in directory
             sys.path.append(os.path.join(directory, ".."))
             self.set_module_methods(directory)
-
-    def set_file_operation_methods(self):
-        """
-        Set file methods from file operatiosn to class
-
-        :return: None
-        """
-        method_names = self.get_class_method_names(FileOperations)
-        for _method_name in method_names:
-            _method = getattr(FileOperations, _method_name)
-            self.set_attribute(self, _method_name, _method)
-
-    def set_testdata_methods(self):
-        """
-        Set testdata methods from global testdata to class
-
-        :return: None
-        """
-        # Get global testdata for adding method into library
-        testdata = get_global_testdata()
-
-        method_names = self.get_class_method_names(TestData)
-        for _method_name in method_names:
-            _method = getattr(testdata, _method_name)
-            self.set_attribute(self, _method_name, _method)
-
-    def remove_module_methods(self, directory):
-        """
-        Remove methods and libary's in given directory from class
-
-        :param directory: Directory where library files are
-        :return: None
-        """
-        library_files = self.get_library_files_in_directory(directory)
-
-        for library in library_files:
-            try:
-                # Make library name from
-                library = os.path.basename(library).replace(".py", "")
-                # Import library module
-                _import = "{}.{}".format(os.path.basename(directory), library)
-                # Import keyword module
-                _module = reload(__import__(_import, fromlist=['']))
-                # Find library name from module
-                library_name = self.find_library_class_name_from_module(_module, library)
-                if not library_name:
-                    break
-                # Get keyword library from module
-                _class = getattr(_module, library_name)
-                self.remove_library_module_methods(library, _class)
-            except Exception as e:
-                pass
 
     def set_module_methods(self, directory):
         """
@@ -159,12 +66,11 @@ class QAutoRobot(CommonUtils):
 
         for library in library_files:
             try:
+                full_path = os.path.join(os.getcwd(), directory, library)
                 # Make library name from
                 library = os.path.basename(library).replace(".py", "")
                 # Import library module
-                _import = "{}.{}".format(os.path.basename(directory), library)
-                # Import keyword module
-                _module = reload(__import__(_import, fromlist=['']))
+                _module = imp.load_source(library, full_path)
                 # Find library name from module
                 library_name = self.find_library_class_name_from_module(_module, library)
                 if not library_name:
@@ -190,23 +96,6 @@ class QAutoRobot(CommonUtils):
             return clsmembers[0]
         except IndexError:
             return None
-    def remove_library_module_methods(self, library, _class):
-        """
-        Remove library module_methods from class
-
-        :param library: Library class name
-        :param _class: Library class object
-        :return: None
-        """
-        # List of method names in python lib object (ignore private methods)
-        method_names = self.get_class_method_names(_class)
-        for _method_name in method_names:
-            # Set python library object
-            self.remove_attribute(self, library)
-            # Set method with library name + . + method name
-            self.remove_attribute(self, library + "." + _method_name)
-            # Set method with method name
-            self.remove_attribute(self, _method_name)
 
     def set_library_module_methods(self, library, _class):
         """
@@ -229,17 +118,6 @@ class QAutoRobot(CommonUtils):
             self.set_attribute(self, library + "." + _method_name, _method, rename_duplicate=True)
             # Set method with method name
             self.set_attribute(self, _method_name, _method, rename_duplicate=True)
-            
-    @staticmethod
-    def remove_attribute(_class, _name):
-        """
-        Remove attribute
-
-        :param _class: Class to add attribute into
-        :param _name: Name for given attribute
-        :return: None
-        """
-        delattr(_class, _name)
 
     def set_attribute(self, _class, _name, _attr, rename_duplicate=True, depth=0):
         """
@@ -308,15 +186,6 @@ class QAutoRobot(CommonUtils):
         except OSError as e:
             self.warning(WarningDirectoryNotFound + str(e))
             return []
-
-    @staticmethod
-    def get_testdata():
-        """
-        Get global test data object
-
-        :return: Global testdata object
-        """
-        return get_global_testdata()
 
     @staticmethod
     def get_failure_image_path(test_case):
