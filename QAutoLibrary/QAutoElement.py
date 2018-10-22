@@ -50,6 +50,14 @@ class QAutoElement(object):
         else:
             raise IndexError(index)
 
+    def __setitem__(self, key, value):
+        if key == 0:
+            self.by = value
+        elif key == 1:
+            self.value = value
+        else:
+            raise IndexError
+
     def get_by_locator_string(self):
         """
         Converts supported locators e.g 'xpath' --> By.XPATH or returns same value if format is already correct
