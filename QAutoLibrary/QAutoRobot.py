@@ -184,7 +184,6 @@ class QAutoRobot(CommonUtils):
         try:
             return [_file for _file in os.listdir(directory) if _file.endswith(".py") and not _file.startswith("__")]
         except OSError as e:
-            self.warning(WarningDirectoryNotFound + str(e))
             return []
 
     @staticmethod
