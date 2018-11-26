@@ -42,12 +42,6 @@
             <set_capabilities option="marionette">True</set_capabilities>
             <set_capabilities option="acceptInsecureCerts">True</set_capabilities>
         </browser>
-        <browser name="Opera">
-            <desired_capabilities option="browserName">"opera"</desired_capabilities>
-            <desired_capabilities option="version">""</desired_capabilities>
-            <desired_capabilities option="platform">"ANY"</desired_capabilities>
-            <desired_capabilities option="opera.logging.level">"WARNING"</desired_capabilities>
-        </browser>
         <browser name="Internet Explorer">
             <capabilities option="browserName">"internet explorer"</capabilities>
             <capabilities option="version">""</capabilities>

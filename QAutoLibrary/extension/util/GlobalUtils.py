@@ -142,7 +142,6 @@ class GlobalUtils(object):
         "ie": "Internet Explorer",
         "ff": "Firefox",
         "gc": "Chrome",
-        "op": "Opera",
         "me": "MicrosoftEdge",
         "sf": "Safari"
     }

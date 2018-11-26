@@ -28,9 +28,8 @@ class Browsers:
     IE = 0
     FIREFOX = 1
     CHROME = 2
-    OPERA = 3
-    EDGE = 6
-    SAFARI = 7
+    EDGE = 3
+    SAFARI = 4
 
 
 def get_country_key(my_lang):
@@ -288,15 +287,6 @@ def create_driver(browser_name):
             else:
                 raise e
         return _driver
-    elif browser_name == GlobalUtils.BROWSER_NAMES[Browsers.OPERA]:
-        desired_capabilities = {}
-        des_caps = _get_browser_options_from_project_xml("default", GlobalUtils.BROWSER_FULL_NAMES[GlobalUtils.BROWSER_NAMES[Browsers.OPERA]],
-                                                         "desired_capabilities")
-        for arg in des_caps:
-            desired_capabilities[arg["option"]] = eval(arg["text"])
-
-        _driver = webdriver.Opera(desired_capabilities=desired_capabilities)
-        return _driver
     elif browser_name == GlobalUtils.BROWSER_NAMES[Browsers.EDGE]:
         capabilities = _get_browser_options_from_project_xml("default",
                                                              GlobalUtils.BROWSER_FULL_NAMES[GlobalUtils.BROWSER_NAMES[Browsers.EDGE]],
@@ -397,8 +387,6 @@ def __get_desired_capabilities(name):
         return DesiredCapabilities.FIREFOX
     elif name == GlobalUtils.BROWSER_NAMES[2]:
         return DesiredCapabilities.CHROME
-    elif name == GlobalUtils.BROWSER_NAMES[3]:
-        return DesiredCapabilities.OPERA
     elif name == GlobalUtils.BROWSER_NAMES[6]:
         return DesiredCapabilities.EDGE
     elif name == GlobalUtils.BROWSER_NAMES[7]:
