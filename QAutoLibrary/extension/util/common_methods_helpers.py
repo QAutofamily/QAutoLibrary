@@ -22,19 +22,21 @@ from QAutoLibrary.extension.config import get_config_value
 
 
 class CommonMethodsHelpers(object):
-    ## Wait until function returns True
-    # Executes passed function until it returns True
-    # or time exceeds DEFAULT_TIMEOUT
-    # @exception If time exceeds DEFAULT_TIMEOUT throws exception
-    # @param function Function which should return True
-    # @param msg      Exception message
-    #
-    # Example:
-    # @code
-    #   webdriver_wait(execute_js(js_script), msg="Function didn't return True or exeeded default timeout" , default_timeout)
-    # @endcode
+
     @classmethod
     def webdriver_wait(cls, function, driver, msg='', timeout=None):
+        """
+        Wait until function returns True
+        Executes passed function until it returns True
+        or time exceeds DEFAULT_TIMEOUT
+        if time exceeds DEFAULT_TIMEOUT throws exception
+
+        :param function: Function which should return True
+        :param driver:
+        :param msg: Exception message
+        :param timeout:
+        :return:
+        """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         TimeOutError = AssertionError
@@ -46,10 +48,15 @@ class CommonMethodsHelpers(object):
         except Exception, e:
             raise e
 
-    ## Helper method to avoid unicode related issues
-    # Converts all input strings to unicode if non-ascii characters are found in any
     @classmethod
     def contains_nonascii(self, *args):
+        """
+        Helper method to avoid unicode related issues
+        Converts all input strings to unicode if non-ascii characters are found in any
+
+        :param args:
+        :return:
+        """
         result = []
         found = False
         for i in args:
@@ -77,19 +84,18 @@ class CommonMethodsHelpers(object):
                 return args[0]
             return args
 
-    ## Assertion with printing
-    # On fail prints out expected and actual values
-    # @param expected Expected value
-    # @param actual   Actual value
-    # @param msg_pass Message to print if pass
-    # @param msg_fail Message to print if fail
-    #
-    # Example (from example_tests/pagemodel/google/youtube.py):
-    # @code
-    #   assert_equal(2,execute_js("return document.getElementById('movie_player').getPlayerState();"),"> Video is now paused", "> Video is not paused")
-    # @endcode
     @classmethod
     def assert_equal(cls, expected, actual, msgpass='', msg=''):
+        """
+        Assertion with printing
+        On fail prints out expected and actual values
+
+        :param expected: Expected value
+        :param actual: Actual value
+        :param msgpass: Message to print if pass
+        :param msg: Message to print if fail
+        :return:
+        """
         expected, actual = CommonMethodsHelpers.contains_nonascii(expected, actual)
         info = "%s %s\nexpected: '%s', actual '%s'" % (DebugLog.get_timestamp(), msg, expected, actual)
         unittest.TestCase("assertEqual").assertEqual(expected, actual, info)

@@ -29,8 +29,6 @@ class Browsers:
     FIREFOX = 1
     CHROME = 2
     OPERA = 3
-    ANDROID_CHROME = 4
-    ANDROID_APPLICATION = 5
     EDGE = 6
     SAFARI = 7
 
@@ -299,29 +297,6 @@ def create_driver(browser_name):
 
         _driver = webdriver.Opera(desired_capabilities=desired_capabilities)
         return _driver
-
-    elif browser_name == GlobalUtils.BROWSER_NAMES[Browsers.ANDROID_CHROME]:
-        desired_caps = {}
-        des_caps = _get_browser_options_from_project_xml("default",
-                                                         GlobalUtils.BROWSER_FULL_NAMES[GlobalUtils.BROWSER_NAMES[Browsers.ANDROID_CHROME]],
-                                                         "desired_caps")
-        for arg in des_caps:
-            desired_caps[arg["option"]] = eval(arg["text"])
-
-        _driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps)
-        return _driver
-
-    elif browser_name == GlobalUtils.BROWSER_NAMES[Browsers.ANDROID_APPLICATION]:
-        desired_caps = {}
-        des_caps = _get_browser_options_from_project_xml("default",
-                                                         GlobalUtils.BROWSER_FULL_NAMES[GlobalUtils.BROWSER_NAMES[Browsers.ANDROID_APPLICATION]],
-                                                         "desired_caps")
-        for arg in des_caps:
-            desired_caps[arg["option"]] = eval(arg["text"])
-
-        _driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps)
-        return _driver
-
     elif browser_name == GlobalUtils.BROWSER_NAMES[Browsers.EDGE]:
         capabilities = _get_browser_options_from_project_xml("default",
                                                              GlobalUtils.BROWSER_FULL_NAMES[GlobalUtils.BROWSER_NAMES[Browsers.EDGE]],
