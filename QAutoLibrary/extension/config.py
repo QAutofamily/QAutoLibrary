@@ -64,7 +64,6 @@ def _write_options(key, value):
         parser.write(configfile)
 
 
-# TODO: add Android section support
 def write_options(key, value):
     """
     Write option

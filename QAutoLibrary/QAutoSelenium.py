@@ -1,7 +1,6 @@
 import csv
 import os
 import random
-import re
 import subprocess
 import sys
 import time
@@ -29,7 +28,6 @@ from selenium.webdriver.remote.webelement import WebElement
 from simplejson import loads, dumps
 from urllib3.exceptions import ConnectionError
 
-from QAutoLibrary.extension.mobile.android_util_functions import AndroidUtilFunctions
 from QAutoLibrary.extension.util.common_methods_helpers import CommonMethodsHelpers, DebugLog
 from QAutoLibrary.extension.webdriver_cache.webdriver_cache import DriverCache
 from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils
@@ -37,7 +35,7 @@ from QAutoLibrary.extension.webdriver_cache.browser import create_driver
 from QAutoLibrary.extension.config import get_config_value
 from QAutoLibrary.extension.util.webtimings import get_measurements as webtimings_get_measurements
 from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, get_file_content
-from QAutoLibrary.extension.parsers.xml_screenshot_parser import XmlScreenshotParser
+from QAutoLibrary.extension.util.xml_screenshot_parser import XmlScreenshotParser
 
 from QAutoLibrary.QAutoElement import QAutoElement
 
@@ -345,27 +343,7 @@ class CommonMethods(object):
         driver = self.driver_cache._get_current_driver()
         by = element[0]
         value = element[1]
-
-        if self.driver_cache._is_aa() and (by == "name" or by == "tag name"):
-
-            separator_index = -1
-            search_value = ""
-            search_index = ""
-
-            separator_index = value.rfind(r"'")
-            if separator_index != -1:
-                search_value = value[: separator_index]
-                search_index = value[separator_index + 1:]
-
-            try:
-                search_index_int = int(search_index)
-            except ValueError:
-                search_index_int = -1
-
-            if search_index_int != -1:
-                return driver.find_elements(by, search_value)[search_index_int]
-        else:
-            return driver.find_element(by, value)
+        return driver.find_element(by, value)
 
 
     def find_elements(self, element):
@@ -385,28 +363,7 @@ class CommonMethods(object):
         by = element[0]
         value = element[1]
 
-        if self.driver_cache._is_aa() and (by == "name" or by == "tag name"):
-
-            separator_index = -1
-            search_value = ""
-            search_index = ""
-            return_elem = []
-
-            separator_index = value.rfind(r"'")
-            if separator_index != -1:
-                search_value = value[: separator_index]
-                search_index = value[separator_index + 1:]
-
-            try:
-                search_index_int = int(search_index)
-            except ValueError:
-                search_index_int = -1
-
-            if search_index_int != -1:
-                return_elem.append(driver.find_elements(by, search_value)[search_index_int])
-                return return_elem
-        else:
-            return driver.find_elements(by, value)
+        return driver.find_elements(by, value)
 
 
     def click_element(self, element, to_print=True):
@@ -1033,15 +990,12 @@ class CommonMethods(object):
         # register driver and get id
         _id = self.driver_cache.register(driver, browser_name, alias)
 
-        if not size and not (self.driver_cache._is_aa() and self.driver_cache._is_ac()):
+        if not size:
             driver.maximize_window()
 
         if url:
             DebugLog.log("* Opening base url '%s'" % url)
-            if not self.driver_cache._is_aa():
-                driver.get(url)
-            else:
-                AndroidUtilFunctions.open_android_activity(url)
+            driver.get(url)
 
         return _id
 
@@ -1127,10 +1081,7 @@ class CommonMethods(object):
             except:
                 DebugLog.log("* Opening url")
 
-        if not self.driver_cache._is_aa():
-            driver.get(url)
-        else:
-            AndroidUtilFunctions.open_android_activity(url)
+        driver.get(url)
 
 
     def open_url(self, url, log=True):
@@ -3677,404 +3628,6 @@ class WebMethods(CommonMethods):
             return None
 
 
-## Class that contains methods for Android
-class AndroidMethods(CommonMethods):
-    """
-    **Class that contains methods for Android**
-    """
-    def __init__(self, driver_cache=None):
-        self.driver_cache = driver_cache and driver_cache or DriverCache()
-        CommonMethods.__init__(self, self.driver_cache)
-        #print "AndroidMethods"
-
-
-    def get_android_element_center(self, element):
-        """
-        **Returns midpoint coordinates of an android element**
-
-        :param element: Element representation (By, value) or WebElement
-        :return: midpoint coordinates of an android element
-
-        """
-        element = self.find_element_if_not_webelement(element)
-
-        element_size = element.size
-        element_location = element.location
-        e_x = element_location['x']
-        e_y = element_location['y']
-        e_width = element_size['width']
-        e_height = element_size['height']
-
-        center_x = int(e_x + (e_width / 2))
-        center_y = int(e_y + (e_height / 2))
-
-        return [center_x, center_y]
-
-
-    def get_android_element_coordinates(self, element):
-        """
-        **Returns coordinates top left and bottom right corner of an android element**
-
-        :param element: Element representation (By, value) or WebElement
-        :return: coordinates top left and bottom right corner of an android element
-        """
-        element = self.find_element_if_not_webelement(element)
-
-        element_size = element.size
-        element_location = element.location
-        e_x = int(element_location['x'])
-        e_y = int(element_location['y'])
-        e_width = int(element_size['width'])
-        e_height = int(element_size['height'])
-
-        return [e_x, e_y, e_x + e_width, e_y + e_height]
-
-
-    def get_android_element_name(self, element):
-        """
-        **Returns name of an android element**
-
-        :param element: Element representation (By, value) or WebElement
-        :return: name of an android element
-        """
-
-        value = ""
-        if type(element) in [tuple, QAutoElement]:
-            element = self.find_element(element)
-            value = re.sub("[']", '_', element[1])
-
-        elem_name = element.get_attribute("name")
-
-        if elem_name == "":
-            elem_name = element.text
-
-        if elem_name == "":
-            if value != "":
-                elem_name = value
-            else:
-                elem_name = repr(element)
-
-        return elem_name
-
-
-    def android_scroll_down(self, element):
-        """
-        **Scroll down in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
-
-        driver = self.driver_cache._get_current_driver()
-
-        element_center = self.get_android_element_center(element)
-        startX = element_center[0]
-        startY = element_center[1]
-        screen_size = driver.get_window_size()
-        stopX = element_center[0]
-        stopY = screen_size['height']
-        try:
-            print "Scrolling down from element '%s' on x: '%s' y: '%s' to x: '%s', y: '%s'" % \
-                (self.get_android_element_name(element), str(startX), str(startY), str(stopX), str(stopY))
-            driver.execute_script("mobile: swipe", {"touchCount": "1",
-                                                    "startX": startX,
-                                                    "startY": startY,
-                                                    "endX": stopX,
-                                                    "endY": stopY})
-        except:
-            print "Scrolling down failed!"
-
-
-    def android_scroll_up(self, element):
-        """
-        **Scroll up in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
-
-        driver = self.driver_cache._get_current_driver()
-
-        element_center = self.get_android_element_center(element)
-        startX = element_center[0]
-        startY = element_center[1]
-        stopX = element_center[0]
-        stopY = 0
-        try:
-            print "Scrolling up from element '%s' on x: '%s' y: '%s' to x: '%s', y: '%s'" % \
-                (self.get_android_element_name(element), str(startX), str(startY), str(stopX), str(stopY))
-            driver.execute_script("mobile: swipe", {"touchCount": "1",
-                                                    "startX": startX,
-                                                    "startY": startY,
-                                                    "endX": stopX,
-                                                    "endY": stopY})
-        except:
-            print "Scrolling up failed!"
-
-
-    def android_swipe_left_to_right(self, element):
-        """
-        **Swipe from left to right in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
-
-        driver = self.driver_cache._get_current_driver()
-
-        screen_size = driver.get_window_size()
-        element_center = self.get_android_element_center(element)
-        startX = 10
-        startY = element_center[1]
-        stopX = screen_size['width'] - 10
-        stopY = element_center[1]
-        try:
-            print "Swipping left on element '%s' from x: '%s' y: '%s' to x: '%s', y: '%s'" % \
-                (self.get_android_element_name(element), str(startX), str(startY), str(stopX), str(stopY))
-            driver.execute_script("mobile: swipe", {"touchCount": "1",
-                                                    "startX": startX,
-                                                    "startY": startY,
-                                                    "endX": stopX,
-                                                    "endY": stopY})
-        except:
-            print "Swipping left failed!"
-
-
-    def android_swipe_right_to_left(self, element):
-        """
-        **Swipe from right to left in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
-
-        driver = self.driver_cache._get_current_driver()
-
-        screen_size = driver.get_window_size()
-        element_center = self.get_android_element_center(element)
-        startX = screen_size['width'] - 10
-        startY = element_center[1]
-        stopX = 10
-        stopY = element_center[1]
-        try:
-            print "Swipping right on element: '%s' from x: '%s' y: '%s' to x: '%s', y: '%s'" % \
-                (self.get_android_element_name(element), str(startX), str(startY), str(stopX), str(stopY))
-            driver.execute_script("mobile: swipe", {"touchCount": "1",
-                                                    "startX": startX,
-                                                    "startY": startY,
-                                                    "endX": stopX,
-                                                    "endY": stopY})
-        except:
-            print "Swipping right failed!"
-
-
-    def android_slide_center_to_left(self, element):
-        """
-        **Slide from element center to the left in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
-
-        driver = self.driver_cache._get_current_driver()
-        element_center = self.get_android_element_center(element)
-        startX = element_center[0]
-        startY = element_center[1]
-        stopX = self.get_android_element_coordinates(element)[0] + 5
-        if stopX < 0:
-            stopX = 5
-        stopY = element_center[1]
-        try:
-            print "Sliding left on element: '%s' from x: '%s' y: '%s' to x: '%s', y: '%s'" % \
-                (self.get_android_element_name(element), str(startX), str(startY), str(stopX), str(stopY))
-            driver.execute_script("mobile: flick", {"touchCount": "1",
-                                                    "startX": startX,
-                                                    "startY": startY,
-                                                    "endX": stopX,
-                                                    "endY": stopY})
-        except:
-            print "Sliding left failed!"
-
-
-    def android_slide_center_to_right(self, element):
-        """
-        **Slide from element center to the right in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
-
-        driver = self.driver_cache._get_current_driver()
-        screen_size = driver.get_window_size()
-        element_center = self.get_android_element_center(element)
-        startX = element_center[0]
-        startY = element_center[1]
-        stopX = self.get_android_element_coordinates(element)[2] - 5
-        if stopX > screen_size['width']:
-            stopX = screen_size['width'] - 5
-        stopY = element_center[1]
-        try:
-            print "Sliding right on element: '%s' from x: '%s' y: '%s' to x: '%s', y: '%s'" % \
-                (self.get_android_element_name(element), str(startX), str(startY), str(stopX), str(stopY))
-            driver.execute_script("mobile: flick", {"touchCount": "1",
-                                                    "startX": startX,
-                                                    "startY": startY,
-                                                    "endX": stopX,
-                                                    "endY": stopY})
-        except:
-            print "Sliding right failed!"
-
-
-    def android_slide_center_to_top(self, element):
-        """
-        **Slide from element center to the top in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
-
-        driver = self.driver_cache._get_current_driver()
-        element_center = self.get_android_element_center(element)
-        startX = element_center[0]
-        startY = element_center[1]
-        stopX = element_center[0]
-        stopY = self.get_android_element_coordinates(element)[1] + 5
-        if stopY < 0:
-            stopY = 5
-        try:
-            print "Sliding up on element: '%s' from x: '%s' y: '%s' to x: '%s', y: '%s'" % \
-                (self.get_android_element_name(element), str(startX), str(startY), str(stopX), str(stopY))
-            driver.execute_script("mobile: flick", {"touchCount": "1",
-                                                    "startX": startX,
-                                                    "startY": startY,
-                                                    "endX": stopX,
-                                                    "endY": stopY})
-        except:
-            print "Sliding up failed!"
-
-
-    def android_slide_center_to_bottom(self, element):
-        """
-        **Slide from element center to the bottom in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
-
-        driver = self.driver_cache._get_current_driver()
-        screen_size = driver.get_window_size()
-        element_center = self.get_android_element_center(element)
-        startX = element_center[0]
-        startY = element_center[1]
-        stopX = element_center[0]
-        stopY = self.get_android_element_coordinates(element)[3] - 5
-        if stopY > screen_size['height']:
-            stopY = screen_size['height'] - 5
-        try:
-            print "Sliding down on element: '%s' from x: '%s' y: '%s' to x: '%s', y: '%s'" % \
-                (self.get_android_element_name(element), str(startX), str(startY), str(stopX), str(stopY))
-            driver.execute_script("mobile: flick", {"touchCount": "1",
-                                                    "startX": startX,
-                                                    "startY": startY,
-                                                    "endX": stopX,
-                                                    "endY": stopY})
-        except:
-            print "Sliding down failed!"
-
-
-    def android_tap(self, element):
-        """
-        **Tap on element center in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
-
-        driver = self.driver_cache._get_current_driver()
-
-        element_center = self.get_android_element_center(element)
-        startX = element_center[0]
-        startY = element_center[1]
-        try:
-            driver.execute_script("mobile: tap", {"touchCount": "1", "x": startX, "y": startY})
-            print "Tapping on element '%s' at x: '%s' y: '%s'" % \
-                (self.get_android_element_name(element), str(startX), str(startY))
-        except:
-            print "Tapping failed!"
-
-
-    def android_back_key(self, element):
-        """
-        **Press BACK key in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-
-        back_cmd = "adb shell input keyevent KEYCODE_BACK"
-
-        try:
-            os.popen(back_cmd, "r")
-            print "Pressing BACK key"
-        except:
-            print "Pressing BACK key failed!"
-
-
-    def android_home_key(self, element):
-        """
-        **Press HOME key in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-
-        back_cmd = "adb shell input keyevent KEYCODE_HOME"
-
-        try:
-            os.popen(back_cmd, "r")
-            print "Pressing HOME key"
-        except:
-            print "Pressing HOME key failed!"
-
-
-    def android_power_key(self, element):
-        """
-        **Press POWER key in android native application**
-
-        :param element: Element representation (By, value) or WebElement
-
-        """
-        self.wait_until_element_is_visible(element)
-
-        back_cmd = "adb shell input keyevent KEYCODE_POWER"
-
-        try:
-            os.popen(back_cmd, "r")
-            print "Pressing POWER key"
-        except:
-            print "Pressing POWER key failed!"
-
-
 class CanvasMethods(object):
     """
     **Class that contains methods for Canvas based areas**
@@ -4674,36 +4227,10 @@ class Asserts(object):
             print "Element might be not a checkbox"
 
 
-## Class that contains methods for making Android verifications
-class AndroidAsserts(object):
-    """
-    **Class that contains methods for making Android verifications**
-    """
-    def __init__(self, driver_cache=None):
-        self.driver_cache = driver_cache and driver_cache or DriverCache()
-        self._wm = WebMethods(self.driver_cache)
-
-    def verify_text(self, element, value):
-        """
-        **Verifies if text in the element corresponds to expected one**
-
-        :param element: Element representation (By, value).
-        :param text: User provided text
-        """
-        CommonMethodsHelpers.assert_equal(value, self._wm.get_text(element))
-
-    def verify_value(self, element, value):
-        """
-        **Verifies if value of element corresponds to expected one**
-        """
-        CommonMethodsHelpers.assert_equal(value, self._wm.get_value(element))
-
-
 class CommonWrappers(object):
     def __init__(self, driver_cache=None):
         self.driver_cache = driver_cache and driver_cache or DriverCache()
         self._wm = WebMethods(self.driver_cache)
-        self._am = AndroidMethods(self.driver_cache)
 
     def click_element(self, element):
         self._wm.click_element(element)
@@ -4773,49 +4300,6 @@ class Wrappers(CommonWrappers):
     def go_to(self, parameters):
         self._wm.go_to(parameters)
 
-
-class AndroidWrappers(CommonWrappers):
-    def __init__(self, driver_cache=None):
-        self.driver_cache = driver_cache and driver_cache or DriverCache()
-        CommonWrappers.__init__(self, self.driver_cache)
-
-    def android_scroll_down(self, element):
-        self._am.android_scroll_down(element)
-
-    def android_scroll_up(self, element):
-        self._am.android_scroll_up(element)
-
-    def android_swipe_left_to_right(self, element):
-        self._am.android_swipe_left_to_right(element)
-
-    def android_swipe_right_to_left(self, element):
-        self._am.android_swipe_right_to_left(element)
-
-    def android_slide_center_to_left(self, element):
-        self._am.android_slide_center_to_left(element)
-
-    def android_slide_center_to_right(self, element):
-        self._am.android_slide_center_to_right(element)
-
-    def android_slide_center_to_top(self, element):
-        self._am.android_slide_center_to_top(element)
-
-    def android_slide_center_to_bottom(self, element):
-        self._am.android_slide_center_to_bottom(element)
-
-    def android_tap(self, element):
-        self._am.android_tap(element)
-
-    def android_back_key(self, element):
-        self._am.android_back_key(element)
-
-    def android_home_key(self, element):
-        self._am.android_home_key(element)
-
-    def android_power_key(self, element):
-        self._am.android_power_key(element)
-
-
 class CanvasWrappers(object):
     def __init__(self, driver_cache=None):
         self.driver_cache = driver_cache and driver_cache or DriverCache()
@@ -4835,8 +4319,7 @@ class CanvasWrappers(object):
 
 
 ## Main class for all available methods
-class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
-                  AndroidWrappers, CanvasMethods, CanvasWrappers):
+class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
     """
     **Main class for all available methods**
     """
@@ -4846,13 +4329,10 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
     def __init__(self):
         self.driver_cache = DriverCache()
         WebMethods.__init__(self, self.driver_cache)
-        AndroidMethods.__init__(self, self.driver_cache)
         CanvasMethods.__init__(self, self.driver_cache)
         Asserts.__init__(self, self.driver_cache)
 
         Wrappers.__init__(self, self.driver_cache)
-        AndroidAsserts.__init__(self, self.driver_cache)
-        AndroidWrappers.__init__(self, self.driver_cache)
         CanvasWrappers.__init__(self, self.driver_cache)
 
     def __generate_tests(self, path_to_file, method):
@@ -5194,7 +4674,6 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
 
         :param measurement_name: label of the measurement (also file name) as a String
         :param sample: value to save in the file as Int (seconds)
-
         """
 
         sample = float(sample)
@@ -5355,10 +4834,14 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
 
     @classmethod
     def _check_screenshot_file_name(cls, screenshot_parser, ref_scr_name):
+        """
 
+        :param screenshot_parser:
+        :param ref_scr_name:
+        :return:
+        """
         current_dir = os.getcwd()
 
-        #splitted_table = self._split_screenshot_name(ref_scr_name)
         browser, screenres = cls._get_browser_and_resolution()
         ref_scr_file_name = ref_scr_name + "_" + browser + "-" + screenres + ".png"
         ref_scr_file_name_path = os.path.join(current_dir, GlobalUtils.SCREENSHOTS_FOLDER_NAME, ref_scr_file_name)
@@ -5427,55 +4910,10 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
     def _get_browser_and_resolution(cls):
         # Get screen resolution and browser name
         browser_name = get_config_value(GlobalUtils.BROWSER_NAME)
-        if browser_name == "aa":
-            display_size = AndroidUtilFunctions.get_current_android_resolution()
-            screen_res = str(display_size[0]) + "x" + str(display_size[1])
-        else:
-            import wx
-            display_size = wx.DisplaySize()
-            screen_res = str(display_size[0]) + "x" + str(display_size[1])
+        import wx
+        display_size = wx.DisplaySize()
+        screen_res = str(display_size[0]) + "x" + str(display_size[1])
         return browser_name, screen_res
-
-
-    def _split_screenshot_name(self, ref_scr_name):
-        """
-        **Splitting string for getting name part and end part (e.g. gc-1600x1200) of selected png file**
-
-        :param ref_scr_name: Reference screenshot image file name
-        :return: tuple (temp_new_name, end_part_split, resolution_part_split, browser_part_split)
-
-        """
-
-        ref_scr_name = str(ref_scr_name).strip().split(".png")[0]
-        screenshot_to_be_updated_split = ref_scr_name.split("_")
-        end_part_split = screenshot_to_be_updated_split[len(screenshot_to_be_updated_split) - 1]
-        #print end_part_split
-        end_part_split_2 = end_part_split.split("-")
-        resolution_part_split = end_part_split_2[1]
-        #print resolution_part_split
-        browser_part_split = end_part_split_2[0]
-        #print browser_part_split
-
-        temp_new_name = ""
-        name_part_split_size = len(screenshot_to_be_updated_split) - 1
-        name_part_split = screenshot_to_be_updated_split[0:name_part_split_size]
-        for x in range(0, name_part_split_size):
-            temp_new_name += name_part_split[x] + "_"
-
-        return (temp_new_name, end_part_split, resolution_part_split, browser_part_split)
-
-
-    def get_current_url(self):
-        """
-        **Get current active browsers url as a String.**
-
-        :return: Current active browser url as a String.
-        """
-        if not self.is_aa():
-            return self.get_current_driver().current_url
-        else:
-            return AndroidUtilFunctions.get_current_package_activity()
-
 
     def get_current_driver(self):
         """
@@ -5484,7 +4922,6 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
         :return: Current active webdriver object.
         """
         return self.driver_cache._get_current_driver()
-
 
     def get_current_browser(self):
         """
@@ -5530,34 +4967,6 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
         """
         return self.driver_cache._is_gc()
 
-
-    def is_op(self):
-        """
-        **Returns True is browser is Opera, else - False.**
-
-        :return: True is browser is Opera, else - False.
-        """
-        return self.driver_cache._is_op()
-
-
-    def is_ac(self):
-        """
-        **Returns True is browser is Android Chrome, else - False.**
-
-        :return: True is browser is Android Chrome, else - False.
-        """
-        return self.driver_cache._is_ac()
-
-
-    def is_aa(self):
-        """
-        **Returns True is browser is Android Application, else - False.**
-
-        :return: True is browser is Android Application, else - False.
-        """
-        return self.driver_cache._is_aa()
-
-
     def get_browser_version(self):
         """
         **Returns browser version**
@@ -5565,19 +4974,20 @@ class CommonUtils(WebMethods, AndroidMethods, Asserts, Wrappers, AndroidAsserts,
         :return: version as String
         """
         driver = self.get_current_driver()
-        if self.is_op():
-            agent = driver.execute_script("return navigator.userAgent")
-            return agent[agent.rindex("/") + 1:]
-        elif self.is_aa():
-            return driver.desired_capabilities["platformVersion"]
-        else:
-            #TODO: how to get version info from new firefox versions
-            if "version" in driver.desired_capabilities:
-                return driver.desired_capabilities["version"]
-            return ""
+
+        #TODO: how to get version info from new firefox versions
+        if "version" in driver.desired_capabilities:
+            return driver.desired_capabilities["version"]
+        return ""
 
     def take_full_screenshot(self, pic_name, height_override=None):
+        """
+        Take full screenshot of the page
 
+        :param pic_name: Name for the screenshot
+        :param height_override: Override height
+        :return: None
+        """
         driver = self.get_current_driver()
 
         # start from the top

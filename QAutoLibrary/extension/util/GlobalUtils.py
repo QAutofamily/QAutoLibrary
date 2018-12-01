@@ -85,10 +85,6 @@ class GlobalUtils(object):
     DRAG_DROP_HELPER = os.path.join(JS_HELPERS_PATH, "drag_and_drop_helper.js")
     JQUERY_LOADER_HELPER = os.path.join(JS_HELPERS_PATH, "jquery_load_helper.js")
 
-    # Appium and node paths in user qautorobot folder
-    APPIUM_PATH = os.path.join(os.path.expanduser("~"), "qautorobot", "Appium", "node_modules", "appium")
-    NODE_JS_PATH = os.path.join(os.path.expanduser("~"), "qautorobot", "Appium", "Node.exe")
-
     SCREENSHOTS_XML_FILE = "screenshots.xml"
 
     # QAutoLibrary testing project directory's
@@ -146,9 +142,6 @@ class GlobalUtils(object):
         "ie": "Internet Explorer",
         "ff": "Firefox",
         "gc": "Chrome",
-        "op": "Opera",
-        "ac": "Android Chrome",
-        "aa": "Android Application",
         "me": "MicrosoftEdge",
         "sf": "Safari"
     }

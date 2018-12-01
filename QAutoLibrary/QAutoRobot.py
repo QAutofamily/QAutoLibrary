@@ -24,7 +24,7 @@ class QAutoRobot(CommonUtils):
     ROBOT_LIBRARY_SCOPE = LibraryScope
     KEYWORDS = {}
 
-    def __init__(self, testdata=None, *shared_directory):
+    def __init__(self, *shared_directory):
         """
         During initilization adds dynamically all library methods to library
         """

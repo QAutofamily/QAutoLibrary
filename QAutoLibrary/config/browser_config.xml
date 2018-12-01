@@ -42,31 +42,6 @@
             <set_capabilities option="marionette">True</set_capabilities>
             <set_capabilities option="acceptInsecureCerts">True</set_capabilities>
         </browser>
-        <browser name="Opera">
-            <desired_capabilities option="browserName">"opera"</desired_capabilities>
-            <desired_capabilities option="version">""</desired_capabilities>
-            <desired_capabilities option="platform">"ANY"</desired_capabilities>
-            <desired_capabilities option="opera.logging.level">"WARNING"</desired_capabilities>
-        </browser>
-        <browser name="Android Chrome">
-            <desired_caps option="deviceName">"Android"</desired_caps>
-            <desired_caps option="platformName">"Android"</desired_caps>
-            <desired_caps option="browserName">"chrome"</desired_caps>
-            <desired_caps option="platformVersion">"6.0"</desired_caps>
-            <desired_caps option="app-package">"com.android.chrome"</desired_caps>
-            <desired_caps option="app-activity">".com.google.android.apps.chrome.Main"</desired_caps>
-            <desired_caps option="newCommandTimeout">9999</desired_caps>
-        </browser>
-        <browser name="Android Application">
-            <desired_caps option="deviceName">"Android"</desired_caps>
-            <desired_caps option="platformName">"Android"</desired_caps>
-            <desired_caps option="browserName">""</desired_caps>
-            <desired_caps option="platformVersion">"6.0"</desired_caps>
-            <desired_caps option="app">PATH('..') + "/resources/WebTestToolApp.apk"</desired_caps>
-            <desired_caps option="app-package">"com.ixonos.ixowebp"</desired_caps>
-            <desired_caps option="app-activity">".WebTestToolApp"</desired_caps>
-            <desired_caps option="newCommandTimeout">9999</desired_caps>
-        </browser>
         <browser name="Internet Explorer">
             <capabilities option="browserName">"internet explorer"</capabilities>
             <capabilities option="version">""</capabilities>

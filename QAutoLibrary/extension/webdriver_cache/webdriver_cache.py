@@ -203,18 +203,6 @@ class DriverCache(object):
     def _is_gc(self):
         return self._get_current_browser() == GlobalUtils.BROWSER_NAMES[Browsers.CHROME]
 
-    ## Returns True is browser is Opera, else - False.
-    def _is_op(self):
-        return self._get_current_browser() == GlobalUtils.BROWSER_NAMES[Browsers.OPERA]
-
-    # Returns True is browser is Android Chrome, else - False.
-    def _is_ac(self):
-        return self._get_current_browser() == GlobalUtils.BROWSER_NAMES[Browsers.ANDROID_CHROME]
-
-    # Returns True is browser is Android Application, else - False.
-    def _is_aa(self):
-       return self._get_current_browser() == GlobalUtils.BROWSER_NAMES[Browsers.ANDROID_APPLICATION]
-
 
 class DriverNotFoundException(Exception):
     pass
