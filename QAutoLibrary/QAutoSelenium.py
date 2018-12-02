@@ -4914,6 +4914,13 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         display_size = wx.DisplaySize()
         screen_res = str(display_size[0]) + "x" + str(display_size[1])
         return browser_name, screen_res
+    
+    def get_current_url(self):
+        """
+        **Get current active browsers url as a String.**
+         :return: Current active browser url as a String.
+        """
+        return self.get_current_driver().current_url
 
     def get_current_driver(self):
         """
