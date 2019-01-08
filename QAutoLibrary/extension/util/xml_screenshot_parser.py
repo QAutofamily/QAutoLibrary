@@ -306,10 +306,10 @@ class XmlScreenshotParser(object):
         if meta_node :
             # file exists in xml, update content
             if bool(self.xml_root.find("screenshot[@name='%s']/area" % name).text.lower() == 'true') and not area:
-                print "Cannot add element screenshot under area screenshot!"
+                print("Cannot add element screenshot under area screenshot!")
                 return False
             elif bool(self.xml_root.find("screenshot[@name='%s']/area" % name).text.lower() == 'false') and area:
-                print "Cannot add area screenshot under element screenshot!"
+                print("Cannot add area screenshot under element screenshot!")
                 return False
             self._set_similarity_level(name, browser, screenres, similarity)
             if area:

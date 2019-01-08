@@ -13,7 +13,7 @@
 import os
 import shutil
 from lxml import etree as ET
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
@@ -106,52 +106,52 @@ def create_driver(browser_name):
             desired_capabilities = _REMOTE_SERVER_CAPTIONS
         else:
             desired_capabilities = __get_desired_capabilities(browser_name)
-        print __REMOTE_SERVER_ADDRESS
-        print desired_capabilities
+        print(__REMOTE_SERVER_ADDRESS)
+        print(desired_capabilities)
 
         _driver = webdriver.Remote(__REMOTE_SERVER_ADDRESS, desired_capabilities)
         return _driver
 
     if browser_name == GlobalUtils.BROWSER_NAMES[Browsers.IE]:
         # Read browser language from config
-        import _winreg
+        import winreg
         try:
             my_lang = get_config_value("browser_language")
             country_key = get_country_key(my_lang)
             try:
 
-                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, "Software\\Microsoft\\Internet Explorer\\International",
-                                      0, _winreg.KEY_ALL_ACCESS)
-                _winreg.SetValueEx(key, "AcceptLanguage", 0, _winreg.REG_SZ, str(country_key + ";q=0.5"))
-                _winreg.CloseKey(key)
-            except Exception, e:
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Software\\Microsoft\\Internet Explorer\\International",
+                                      0, winreg.KEY_ALL_ACCESS)
+                winreg.SetValueEx(key, "AcceptLanguage", 0, winreg.REG_SZ, str(country_key + ";q=0.5"))
+                winreg.CloseKey(key)
+            except Exception as e:
                 try:
-                    _winreg.CloseKey(key)
+                    winreg.CloseKey(key)
                     throw_error("\nCould not set language value: " + str(e))
-                except Exception, msg:
-                    print str(msg)
+                except Exception as msg:
+                    print(str(msg))
         except:
             pass
 
         # Turn protected mode on for all zones
         try:
             for i in range(1, 5):
-                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER,
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                                       "Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\" + str(i),
-                                      0, _winreg.KEY_ALL_ACCESS)
+                                      0, winreg.KEY_ALL_ACCESS)
                 try:
-                    _protected_values[i - 1] = _winreg.QueryValueEx(key, "2500")[0]
-                except WindowsError, e:
+                    _protected_values[i - 1] = winreg.QueryValueEx(key, "2500")[0]
+                except WindowsError as e:
                     pass
-                _winreg.SetValueEx(key, "2500", 0, _winreg.REG_DWORD, 0)
-                _winreg.CloseKey(key)
-        except Exception, e:
+                winreg.SetValueEx(key, "2500", 0, winreg.REG_DWORD, 0)
+                winreg.CloseKey(key)
+        except Exception as e:
             try:
-                _winreg.CloseKey(key)
+                winreg.CloseKey(key)
                 reset_protected_mode()
                 throw_error("\nCould not change Internet Explorer zone settings: " + str(e))
-            except Exception, msg:
-                print str(msg)
+            except Exception as msg:
+                print(str(msg))
                 pass
 
         capabilities = _get_browser_options_from_project_xml("default",
@@ -164,9 +164,9 @@ def create_driver(browser_name):
 
         # Adding driver to path
         if not GlobalUtils.is_linux():
-            print "Using IEDriverServer"
+            print("Using IEDriverServer")
             if not os.path.join(GlobalUtils.RESOURCES_IE_PATH) in os.environ["PATH"]:
-                print "Adding IEDriverServer to path"
+                print("Adding IEDriverServer to path")
                 os.environ["PATH"] += os.pathsep + os.path.join(GlobalUtils.RESOURCES_IE_PATH)
         else:
             raise Exception("Linux can't use IEDriverServer")
@@ -222,14 +222,14 @@ def create_driver(browser_name):
 
         # Adding driver to path
         if not GlobalUtils.is_linux():
-            print "Using 32bit win chromedriver"
+            print("Using 32bit win chromedriver")
             if not os.path.join(GlobalUtils.RESOURCES_CHROME32_PATH) in os.environ["PATH"]:
-                print "Adding 32bit win chromedriver to path"
+                print("Adding 32bit win chromedriver to path")
                 os.environ["PATH"] += os.pathsep + os.path.join(GlobalUtils.RESOURCES_CHROME32_PATH)
         else:
-            print "Using 64bit linux chromedriver"
+            print("Using 64bit linux chromedriver")
             if not os.path.join(GlobalUtils.RESOURCES_LINUX_CHROME64_PATH) in os.environ["PATH"]:
-                print "Adding 64bit linux chromedriver to path"
+                print("Adding 64bit linux chromedriver to path")
                 os.environ["PATH"] += os.pathsep + os.path.join(GlobalUtils.RESOURCES_LINUX_CHROME64_PATH)
 
         _driver = webdriver.Chrome(chrome_options=options)
@@ -259,15 +259,15 @@ def create_driver(browser_name):
 
         # Adding driver to path
         if not GlobalUtils.is_linux():
-            print "Using 32bit win geckodriver"
+            print("Using 32bit win geckodriver")
             # first we try to use 32bit wersion
             if not os.path.join(GlobalUtils.RESOURCES_GECKO32_PATH) in os.environ["PATH"]:
-                print "Adding 32bit win geckodriver to path"
+                print("Adding 32bit win geckodriver to path")
                 os.environ["PATH"] += os.pathsep + os.path.join(GlobalUtils.RESOURCES_GECKO32_PATH)
         else:
-            print "Using 64bit linux geckodriver"
+            print("Using 64bit linux geckodriver")
             if not os.path.join(GlobalUtils.RESOURCES_LINUX_GECKO64_PATH) in os.environ["PATH"]:
-                print "Adding 64bit linux geckodriver to path"
+                print("Adding 64bit linux geckodriver to path")
                 os.environ["PATH"] += os.pathsep + os.path.join(GlobalUtils.RESOURCES_LINUX_GECKO64_PATH)
         try:
             _driver = webdriver.Firefox(firefox_profile=profile, capabilities=firefox_capabilities, log_path=_geckodriver_log_path)
@@ -298,9 +298,9 @@ def create_driver(browser_name):
 
         # Adding driver to path
         if not GlobalUtils.is_linux():
-            print "Using MicrosoftWebDriver"
+            print("Using MicrosoftWebDriver")
             if not os.path.join(GlobalUtils.RESOURCES_EDGE_PATH) in os.environ["PATH"]:
-                print "Adding MicrosoftWebDriver to path"
+                print("Adding MicrosoftWebDriver to path")
                 os.environ["PATH"] += os.pathsep + os.path.join(GlobalUtils.RESOURCES_EDGE_PATH)
         else:
             raise Exception("Linux can't use MicrosoftWebDriver")
@@ -327,20 +327,20 @@ def create_driver(browser_name):
 ## Reverts changes done to protected mode settings when browser was IE
 def reset_protected_mode():
     try:
-        import _winreg
+        import winreg
         for i in range(1, 5):
             if _protected_values[i - 1] is not None:
-                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER,
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                                       "Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\" + str(i),
-                                      0, _winreg.KEY_ALL_ACCESS | _winreg.KEY_WOW64_32KEY)
-                _winreg.SetValueEx(key, "2500", 0, _winreg.REG_DWORD, _protected_values[i - 1])
-                _winreg.CloseKey(key)
-    except Exception, e:
+                                      0, winreg.KEY_ALL_ACCESS | winreg.KEY_WOW64_32KEY)
+                winreg.SetValueEx(key, "2500", 0, winreg.REG_DWORD, _protected_values[i - 1])
+                winreg.CloseKey(key)
+    except Exception as e:
         try:
-            _winreg.CloseKey(key)
+            winreg.CloseKey(key)
             raise Exception("\nCould not change Internet Explorer zone settings back to original: " + str(e))
-        except Exception, msg:
-            print str(msg)
+        except Exception as msg:
+            print(str(msg))
         pass
 
 

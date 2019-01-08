@@ -13,7 +13,7 @@ from datetime import datetime
 from functools import wraps
 from lxml import etree
 from re import search
-from urllib2 import URLError, HTTPError
+from urllib.error import URLError, HTTPError
 
 from logging import warn
 
@@ -188,7 +188,7 @@ class CommonMethods(object):
             ref_scr_h = int(xml_meta_data['h'])
         else:
             if not element:
-                print "Web element must be given, if using element screenshot"
+                print("Web element must be given, if using element screenshot")
                 return False
             element = self.find_element_if_not_webelement(element)
 
@@ -212,13 +212,13 @@ class CommonMethods(object):
         save_dir = os.path.join(os.getcwd(), get_config_value("reporting_folder_run"), "perf_screenshots")
         if not os.path.isdir(save_dir):
             os.mkdir(save_dir)
-        for elapsed, perf_png_data in perf_png_data_dict.iteritems():
+        for elapsed, perf_png_data in perf_png_data_dict.items():
             perf_png = os.path.join(save_dir, "%s_%s.png" % (measurement_name, elapsed))
             try:
                 with open(perf_png, 'wb') as f:
                     f.write(perf_png_data)
             except IOError:
-                print "Failed to save screenshot: %s" % perf_png
+                print("Failed to save screenshot: %s" % perf_png)
                 continue
 
             scr_curr = Image.open(perf_png)
@@ -245,7 +245,7 @@ class CommonMethods(object):
             if is_similar:
                 print ("Comparing screenshots...  Screenshots match. Reference screenshot: %s. " +
                        "Similarity level is %s.") % (ref_scr_file_name, str(100 - difference) + "%")
-                print "Match found and time was: %s" % elapsed
+                print("Match found and time was: %s" % elapsed)
                 return elapsed
             else:
                 print ("Comparing screenshots... Screenshots do not match. Current screenshot: %s. " +
@@ -406,7 +406,7 @@ class CommonMethods(object):
                 except:
                     printout = "* Clicking at Unknown button"
         except:
-            print "* Clicking at Unknown button"
+            print("* Clicking at Unknown button")
         try:
             web_element.click()
         except WebDriverException as e:
@@ -528,7 +528,7 @@ class CommonMethods(object):
         if to_print:
             try:
                 if web_element.text != "":
-                    print "* Clicking at element (%s, %s, %s)" % (web_element.text + " ", x + ",", y + " ") + " coordinates"
+                    print("* Clicking at element (%s, %s, %s)" % (web_element.text + " ", x + ",", y + " ") + " coordinates")
                 else:
                     try:
                         element_information = repr(element)
@@ -817,19 +817,19 @@ class CommonMethods(object):
         if not section:
             parameters.update({name: value})
             try:
-                print "* Dynamic parameter '%s'='%s' added to parameters dictionary" % (name, value)
+                print("* Dynamic parameter '%s'='%s' added to parameters dictionary" % (name, value))
             except:
-                print "* Dynamic parameter added to parameters dictionary"
+                print("* Dynamic parameter added to parameters dictionary")
         else:
-            if section in parameters.keys():
+            if section in list(parameters.keys()):
                 parameters[section].update({name: value})
             else:
                 parameters.update({section: {name: value}})
             try:
-                print "* Dynamic parameter ('%s'='%s') added to '%s' section of parameters dictionary" % (name, value,
-                                                                                                          section)
+                print("* Dynamic parameter ('%s'='%s') added to '%s' section of parameters dictionary" % (name, value,
+                                                                                                          section))
             except:
-                print "* Dynamic parameter added to parameters dictionary"
+                print("* Dynamic parameter added to parameters dictionary")
 
     def get_measurements(self, measurement_name):
         """
@@ -886,7 +886,7 @@ class CommonMethods(object):
                 js_file = os.path.join(measurement_folder, GlobalUtils.RESOURCE_DATA_PREFIX + measurement_name + ".js")
                 jtl_file = os.path.join(measurement_folder, GlobalUtils.RESOURCE_DATA_PREFIX + measurement_name + ".jtl")
 
-                ts = long(time.time()) * 1000
+                ts = int(time.time()) * 1000
                 timings_string = "'%s': [" % ts
                 jtl_timings_string = ""
 
@@ -898,7 +898,7 @@ class CommonMethods(object):
                     if 'startTime' in resource_dict and (not min_start_time or resource_dict['startTime'] < min_start_time):
                         min_start_time = resource_dict['startTime']
                     timings_string += "{"
-                    for key, value in resource_dict.iteritems():
+                    for key, value in resource_dict.items():
                         # temporary fix for firefox timings
                         if key == "toJSON":
                             continue
@@ -936,10 +936,10 @@ class CommonMethods(object):
                     self.execute_javascript("return window.performance.clearResourceTimings();", log=False)
                 return resource_timings
             else:
-                print "%s: No resource timings to measure!!" % measurement_name
+                print("%s: No resource timings to measure!!" % measurement_name)
                 return []
-        except Exception, e:
-            print "Failed to get resource timings:\n%s" % str(e)
+        except Exception as e:
+            print("Failed to get resource timings:\n%s" % str(e))
             return None
 
 
@@ -1434,11 +1434,11 @@ class CommonMethods(object):
                 else:
                     return requests.delete(url, data=open(data), auth=HTTPBasicAuth(username, password))
             else:
-                print "Method not recognized"
+                print("Method not recognized")
         except HTTPError as e:
-            print 'Error code: ', e.code, e.read()
+            print('Error code: ', e.code, e.read())
         except URLError as e:
-            print e.reason
+            print(e.reason)
 
 
     def get_soap_response(self, url, request_file_xml):
@@ -1468,7 +1468,7 @@ class CommonMethods(object):
             else:
                 return response.content
         except ConnectionError as e:
-            print e
+            print(e)
 
 
     def get_text_length(self, element):
@@ -1492,7 +1492,7 @@ class CommonMethods(object):
         """
         self.wait_until_element_is_visible(element)
         element = self.find_element_if_not_webelement(element)
-        print "Element text length: ", len(element.text)
+        print("Element text length: ", len(element.text))
         return len(element.text)
 
 
@@ -1515,22 +1515,22 @@ class CommonMethods(object):
         """
         try:
             from zapv2 import ZAPv2
-        except Exception, e:
-            print "ZAP installation does not found or missing!" + str(e)
-        print 'Starting ZAP ...'
+        except Exception as e:
+            print("ZAP installation does not found or missing!" + str(e))
+        print('Starting ZAP ...')
         try:
             zap_test_measurement_folder = os.path.join(get_config_value("reporting_folder"),
                                                        GlobalUtils.MEASUREMENTS_FOLDER_NAME)
             if not os.path.exists(zap_test_measurement_folder):
                 os.mkdir(zap_test_measurement_folder)
-        except Exception, e:
-                print "Could not create zap measurements folder:\n%s" % str(e)
+        except Exception as e:
+                print("Could not create zap measurements folder:\n%s" % str(e))
 
         session_name = "qautorobot_zap_session_" + self.get_timestamp()
         try:
             newsession = zap_test_measurement_folder + os.path.sep + session_name
             subprocess.Popen(installation_dir + " -daemon -newsession " + newsession)
-            print 'Waiting for ZAP to load ...'
+            print('Waiting for ZAP to load ...')
             zap = ZAPv2(proxies={'http': 'http://127.0.0.1:8092', 'https': 'http://127.0.0.1:8092'})
             for _ in range(25):
                 try:
@@ -1541,9 +1541,9 @@ class CommonMethods(object):
                 except requests.ConnectionError:
                     pass
                 time.sleep(3)
-            raise
-        except Exception, e:
-            print "Failed to start zap proxy and session! Please check installation path and settings." + str(e)
+
+        except Exception as e:
+            print("Failed to start zap proxy and session! Please check installation path and settings." + str(e))
 
 
     def stop_zapproxy_daemon(self, zap):
@@ -1564,8 +1564,8 @@ class CommonMethods(object):
         try:
             # To close ZAP:
             zap.core.shutdown()
-        except Exception, e:
-            print "Zap " + str(e)
+        except Exception as e:
+            print("Zap " + str(e))
         time.sleep(4)
 
 
@@ -1592,8 +1592,8 @@ class CommonMethods(object):
             zap_test_report_folder = get_config_value("reporting_folder")
             zap_test_measurement_folder = os.path.join(zap_test_report_folder, GlobalUtils.MEASUREMENTS_FOLDER_NAME)
             subprocess.Popen(installation_dir + " -last_scan_report " + zap_test_report_folder + os.path.sep + report_name + " -session " + zap_test_measurement_folder + os.path.sep + session_name + " -cmd")
-        except Exception, e:
-            print "Failed to generate zap test report" + str(e)
+        except Exception as e:
+            print("Failed to generate zap test report" + str(e))
         time.sleep(1)
 
 
@@ -2243,9 +2243,9 @@ class WebMethods(CommonMethods):
             _tmp.remove(CommonMethodsHelpers.contains_nonascii(skipped))
         value = random.choice(_tmp)
         try:
-            print "* Random value is '%s'" % value
+            print("* Random value is '%s'" % value)
         except:
-            print "* Random value"
+            print("* Random value")
 
         return value
 
@@ -2276,11 +2276,11 @@ class WebMethods(CommonMethods):
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         element = (By.XPATH, "//*[contains(., %s)]" % CommonMethodsHelpers.escape_xpath_text(text))
-        msg = u"Text '%s' did not appear in %s seconds" % (text, timeout)
+        msg = "Text '%s' did not appear in %s seconds" % (text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_present(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
         try:
-            DebugLog.log(u"* Page contains text: '%s'" % text)
+            DebugLog.log("* Page contains text: '%s'" % text)
         except:
             DebugLog.log("* Page contains text")
 
@@ -2311,11 +2311,11 @@ class WebMethods(CommonMethods):
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         element = (By.XPATH, "//*[contains(., %s)]" % CommonMethodsHelpers.escape_xpath_text(text))
-        msg = u"Text '%s' did not appear in %s seconds" % (text, timeout)
+        msg = "Text '%s' did not appear in %s seconds" % (text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: not self.is_present(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
         try:
-            DebugLog.log(u"* Page does not contain text: '%s'" % text)
+            DebugLog.log("* Page does not contain text: '%s'" % text)
         except:
             DebugLog.log("* Page does not contain text")
 
@@ -2760,10 +2760,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print u"* Found text contains '%s' from column '%s' and row '%s'" % (text, column, row)
+                    print("* Found text contains '%s' from column '%s' and row '%s'" % (text, column, row))
                     return elem, elem_c, row, column
 
-        self.fail(u"* Text '%s' contains not found from table" % text)
+        self.fail("* Text '%s' contains not found from table" % text)
 
 
     def get_table_column_and_row_by_text(self, element, text, row="TBODY/TR", cell="TD"):
@@ -2804,10 +2804,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print u"* Found text '%s' from column '%s' and row '%s'" % (text, column, row)
+                    print("* Found text '%s' from column '%s' and row '%s'" % (text, column, row))
                     return elem, elem_c, row, column
 
-        self.fail(u"* Text '%s' not found from table" % text)
+        self.fail("* Text '%s' not found from table" % text)
 
 
     def get_table_column_and_row_by_value_contains(self, element, value, row="TBODY/TR", cell="TD"):
@@ -2849,10 +2849,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print u"* Found value contains '%s' from column '%s' and row '%s'" % (value, column, row)
+                    print("* Found value contains '%s' from column '%s' and row '%s'" % (value, column, row))
                     return elem, elem_c, row, column
 
-        self.fail(u"* Value '%s' contains not found from table" % value)
+        self.fail("* Value '%s' contains not found from table" % value)
 
 
     def get_table_column_and_row_by_value(self, element, value, row="TBODY/TR", cell="TD"):
@@ -2894,10 +2894,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print u"* Value text '%s' from column '%s' and row '%s'" % (value, column, row)
+                    print("* Value text '%s' from column '%s' and row '%s'" % (value, column, row))
                     return elem, elem_c, row, column
 
-        self.fail(u"* Value '%s' not found from table" % value)
+        self.fail("* Value '%s' not found from table" % value)
 
     def get_table_column_and_row_by_attribute_value(self, element, attribute, value, row="TBODY/TR", cell="TD"):
         """
@@ -2939,10 +2939,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print u"* Found attribute with value '%s' from column '%s' and row '%s'" % (value, column, row)
+                    print("* Found attribute with value '%s' from column '%s' and row '%s'" % (value, column, row))
                     return elem, elem_c, row, column
 
-        self.fail(u"* Attribute with value '%s' not found from table" % value)
+        self.fail("* Attribute with value '%s' not found from table" % value)
 
 
     def get_table_column_and_row_by_attribute_value_contains(self, element, attribute, value, row="TBODY/TR", cell="TD"):
@@ -2985,10 +2985,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print u"* Found attribute contains value '%s' from column '%s' and row '%s'" % (value, column, row)
+                    print("* Found attribute contains value '%s' from column '%s' and row '%s'" % (value, column, row))
                     return elem, elem_c, row, column
 
-        self.fail(u"* Attribute with value '%s' not found from table" % value)
+        self.fail("* Attribute with value '%s' not found from table" % value)
 
 
     def get_table_column_and_row_by_multiple_text(self, element, text1, text2, row="TBODY/TR", cell="TD"):
@@ -3041,11 +3041,11 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print u"* Found text1 '%s' from column '%s' and row '%s'" % (text1, temp_column + 1, temp_row + 1)
-                    print u"* Found text2 '%s' from column '%s' and row '%s'" % (text2, column, row)
+                    print("* Found text1 '%s' from column '%s' and row '%s'" % (text1, temp_column + 1, temp_row + 1))
+                    print("* Found text2 '%s' from column '%s' and row '%s'" % (text2, column, row))
                     return temp_elem, temp_elem_c, temp_row + 1, temp_column + 1, elem, elem_c, row, column
 
-        self.fail(u"* Texts '%s' and '%s' not found from table in same row" % (text1, text2))
+        self.fail("* Texts '%s' and '%s' not found from table in same row" % (text1, text2))
 
 
     def get_table_cell_text_by_column_and_row(self, element, column, row, cell="TD"):
@@ -3075,7 +3075,7 @@ class WebMethods(CommonMethods):
 
         element_row = element.find_elements(By.XPATH, "TBODY/TR")[int(row) - 1]
         table_text = element_row.find_elements(By.XPATH, cell)[int(column) - 1].text
-        print u"* Found text '%s' from column '%s' and row '%s'" % (table_text, str(column), str(row))
+        print("* Found text '%s' from column '%s' and row '%s'" % (table_text, str(column), str(row)))
         return table_text
 
 
@@ -3171,17 +3171,17 @@ class WebMethods(CommonMethods):
         for elem in element_rows:
             if cell == "" and self.is_visible(elem) and text in self.get_text(elem):
                 row = element_rows.index(elem) + 1
-                print u"* Found text '%s' from row '%s'" % (text, row)
+                print("* Found text '%s' from row '%s'" % (text, row))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and text in self.get_text(cell_elem):
                         row = element_rows.index(elem) + 1
-                        print u"* Found text '%s' from row '%s'" % (text, row)
+                        print("* Found text '%s' from row '%s'" % (text, row))
                         return cell_elem, row
 
-        print u"* Text '%s' not found from list" % text
+        print("* Text '%s' not found from list" % text)
         return None, None
 
 
@@ -3223,17 +3223,17 @@ class WebMethods(CommonMethods):
             if cell == "" and self.is_visible(elem) and text == self.get_text(elem):
                 # return "real" row and column numbers
                 row = element_rows.index(elem) + 1
-                print u"* Found text '%s' from row '%s'" % (text, row)
+                print("* Found text '%s' from row '%s'" % (text, row))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and text == self.get_text(cell_elem):
                         row = element_rows.index(elem) + 1
-                        print u"* Found text '%s' from row '%s'" % (text, row)
+                        print("* Found text '%s' from row '%s'" % (text, row))
                         return cell_elem, row
 
-        print u"* Text '%s' not found from list" % text
+        print("* Text '%s' not found from list" % text)
         return None, None
 
 
@@ -3275,17 +3275,17 @@ class WebMethods(CommonMethods):
             if cell == "" and self.is_visible(elem) and self.get_value(elem) == value:
                 # return "real" row and column numbers
                 row = element_rows.index(elem) + 1
-                print u"* Found value '%s' from row '%s'" % (value, row)
+                print("* Found value '%s' from row '%s'" % (value, row))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and self.get_value(cell_elem) == value:
                         row = element_rows.index(elem) + 1
-                        print u"* Found value '%s' from row '%s'" % (value, row)
+                        print("* Found value '%s' from row '%s'" % (value, row))
                         return cell_elem, row
 
-        print u"* Value '%s' not found from list" % value
+        print("* Value '%s' not found from list" % value)
         return None, None
 
 
@@ -3326,17 +3326,17 @@ class WebMethods(CommonMethods):
         for elem in element_rows:
             if cell == "" and self.is_visible(elem) and value in self.get_value(elem):
                 row = element_rows.index(elem) + 1
-                print u"* Found value contains '%s' from row '%s'" % (value, row)
+                print("* Found value contains '%s' from row '%s'" % (value, row))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and value in self.get_value(cell_elem):
                         row = element_rows.index(elem) + 1
-                        print u"* Found value contains '%s' from row '%s'" % (value, row)
+                        print("* Found value contains '%s' from row '%s'" % (value, row))
                         return cell_elem, row
 
-        print u"* Value '%s' contains not found from list" % value
+        print("* Value '%s' contains not found from list" % value)
         return None, None
 
 
@@ -3377,17 +3377,17 @@ class WebMethods(CommonMethods):
         for elem in element_rows:
             if cell == "" and self.is_visible(elem) and self.get_attribute(elem, attribute) == value:
                 row = element_rows.index(elem) + 1
-                print u"* Found attribute with value '%s' from row '%s'" % (value, row)
+                print("* Found attribute with value '%s' from row '%s'" % (value, row))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and self.get_attribute(cell_elem, attribute) == value:
                         row = element_rows.index(elem) + 1
-                        print u"* Found attribute with value '%s' from row '%s'" % (value, row)
+                        print("* Found attribute with value '%s' from row '%s'" % (value, row))
                         return cell_elem, row
 
-        print u"* Attribute with value '%s' contains not found from list" % value
+        print("* Attribute with value '%s' contains not found from list" % value)
         return None, None
 
 
@@ -3428,17 +3428,17 @@ class WebMethods(CommonMethods):
         for elem in element_rows:
             if cell == "" and self.is_visible(elem) and value in self.get_attribute(elem, attribute):
                 row = element_rows.index(elem) + 1
-                print u"* Found attribute contains value '%s' from row '%s'" % (value, row)
+                print("* Found attribute contains value '%s' from row '%s'" % (value, row))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and value in self.get_attribute(cell_elem, attribute):
                         row = element_rows.index(elem) + 1
-                        print u"* Found attribute contains value '%s' from row '%s'" % (value, row)
+                        print("* Found attribute contains value '%s' from row '%s'" % (value, row))
                         return cell_elem, row
 
-        print u"* Attribute with value '%s' contains not found from list" % value
+        print("* Attribute with value '%s' contains not found from list" % value)
         return None, None
 
 
@@ -3585,20 +3585,20 @@ class WebMethods(CommonMethods):
 
         """
         if not self.driver_cache._is_gc():
-            print "get_js_memory_heap is currently supported only by the Google Chrome browser."
+            print("get_js_memory_heap is currently supported only by the Google Chrome browser.")
             return
 
         memory_data = self.execute_javascript("return performance.memory;", log=False)
         if memory_data and 'usedJSHeapSize' in memory_data:
 
-            ts = long(time.time()) * 1000
+            ts = int(time.time()) * 1000
 
             try:
                 measurement_folder = os.path.join(get_config_value("reporting_folder"), GlobalUtils.MEASUREMENTS_FOLDER_NAME)
                 if not os.path.exists(measurement_folder):
                     os.mkdir(measurement_folder)
-            except Exception, e:
-                print "Could not create measurements folder:\n%s" % str(e)
+            except Exception as e:
+                print("Could not create measurements folder:\n%s" % str(e))
 
             js_file = os.path.join(measurement_folder, GlobalUtils.MEMORY_DATA_PREFIX + str(measurement_name) + ".js")
 
@@ -3620,11 +3620,11 @@ class WebMethods(CommonMethods):
                     content = "".join(new_lines)
                     save_content_to_file(content, js_file)
                 return memory_data['usedJSHeapSize']
-            except Exception, e:
-                print "Could not generate js file:\n%s" % str(e)
+            except Exception as e:
+                print("Could not generate js file:\n%s" % str(e))
                 return None
         else:
-            print "%s: No memory heap to measure!!" % measurement_name
+            print("%s: No memory heap to measure!!" % measurement_name)
             return None
 
 
@@ -3871,7 +3871,7 @@ class Asserts(object):
             msg = "Element attribute doesn't contain correct text"
         unittest.TestCase("assertTrue").assertTrue(expected_value in atr_text, msg)
         try:
-            print "Element attribute '%s' contains text '%s'" % (attr, expected_value)
+            print("Element attribute '%s' contains text '%s'" % (attr, expected_value))
         except:
             pass
 
@@ -4204,7 +4204,7 @@ class Asserts(object):
             except:
                 pass
         else:
-            print "Element might be not a radiobutton"
+            print("Element might be not a radiobutton")
 
 
     def checkbox_should_not_be_selected(self, element):
@@ -4224,7 +4224,7 @@ class Asserts(object):
             except:
                 pass
         else:
-            print "Element might be not a checkbox"
+            print("Element might be not a checkbox")
 
 
 class CommonWrappers(object):
@@ -4380,7 +4380,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         compiled = compile(self.__generate_tests(path_to_file, method), '<string>', 'exec')
         exec(compiled)
 
-        funcs = [v for k, v in locals().items() if k.startswith('test')]
+        funcs = [v for k, v in list(locals().items()) if k.startswith('test')]
 
         for f in funcs:
             setattr(classs, f.__name__, f)
@@ -4443,7 +4443,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
                 except:
                     etype, value, tb = sys.exc_info()
                     traceback.print_exception(etype, value, tb)
-                    print message
+                    print(message)
             return wrapper
         return out_wrapper
 
@@ -4470,9 +4470,9 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             res = func(*args, **kwargs)
             t2 = time.clock()
             try:
-                print "MEASURE: %s(), %s" % (func.__name__, t2 - t1)
+                print("MEASURE: %s(), %s" % (func.__name__, t2 - t1))
             except:
-                print "MEASURE"
+                print("MEASURE")
             return res
         return wrapper
 
@@ -4522,9 +4522,9 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             saving_dir = os.getenv('Temp') + "/"
         path_to_file = os.path.abspath(saving_dir + CommonUtils.get_timestamp() + action + ".png")
         try:
-            print "* Saving screenshot to '%s'" % path_to_file
+            print("* Saving screenshot to '%s'" % path_to_file)
         except:
-            print "* Saving screenshot"
+            print("* Saving screenshot")
         self.get_current_driver().save_screenshot(path_to_file)
 
 
@@ -4547,9 +4547,9 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             _tmp.remove(CommonMethodsHelpers.contains_nonascii(skipped))
         value = random.choice(_tmp)
         try:
-            print "* Random value is '%s'" % value
+            print("* Random value is '%s'" % value)
         except:
-            print "* Random value"
+            print("* Random value")
 
         return value
 
@@ -4677,15 +4677,15 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         """
 
         sample = float(sample)
-        ts = long(time.time()) * 1000
+        ts = int(time.time()) * 1000
         t = int(round(sample * 1000))
 
         try:
             measurement_folder = os.path.join(get_config_value("reporting_folder"), GlobalUtils.MEASUREMENTS_FOLDER_NAME)
             if not os.path.exists(measurement_folder):
                 os.mkdir(measurement_folder)
-        except Exception, e:
-            print "Could not create measurements folder:\n%s" % str(e)
+        except Exception as e:
+            print("Could not create measurements folder:\n%s" % str(e))
 
         jtl_file = os.path.join(measurement_folder, GlobalUtils.NAVIGATION_DATA_PREFIX + str(measurement_name) + ".jtl")
         js_file = os.path.join(measurement_folder, GlobalUtils.NAVIGATION_DATA_PREFIX + str(measurement_name) + ".js")
@@ -4707,8 +4707,8 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
                 new_lines = heading + lines + ending
                 content = "".join(new_lines)
                 save_content_to_file(content, jtl_file)
-        except Exception, e:
-            print "Could not generate jtl file" + str(e)
+        except Exception as e:
+            print("Could not generate jtl file" + str(e))
 
         # javascript file
         try:
@@ -4727,8 +4727,8 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
                 new_lines = heading + lines + ending
                 content = "".join(new_lines)
                 save_content_to_file(content, js_file)
-        except Exception, e:
-            print "Could not generate js file:\n%s" % str(e)
+        except Exception as e:
+            print("Could not generate js file:\n%s" % str(e))
 
 
     def create_ref_screenshot(self, ref_scr_name, ref_scr_x, ref_scr_y, ref_scr_w, ref_scr_h):
@@ -4755,8 +4755,8 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
                 current_dir = os.path.abspath(os.path.join(current_dir, ".."))
 
             ref_scr_subim.save(os.path.join(current_dir, GlobalUtils.SCREENSHOTS_FOLDER_NAME, ref_scr_name))
-        except Exception, ex:
-            print "Failed to create reference screenshot:\n", str(ex)
+        except Exception as ex:
+            print("Failed to create reference screenshot:\n", str(ex))
             scr_created = False
 
         return scr_created
@@ -4826,8 +4826,8 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
                 current_dir = os.path.abspath(os.path.join(current_dir, ".."))
 
             ref_scr_subim.save(os.path.join(current_dir, GlobalUtils.SCREENSHOTS_FOLDER_NAME, ref_scr_name))
-        except Exception, ex:
-            print "Create reference screenshot of object inside canvas exception: ", str(ex)
+        except Exception as ex:
+            print("Create reference screenshot of object inside canvas exception: ", str(ex))
             scr_created = False
 
         return scr_created, ref_scr_name

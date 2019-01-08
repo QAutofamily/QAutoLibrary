@@ -24,15 +24,15 @@ def throw_error(error_msg):
     :param error_msg: error_msg message as String
     :return: Exception and message
     """
-    print "_____________________________________________________"
-    print traceback.print_exc()
-    print "_____________________________________________________"
+    print("_____________________________________________________")
+    print(traceback.print_exc())
+    print("_____________________________________________________")
     info = "".join(traceback.format_tb(sys.exc_info()[2]))
     linenumber = ""
     for m in re.finditer(r"\\(.*)line(.*),", info):
         linenumber = info[m.start() - 2:m.end() - 1]
         break
-    raise Exception, '\n'.join(["\n", linenumber, error_msg])
+    raise Exception('\n'.join(["\n", linenumber, error_msg]))
 
 
 class Singleton(type):

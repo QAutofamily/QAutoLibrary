@@ -184,8 +184,8 @@ class FileUtils(object):
         try:
             shutil.move(old_name, new_name)
             return True
-        except Exception, e:
-            print "File operation exception: ", str(e)
+        except Exception as e:
+            print("File operation exception: ", str(e))
             return False
 
 

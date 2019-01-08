@@ -84,13 +84,13 @@ class QAutoElement(object):
         :return: String e.g QAutoElement((By.LINK_TEXT, u'Trial'), tag='DIV', size=(100, 200))``
         """
         priority_list = ["tag", "coordinates", "size", "frame"]
-        attributes = [value for key, value in self.__dict__.items() if key == "metadata"][0]
+        attributes = [value for key, value in list(self.__dict__.items()) if key == "metadata"][0]
         if len(attributes) > 0:
             # get list of attributes ordered by priority list
             priority_attributes = []
 
             for x in priority_list:
-                for key, value in attributes.items():
+                for key, value in list(attributes.items()):
 
                     if key == x:
                         if type(value) == str:
@@ -111,7 +111,7 @@ class QAutoElement(object):
             non_priority_attributes = sorted(non_priority_attributes, key=str.lower)
             # match sorted keys with values and construct list
             additional_keywords = [key + "='" + str(value) + "'" for x in non_priority_attributes for key, value in
-                                   attributes.items() if key == x]
+                                   list(attributes.items()) if key == x]
 
             priority_attributes.extend(additional_keywords)
 

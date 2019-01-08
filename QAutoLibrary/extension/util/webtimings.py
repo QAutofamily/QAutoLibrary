@@ -12,7 +12,7 @@
 """
 import os
 import time
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from selenium.common.exceptions import WebDriverException
 
@@ -55,7 +55,7 @@ def __get_timing_page_load(driver):
 # Method can be used only on browsers that support navigation timing  API.
 # Implemented on commonly used browsers starting from Chrome 6, Firefox 7, Internet Explorer 9
 def get_measurements(label, driver, *args):
-    time_stamp = long(time.time()) * 1000
+    time_stamp = int(time.time()) * 1000
     total_time = None
     latency = None
     load_time = None
@@ -99,29 +99,29 @@ def get_measurements(label, driver, *args):
             return timings[0]
         return timings
     except WebDriverException:
-        print "Javascript error occurred. Make sure your browser supports navigation timing API"
+        print("Javascript error occurred. Make sure your browser supports navigation timing API")
 
 
 def is_page_up(url):
     global __RESPONSE
     try:
         # Return true if there was a response and it was between 200-299
-        __RESPONSE = urllib2.urlopen(url)
-        print "* Response code: " + str(__RESPONSE.code)
-        print "* Response msg: " + str(__RESPONSE.msg)
+        __RESPONSE = urllib.request.urlopen(url)
+        print("* Response code: " + str(__RESPONSE.code))
+        print("* Response msg: " + str(__RESPONSE.msg))
         if(200 <= __RESPONSE.code < 300):
             return True
         else:
             return False
     # Return false if there was a response and it was not between 200-299
-    except urllib2.HTTPError, e:
+    except urllib.error.HTTPError as e:
         class backup:
             code = e.code
             msg = e.msg
 
         __RESPONSE = backup()
-        print "* Response code: " + str(__RESPONSE.code)
-        print "* Response msg: " + str(__RESPONSE.msg)
+        print("* Response code: " + str(__RESPONSE.code))
+        print("* Response msg: " + str(__RESPONSE.msg))
         return False
     # Return false if there was no response at all
     except:
@@ -130,8 +130,8 @@ def is_page_up(url):
             msg = " URL does not exist"
 
         __RESPONSE = backup()
-        print "* Response code: " + str(__RESPONSE.code)
-        print "* Response msg: " + str(__RESPONSE.msg)
+        print("* Response code: " + str(__RESPONSE.code))
+        print("* Response msg: " + str(__RESPONSE.msg))
         return False
 
 
@@ -150,15 +150,15 @@ def __generate_files(timings, total_time, load_time, latency, ts, lb):
         measurement_folder = os.path.join(get_config_value("reporting_folder"), GlobalUtils.MEASUREMENTS_FOLDER_NAME)
         if not os.path.exists(measurement_folder):
             os.mkdir(measurement_folder)
-    except Exception, e:
-        print "Could not create measurements folder:\n%s" % str(e)
+    except Exception as e:
+        print("Could not create measurements folder:\n%s" % str(e))
 
     try:
         CSV_FILE = os.path.join(measurement_folder, GlobalUtils.NAVIGATION_DATA_PREFIX + str(lb) + ".csv")
         content = header + "\n" + data
         save_content_to_file(content, CSV_FILE)
-    except Exception, e:
-        print "Could not generate csv file:\n%s" % str(e)
+    except Exception as e:
+        print("Could not generate csv file:\n%s" % str(e))
 
     JTL_FILE = os.path.join(measurement_folder, GlobalUtils.NAVIGATION_DATA_PREFIX + str(lb) + ".jtl")
     JS_FILE = os.path.join(measurement_folder, GlobalUtils.NAVIGATION_DATA_PREFIX + str(lb) + ".js")
@@ -175,50 +175,50 @@ def __generate_files(timings, total_time, load_time, latency, ts, lb):
     try:
         if(os.path.isfile(JTL_FILE)):
             read_lines = get_file_lines(JTL_FILE)
-            str_to_insert = "<sample" + (' t=\'' + str(t) + '\'' if t is not None else '') + "" + \
-                            (' lt=\'' + str(latency) + '\'' if latency is not None else '') + " ts='" + str(ts) + "' s='" \
-                            + str('true' if 200 <= __RESPONSE.code < 300 else 'false') + "' lb='" + str(lb) + "' rc='" \
-                            + str(__RESPONSE.code) + "' rm='" + str(__RESPONSE.msg) + "'/>\n"
+            str_to_insert = ("<sample" + (' t=\'' + str(t) + '\'' if t is not None else '') + "" +
+                            (' lt=\'' + str(latency) + '\'' if latency is not None else '') + " ts='" + str(ts) + "' s='"
+                            + str('true' if 200 <= __RESPONSE.code < 300 else 'false') + "' lb='" + str(lb) + "' rc='"
+                            + str(__RESPONSE.code) + "' rm='" + str(__RESPONSE.msg) + "'/>\n")
             new_lines = read_lines[:-1] + [str_to_insert] + [read_lines[-1]]
             content = "".join(new_lines)
             save_content_to_file(content, JTL_FILE)
         else:
             heading = "<?xml version='1.0' encoding='UTF-8'?>\n<testResults version='1.2'>"
-            lines = "\n<sample" + (' t=\'' + str(t) + '\'' if t is not None else '') + "" + \
-                    (' lt=\'' + str(latency) + '\'' if latency is not None else '') + " ts='" + str(ts) + "' s='" \
-                    + str('true' if 200 <= __RESPONSE.code < 300 else 'false') + "' lb='" + str(lb) + "' rc='" \
-                    + str(__RESPONSE.code) + "' rm='" + str(__RESPONSE.msg) + "'/>"
+            lines = ("\n<sample" + (' t=\'' + str(t) + '\'' if t is not None else '') + "" +
+                    (' lt=\'' + str(latency) + '\'' if latency is not None else '') + " ts='" + str(ts) + "' s='"
+                    + str('true' if 200 <= __RESPONSE.code < 300 else 'false') + "' lb='" + str(lb) + "' rc='"
+                    + str(__RESPONSE.code) + "' rm='" + str(__RESPONSE.msg) + "'/>")
             ending = "\n</testResults>"
             new_lines = heading + lines + ending
             content = "".join(new_lines)
             save_content_to_file(content, JTL_FILE)
-    except Exception, e:
-        print "Could not generate jtl file:\n%s" % str(e)
+    except Exception as e:
+        print("Could not generate jtl file:\n%s" % str(e))
 
     # javascript file
     try:
         if(os.path.isfile(JS_FILE)):
             read_lines = get_file_lines(JS_FILE)
-            str_to_insert = "{" + ("'load': '" + str(load_time) + "', " if load_time is not None else "") + \
-                            ("'total': '" + str(total_time) + "', " if t is not None else "") + \
-                            ("'latency': '" + str(latency) + "', " if latency is not None else "") + "'timestamp': '" \
-                            + str(ts) + "', 'succes': " + str('true' if 200 <= __RESPONSE.code < 300 else 'false') \
-                            + ", 'label': '" + str(lb) + "', 'response_code': '" + str(__RESPONSE.code) + "', 'response_msg': '" \
-                            + str(__RESPONSE.msg) + "'},\n"
+            str_to_insert = ("{" + ("'load': '" + str(load_time) + "', " if load_time is not None else "") +
+                            ("'total': '" + str(total_time) + "', " if t is not None else "") +
+                            ("'latency': '" + str(latency) + "', " if latency is not None else "") + "'timestamp': '"
+                            + str(ts) + "', 'succes': " + str('true' if 200 <= __RESPONSE.code < 300 else 'false')
+                            + ", 'label': '" + str(lb) + "', 'response_code': '" + str(__RESPONSE.code) + "', 'response_msg': '"
+                            + str(__RESPONSE.msg) + "'},\n")
             new_lines = read_lines[:-1] + [str_to_insert] + [read_lines[-1]]
             content = "".join(new_lines)
             save_content_to_file(content, JS_FILE)
         else:
             heading = "var timings_js_data = ["
-            lines = "\n{" + ("'load': '" + str(load_time) + "', " if load_time is not None else "") + \
-                    ("'total': '" + str(total_time) + "', " if t is not None else "") + \
-                    ("'latency': '" + str(latency) + "', " if latency is not None else "") + "'timestamp': '" \
-                    + str(ts) + "', 'succes': " + str('true' if 200 <= __RESPONSE.code < 300 else 'false') \
-                    + ", 'label': '" + str(lb) + "', 'response_code': '" + str(__RESPONSE.code) + "', 'response_msg': '" \
-                    + str(__RESPONSE.msg) + "'},"
+            lines = ("\n{" + ("'load': '" + str(load_time) + "', " if load_time is not None else "") +
+                    ("'total': '" + str(total_time) + "', " if t is not None else "") +
+                    ("'latency': '" + str(latency) + "', " if latency is not None else "") + "'timestamp': '"
+                    + str(ts) + "', 'succes': " + str('true' if 200 <= __RESPONSE.code < 300 else 'false')
+                    + ", 'label': '" + str(lb) + "', 'response_code': '" + str(__RESPONSE.code) + "', 'response_msg': '"
+                    + str(__RESPONSE.msg) + "'},")
             ending = "\n];"
             new_lines = heading + lines + ending
             content = "".join(new_lines)
             save_content_to_file(content, JS_FILE)
-    except Exception, e:
-        print "Could not generate js file:\n%s" % str(e)
+    except Exception as e:
+        print("Could not generate js file:\n%s" % str(e))

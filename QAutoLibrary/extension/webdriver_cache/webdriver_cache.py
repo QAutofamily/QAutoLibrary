@@ -23,10 +23,10 @@ class DriverIdAlias(object):
     browser = None
 
 
-class DriverCache(object):
+class DriverCache(object, metaclass=Singleton):
 
     # make class as singleton
-    __metaclass__ = Singleton
+
 
     def __init__(self):
         # current DriverIdAlias
@@ -137,12 +137,12 @@ class DriverCache(object):
             else:
                 self.reset()
         else:
-            print "There is not any application to close!!"
+            print("There is not any application to close!!")
 
     # closes all drivers
     def close_all(self):
 
-        for current_driver in self.drivers_by_id.values():
+        for current_driver in list(self.drivers_by_id.values()):
             id_or_alias = current_driver.alias and current_driver.alias or current_driver.id
             DebugLog.log("* Closing browser '%s' with id or alias '%s'" % (current_driver.browser, id_or_alias))
             if current_driver.browser == GlobalUtils.IE:
@@ -152,7 +152,7 @@ class DriverCache(object):
         self.reset()
 
     def close_all_except_current(self):
-        for driver in self.drivers_by_id.values():
+        for driver in list(self.drivers_by_id.values()):
             # id_or_alias = driver.alias and driver.alias or driver.id
             if not driver.id == self.current_driver_id_alias.id:
                 # DebugLog.log("* Closing browser '%s' with id or alias '%s'" % (driver.browser, id_or_alias))
@@ -189,7 +189,7 @@ class DriverCache(object):
 
     # returns all drivers as a list
     def get_all_drivers(self):
-        return self.drivers_by_id.values()
+        return list(self.drivers_by_id.values())
 
     # Returns True is browser is Internet Explorer, else - False.
     def _is_ie(self):

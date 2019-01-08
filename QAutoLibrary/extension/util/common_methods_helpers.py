@@ -43,9 +43,9 @@ class CommonMethodsHelpers(object):
         try:
             WebDriverWait(driver, timeout, ignored_exceptions=[ElementNotVisibleException, StaleElementReferenceException,
                                                                ElementNotSelectableException]).until(function, msg)
-        except TimeoutException, e:
+        except TimeoutException as e:
             raise TimeOutError("%s %s" % (DebugLog.get_timestamp(), msg))
-        except Exception, e:
+        except Exception as e:
             raise e
 
     @classmethod
@@ -61,7 +61,7 @@ class CommonMethodsHelpers(object):
         found = False
         for i in args:
             try:
-                if(isinstance(i, unicode)):
+                if(isinstance(i, str)):
                     found = True
                     break
                 if(isinstance(i, str)):
@@ -73,7 +73,7 @@ class CommonMethodsHelpers(object):
         if(found):
             for string in args:
                 if(isinstance(string, str)):
-                    result.append(unicode(string, "utf8"))
+                    result.append(str(string, "utf8"))
                 else:
                     result.append(string)
             if(len(result) == 1):
@@ -106,7 +106,7 @@ class CommonMethodsHelpers(object):
 
     @classmethod
     def escape_xpath_text(csl, text):
-        text = unicode(text)
+        text = str(text)
         if '"' in text and '\'' in text:
             parts = text.split('\'')
             return "concat('%s')" % "', \"'\", '".join(parts)

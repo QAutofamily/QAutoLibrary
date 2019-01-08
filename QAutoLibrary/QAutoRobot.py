@@ -71,6 +71,7 @@ class QAutoRobot(CommonUtils):
                 library = os.path.basename(library).replace(".py", "")
                 # Import library module
                 _module = imp.load_source(library, full_path)
+                # Python3.7 _import = "{}.{}".format(os.path.basename(directory), library) _module = imp.reload(__import__(_import, fromlist=['']))
                 # Find library name from module
                 library_name = self.find_library_class_name_from_module(_module, library)
                 if not library_name:
@@ -163,7 +164,7 @@ class QAutoRobot(CommonUtils):
         :param _class: Class to add attribute into
         :return: List of class methods
         """
-        return [x for x, y in _class.__dict__.items() if type(y) == FunctionType]
+        return [x for x, y in list(_class.__dict__.items()) if type(y) == FunctionType]
 
     @classmethod
     def get_class_method_names(cls, _class):

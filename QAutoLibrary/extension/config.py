@@ -10,8 +10,8 @@
 #    All rights reserved, see LICENSE for details.
 """
 import os
-from ConfigParser import ConfigParser
-from StringIO import StringIO
+from configparser import ConfigParser
+from io import StringIO
 
 _DEFAULT_CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "config", "framework_config.ini"))
 _DEFAULT_SECTION = "default_config"
@@ -40,7 +40,7 @@ def _read_and_load_options():
 
     :return: None
     """
-    parser = SimpleConfigParser()
+    parser = ConfigParser()
     parser.read(_config_file)
     global _settings
     _settings = {}
@@ -116,7 +116,7 @@ def get_config_value(key):
             return int(_settings[key])
         else:
             return _settings[key]
-    except Exception, e:
+    except Exception as e:
         raise Exception("Could not read config file: " + str(e))
 
 
@@ -132,5 +132,5 @@ def set_config_value(key, value):
         set_config()
     try:
         _settings[key] = value
-    except Exception, e:
+    except Exception as e:
         raise Exception("Could not set value to file: " + str(e))
