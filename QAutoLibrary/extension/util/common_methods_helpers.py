@@ -73,7 +73,7 @@ class CommonMethodsHelpers(object):
         if(found):
             for string in args:
                 if(isinstance(string, str)):
-                    result.append(str(string, "utf8"))
+                    result.append(string)
                 else:
                     result.append(string)
             if(len(result) == 1):
