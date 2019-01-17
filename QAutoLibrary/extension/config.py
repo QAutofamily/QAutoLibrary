@@ -57,10 +57,10 @@ def _write_options(key, value):
     :param value: Option value
     :return:
     """
-    parser = SimpleConfigParser()
+    parser = ConfigParser()
     parser.read(_config_file)
     parser.set(_DEFAULT_SECTION, key, value)
-    with open(_DEFAULT_CONFIG_FILE, 'wb') as configfile:
+    with open(_DEFAULT_CONFIG_FILE, 'w') as configfile:
         parser.write(configfile)
 
 
