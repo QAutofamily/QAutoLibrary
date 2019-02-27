@@ -259,18 +259,21 @@ class CommonMethods(object):
 
         :return: Element details or none
         """
-        x = self.last_element.coordinates[0]
-        y = self.last_element.coordinates[1]
-        w = self.last_element.size[0]
-        h = self.last_element.size[1]
+        try:
+            x = self.last_element.coordinates[0]
+            y = self.last_element.coordinates[1]
+            w = self.last_element.size[0]
+            h = self.last_element.size[1]
 
-        driver = self.driver_cache._get_current_driver()
-        dimensions = driver.get_window_size()
+            driver = self.driver_cache._get_current_driver()
+            dimensions = driver.get_window_size()
 
-        print("Searched element locator: " + str(self.last_element.locator))
-        print("Searched element coordinates: " + str(self.last_element.coordinates))
-        print("Searched element size: " + str(self.last_element.size))
-        print("")
+            print("Searched element locator: " + str(self.last_element.locator))
+            print("Searched element coordinates: " + str(self.last_element.coordinates))
+            print("Searched element size: " + str(self.last_element.size))
+            print("")
+        except:
+            return None
 
         # check if coordinates are empty or outside current screen
         if x and y and w and h and dimensions.get("height") > int(x) and dimensions.get("width") > int(y):
