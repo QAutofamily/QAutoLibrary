@@ -24,7 +24,7 @@ from QAutoLibrary.extension.config import get_config_value
 class CommonMethodsHelpers(object):
 
     @classmethod
-    def webdriver_wait(cls, function, driver, msg='', timeout=None):
+    def webdriver_wait(cls, function, driver, msg='', timeout=None, fallback=False):
         """
         Wait until function returns True
         Executes passed function until it returns True
@@ -44,7 +44,8 @@ class CommonMethodsHelpers(object):
             WebDriverWait(driver, timeout, ignored_exceptions=[ElementNotVisibleException, StaleElementReferenceException,
                                                                ElementNotSelectableException]).until(function, msg)
         except TimeoutException as e:
-            raise TimeOutError("%s %s" % (DebugLog.get_timestamp(), msg))
+            if not fallback:
+                raise TimeOutError("%s %s" % (DebugLog.get_timestamp(), msg))
         except Exception as e:
             raise e
 

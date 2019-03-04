@@ -15,7 +15,8 @@ from lxml import etree
 from re import search
 from urllib.error import URLError, HTTPError
 
-from logging import warn
+from logging import warn, log
+from robot.libraries.BuiltIn import BuiltIn
 
 from requests.auth import HTTPBasicAuth
 from selenium.common.exceptions import WebDriverException, NoAlertPresentException
@@ -39,7 +40,7 @@ from QAutoLibrary.extension.util.xml_screenshot_parser import XmlScreenshotParse
 
 from QAutoLibrary.QAutoElement import QAutoElement
 
-#TODO decide how to fix this
+# TODO decide how to fix this
 try:
     from QAutoLibrary.extension import XmlScreenshotParser
 except:
@@ -94,6 +95,7 @@ class CommonMethods(object):
     """
     **Class that contains common methods**
     """
+
     def __init__(self, driver_cache=None):
         self.driver_cache = driver_cache and driver_cache or DriverCache()
         self.screenshot_parser = None
@@ -122,10 +124,7 @@ class CommonMethods(object):
         --------------
         :Example:
             | *Page model level example*
-            | ``self.fail("My message")``
-            |
-            | *Test level example*
-            | ``self.common_utils.fail("My message")``
+            | ``QAutoRobot.fail("My message")``
 
         """
         raise AssertionError(message)
@@ -138,10 +137,7 @@ class CommonMethods(object):
         -----------------
         :Example:
             | *Page model level example*
-            | ``self.warning("My message")``
-            |
-            | *Test level example*
-            | ``self.common_utils.warning("My message")``
+            | ``QAutoRobot.warning("My message")``
 
         """
         message = "**WARN**Warning: %s*WARN*" % message
@@ -161,10 +157,8 @@ class CommonMethods(object):
         -------------
         :Example:
             | *Page model level*
-            | ``self.measure_async_screen_response_time("trial", 10, "trial_perf_pic")``
-            |
-            | *Test level*
-            | ``self.common_utils.measure_async_screen_response_time("trial", 10, "trial_perf_pic")``
+            | ``QAutoRobot.measure_async_screen_response_time("trial", 10, "trial_perf_pic")``
+
         """
         driver = self.driver_cache._get_current_driver()
         perf_png_data_dict = OrderedDict()
@@ -180,7 +174,8 @@ class CommonMethods(object):
         # get reference screenshot metadata
         if not self.screenshot_parser:
             self.screenshot_parser = XmlScreenshotParser()
-        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser, reference_picture)
+        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser,
+                                                                                        reference_picture)
         if xml_meta_data['area'] is True:
             ref_scr_x = int(xml_meta_data['x'])
             ref_scr_y = int(xml_meta_data['y'])
@@ -208,7 +203,7 @@ class CommonMethods(object):
         scr_ref = Image.open(ref_scr_file_name_path)
         scr_ref_list = list(scr_ref.getdata())
 
-        #save png data and compare to reference image
+        # save png data and compare to reference image
         save_dir = os.path.join(os.getcwd(), get_config_value("reporting_folder_run"), "perf_screenshots")
         if not os.path.isdir(save_dir):
             os.mkdir(save_dir)
@@ -243,48 +238,33 @@ class CommonMethods(object):
             is_similar = (100 - difference) >= similarity
 
             if is_similar:
-                print ("Comparing screenshots...  Screenshots match. Reference screenshot: %s. " +
-                       "Similarity level is %s.") % (ref_scr_file_name, str(100 - difference) + "%")
+                print("Comparing screenshots...  Screenshots match. Reference screenshot: %s. " +
+                      "Similarity level is %s.") % (ref_scr_file_name, str(100 - difference) + "%")
                 print("Match found and time was: %s" % elapsed)
                 return elapsed
             else:
-                print ("Comparing screenshots... Screenshots do not match. Current screenshot: %s. " +
-                       "Similarity level is %s.") % (os.path.basename(actual_screenshot), str(100 - difference) + "%")
+                print("Comparing screenshots... Screenshots do not match. Current screenshot: %s. " +
+                      "Similarity level is %s.") % (os.path.basename(actual_screenshot), str(100 - difference) + "%")
 
         return False
 
-    def find_last_searched_element_details(self):
-        """
-        **Find element with last searched elements information**
+    def _save_screen_element(self, element, x, y, w, h, image_name):
+        driver = self.driver_cache._get_current_driver()
+        driver.save_screenshot(os.getcwd() + os.sep + "/test_reports/" + image_name);
 
-        :return: Element details or none
-        """
-        try:
-            x = self.last_element.coordinates[0]
-            y = self.last_element.coordinates[1]
-            w = self.last_element.size[0]
-            h = self.last_element.size[1]
+        x = x;
+        y = y;
+        width = x + w;
+        height = y + h;
 
-            driver = self.driver_cache._get_current_driver()
-            dimensions = driver.get_window_size()
+        im = Image.open(os.getcwd() + os.sep + '/test_reports' + image_name)
+        im = im.crop((int(x), int(y), int(width), int(height)))
+        im.save(os.getcwd() + os.sep + 'test_reports/' + image_name)
 
-            print("Searched element locator: " + str(self.last_element.locator))
-            print("Searched element coordinates: " + str(self.last_element.coordinates))
-            print("Searched element size: " + str(self.last_element.size))
-            print("")
-        except:
-            return None
-
-        # check if coordinates are empty or outside current screen
-        if x and y and w and h and dimensions.get("height") > int(x) and dimensions.get("width") > int(y):
-            width = int(w) / 2
-            height = int(h) / 2
-            new_x = int(x) + width
-            new_y = int(y) + height
-
-            element = self.find_element_with_coordinates(new_x, new_y)
-
+    def get_xpath(self, element):
+        if element != None:
             xpath = ""
+            driver = self.driver_cache._get_current_driver()
             try:
                 current = element
                 path = ''
@@ -297,26 +277,25 @@ class CommonMethods(object):
                         break
                     current = driver.execute_script("return arguments[0].parentNode", current)
 
-                xpath = xpath
+                return xpath
             except WebDriverException as e:
                 print(str(e))
-            else:
-                locator_id = element.get_attribute('id')
-                locator_class = element.get_attribute('class')
-                locator_xpath = xpath
-                element_tag_name = element.tag_name
-                element_text = element.text
+                return None
+        else:
+            return None
 
-                print("Found element id: " + locator_id)
-                print("Found element class: " + locator_class)
-                print("Found element xpath: " + locator_xpath)
-                print("Found element tag name: " + element_tag_name)
-                print("Found element text: " + element_text)
+    def find_last_searched_element_details(self, element=None):
+        """
+        **Find element with last searched elements information**
 
-                return [locator_id, locator_class, locator_xpath, element_tag_name, element_text]
+        :return: Element details or none
+        """
+        if element == None:
+            element = self.last_element_details()
 
-        print("Element not found")
-        return None
+        else:
+            print("Element not found")
+            return None
 
     def find_element_with_coordinates(self, x, y):
         """
@@ -339,7 +318,7 @@ class CommonMethods(object):
         -------------
         :Example:
             | *Page model level*
-            | ``element = self.find_element((By.LINK_TEXT, u'Trial'))``
+            | ``element = QAutoRobot.find_element((By.LINK_TEXT, u'Trial'))``
 
         """
         self.last_element = element
@@ -347,7 +326,6 @@ class CommonMethods(object):
         by = element[0]
         value = element[1]
         return driver.find_element(by, value)
-
 
     def find_elements(self, element):
         """
@@ -358,7 +336,7 @@ class CommonMethods(object):
         -------------
         :Example:
             | *Page model level*
-            | ``all_elements = self.find_elements((By.CSS_SELECTOR, u"img"))``
+            | ``all_elements = QAutoRobot.find_elements((By.CSS_SELECTOR, u"img"))``
 
         """
         self.last_element = element
@@ -368,6 +346,64 @@ class CommonMethods(object):
 
         return driver.find_elements(by, value)
 
+    def last_element_details(self, fallback=False):
+        try:
+            x = self.last_element.coordinates[0]
+            y = self.last_element.coordinates[1]
+            w = self.last_element.size[0]
+            h = self.last_element.size[1]
+
+            driver = self.driver_cache._get_current_driver()
+            dimensions = driver.get_window_size()
+            print("Searched element coordinates and size: x: " + str(x) + " y: " + str(y) + " w: " + str(
+                w) + " h: " + str(h))
+            # check if coordinates are empty or outside current screen
+            if x and y and w and h and dimensions.get("height") > int(x) and dimensions.get("width") > int(y):
+                elem_middle_x = int(w) / 2
+                elem_middle_y = int(h) / 2
+                click_x = int(x) + elem_middle_x
+                click_y = int(y) + elem_middle_y
+                element = self.find_element_with_coordinates(click_x, click_y)
+                element_size = element.size
+                element_location = element.location
+                print("Current element coordinates and size:  x: " + str(element_location['x']) + " y: " + str(
+                    element_location['y']) + " w: " + str(element_size['width']) + " h: " + str(element_size['height']))
+                locator_id = element.get_attribute('id')
+                locator_class = element.get_attribute('class')
+                element_tag_name = element.tag_name
+                element_text = element.text
+                element_size = element.size
+                print("Found element id: " + locator_id)
+                print("Found element class: " + locator_class)
+                print("Found element tag name: " + element_tag_name)
+                print("Found element text: " + element_text.replace("\n", " "))
+                try:
+                    htmldoc = element.find_element_by_xpath("parent::*").find_element_by_xpath(
+                        "parent::*").get_attribute("innerHTML")
+                except:
+                    htmldoc = element.get_attribute("outerHTML")
+                print("")
+                print(htmldoc)
+
+                test_name = BuiltIn().get_variable_value("${TEST NAME}")
+                if h == element_size['height'] and w == element_size['width']:
+                    if fallback:
+                        self.warning(
+                            "#Fallback at coordinates ---> Testcase: " + test_name + " ---> Searched element locator is changed: " + str(
+                                self.last_element.locator) + " .Element locator needs to be updated. ")
+                    else:
+                        self.warning("#Testcase: " + test_name + " ---> Searched element locator is changed: " + str(
+                            self.last_element.locator) + " .Element locator needs to be updated. ")
+                    self._save_screen_element(element, element_location['x'], element_location['y'],
+                                              element_size['width'], element_size['height'], "${TEST NAME}" + "_element.png")
+
+
+                    BuiltIn().log("<img src='" + "${TEST NAME}" + "_element.png" + "'>", "HTML")
+                    return (element, str(int(elem_middle_x)), str(int(elem_middle_y)))
+                else:
+                    return (element, None, None)
+        except:
+            return (None, None, None)
 
     def click_element(self, element, to_print=True):
         """
@@ -379,50 +415,74 @@ class CommonMethods(object):
         :Example:
             | *Page model level*
             | using web element
-            | ``self.click_element(self.TRIAL)``
+            | ``QAutoRobot.click_element(self.TRIAL)``
             | using representation
-            | ``self.click_element((By.LINK_TEXT, u'Trial'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.click_element(self.trial.TRIAL)``
-
+            | ``QAutoRobot.click_element((By.LINK_TEXT, u'Trial'))``
         """
-        self.wait_until_element_is_visible(element)
-        self.wait_until_element_is_enabled(element)
+        self.wait_until_element_is_visible(element, get_config_value("default_timeout"), "", True)
+        self.wait_until_element_is_enabled(element, 5, "", True)
         msg = "Failed to click element after %s seconds" % get_config_value("default_timeout")
         CommonMethodsHelpers.webdriver_wait(lambda driver: self._click_element(element, to_print),
-                                            self.driver_cache._get_current_driver(), msg)
+                                            self.driver_cache._get_current_driver(), msg, True)
 
     def _click_element(self, element, to_print=True):
         printout = ""
+        locator_by = element[0]
+        locator_value = element[1]
 
-        web_element = self.find_element_if_not_webelement(element)
         try:
-            if web_element.text != "":
-                printout = "* Clicking at '%s'" % web_element.text
-            else:
-                try:
-                    element_information = repr(element)
-                    element_loc = web_element.location
-                    printout = "* Clicking at '%s'" % str(element_information) + str(element_loc)
-                except:
-                    printout = "* Clicking at Unknown button"
-        except:
-            print("* Clicking at Unknown button")
-        try:
-            web_element.click()
-        except WebDriverException as e:
-            if "is not clickable at point" in e.msg:
-                DebugLog.log("Retry click after exception: " + e.msg)
+
+            web_element = self.find_element_if_not_webelement(element)
+            try:
+                if web_element.text != "":
+                    printout = "* Clicking at '%s'" % web_element.text
+                else:
+                    try:
+                        element_information = repr(element)
+                        element_loc = web_element.location
+                        printout = "* Clicking at '%s'" % str(element_information) + str(element_loc)
+                    except:
+                        printout = "* Clicking at Unknown button"
+            except:
+                print("* Clicking at Unknown button")
+            try:
+                web_element.click()
+            except WebDriverException as e:
+                if "is not clickable at point" in e.msg:
+                    DebugLog.log("Retry click after exception: " + e.msg)
+                    return False
+                else:
+                    DebugLog.log("Stopped running on WebDriverException: " + e.msg)
+                    raise
+
+        except Exception as e:
+
+            last_elem = self.last_element_details(True)
+
+            if last_elem == None:
+                msg = "Failed to click element '%s, %s' after %s seconds" % (
+                locator_by.upper(), locator_value, get_config_value("default_timeout"))
+                self.fail(msg)
+                # print("No element")
                 return False
-            else:
-                DebugLog.log("Stopped running on WebDriverException: " + e.msg)
+
+            if last_elem[0] == None and last_elem[1] == None:
+                msg = "Failed to click element '%s, %s' after %s seconds" % (
+                locator_by.upper(), locator_value, get_config_value("default_timeout"))
+                self.fail(msg)
+                return False
+            elif last_elem[1] != None:
+                self.click_element_at_coordinates(last_elem[0], last_elem[1], last_elem[2])
+                return True
+            elif last_elem[0] != None:
+                msg = "UI layout changed. Failed to click element '%s, %s' after %s seconds" % (
+                locator_by.upper(), locator_value, get_config_value("default_timeout"))
+                self.fail(msg)
                 raise
+
         if to_print:
             DebugLog.log(printout)
         return True
-
 
     def double_click_element(self, element, to_print=True):
         """
@@ -434,13 +494,9 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.double_click_element(self.TRIAL)``
+            | ``QAutoRobot.double_click_element(self.TRIAL)``
             | using representation
-            | ``self.double_click_element((By.LINK_TEXT, u'Trial'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.double_click_element(self.trial.TRIAL)``
+            | ``QAutoRobot.double_click_element((By.LINK_TEXT, u'Trial'))``
 
         """
         actions = self._get_actions()
@@ -462,7 +518,6 @@ class CommonMethods(object):
 
         actions.double_click(web_element).perform()
 
-
     def triple_click_element(self, element, to_print=True):
         """
         **Triple click at element**
@@ -473,13 +528,9 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.triple_click_element(self.TRIAL)``
+            | ``QAutoRobot.triple_click_element(self.TRIAL)``
             | using representation
-            | ``self.triple_click_element((By.LINK_TEXT, u'Trial'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.triple_click_element(self.trial.TRIAL)``
+            | ``QAutoRobot.triple_click_element((By.LINK_TEXT, u'Trial'))``
 
         """
         actions = self._get_actions()
@@ -503,7 +554,6 @@ class CommonMethods(object):
         actions.double_click(web_element)
         actions.perform()
 
-
     def click_element_at_coordinates(self, element, x, y, to_print=True):
         """
         **Clicks at the specified coordinates at element**
@@ -516,13 +566,9 @@ class CommonMethods(object):
         :Example:
             | *Page model level*
             | using web element
-            | ``self.click_element_at_coordinates(self.TRIAL, 1, 1)``
+            | ``QAutoRobot.click_element_at_coordinates(self.TRIAL, 1, 1)``
             | using representation
-            | ``self.click_element_at_coordinates((By.LINK_TEXT, u'Trial'), 1, 1)``
-            |
-            | *Test level*
-            | using web element
-            | ``self.common_utils.click_element_at_coordinates(self.trial.TRIAL, 1, 1)``
+            | ``QAutoRobot.click_element_at_coordinates((By.LINK_TEXT, u'Trial'), 1, 1)``
 
         """
         actions = self._get_actions()
@@ -531,18 +577,62 @@ class CommonMethods(object):
         if to_print:
             try:
                 if web_element.text != "":
-                    print("* Clicking at element (%s, %s, %s)" % (web_element.text + " ", x + ",", y + " ") + " coordinates")
+                    print("* Clicking at element (%s, %s, %s)" % (
+                    web_element.text + " ", x + ",", y + " ") + " coordinates")
                 else:
                     try:
                         element_information = repr(element)
                         element_loc = web_element.location
-                        DebugLog.log("* Clicking at element (%s, %s, %s)" % (str(element_information) + str(element_loc) + " ", x + ",", y + " ") + " coordinates")
+                        DebugLog.log("* Clicking at element (%s, %s, %s)" % (
+                        str(element_information) + str(element_loc) + " " + x + ",", y + " ") + " coordinates")
                     except:
-                        DebugLog.log("* Clicking at element (%s, %s, %s)" % ("Unknown button" + " ", x + ",", y + " ") + " coordinates")
+                        DebugLog.log("* Clicking at element (%s, %s, %s)" % (
+                        "Unknown button" + " ", x + ",", y + " ") + " coordinates")
             except:
-                DebugLog.log("* Clicking at element (%s, %s, %s)" % ("Unknown button" + " ", x + ",", y + " ") + " coordinates")
+                DebugLog.log(
+                    "* Clicking at element (%s, %s, %s)" % ("Unknown button" + " ", x + ",", y + " ") + " coordinates")
         actions.move_to_element(web_element).move_by_offset(x, y).click().perform()
 
+    def input_text_element_at_coordinates(self, element, x, y, text, to_print=True):
+        """
+        **Clicks at the specified coordinates at element**
+
+        :param element: Element representation (By, value) or WebElement
+        :param x: x-coordinate
+        :param y: y-coordinate
+        :param to_print: Flag, if True prints action message
+        --------------
+        :Example:
+            | *Page model level*
+            | using web element
+            | ``self.input_text_element_at_coordinates(self.TRIAL, 1, 1)``
+            | using representation
+            | ``self.input_text_element_at_coordinates((By.LINK_TEXT, u'Trial'), 1, 1)``
+            |
+
+        """
+        actions = self._get_actions()
+        self.wait_until_element_is_visible(element)
+        web_element = self.find_element_if_not_webelement(element)
+        if to_print:
+            try:
+                if web_element.text != "":
+                    print("* Input text at element (%s, %s, %s)" % (
+                    web_element.text + " ", x + ",", y + " ") + " coordinates")
+                else:
+                    try:
+                        element_information = repr(element)
+                        element_loc = web_element.location
+                        DebugLog.log("* Input text at element (%s, %s, %s)" % (
+                        str(element_information) + str(element_loc) + " " + x + ",", y + " ") + " coordinates")
+                    except:
+                        DebugLog.log("* Input text at element (%s, %s, %s)" % (
+                        "Unknown button" + " ", x + ",", y + " ") + " coordinates")
+            except:
+                DebugLog.log(
+                    "* Input at element (%s, %s, %s)" % ("Unknown button" + " ", x + ",", y + " ") + " coordinates")
+        # actions.move_to_element(web_element).move_by_offset(x, y).send_keys_to_element(web_element, text).perform()
+        actions.send_keys_to_element(web_element, text).perform()
 
     def input_text(self, element, value, to_print=True):
         """
@@ -555,38 +645,66 @@ class CommonMethods(object):
         :Example:
             | *Page model level*
             | using web element
-            | ``self.input_text(self.ID_CONTACT_FIRST_NAME, "this is value")``
+            | ``QAutoRobot.input_text(self.ID_CONTACT_FIRST_NAME, "this is value")``
             | using representation
-            | ``self.input_text((By.ID, u'contact_first_name'), "this is value")``
-            |
-            | *Test level*
-            | using web element
-            | ``self.common_utils.input_text(self.trial.ID_CONTACT_FIRST_NAME, "this is value")``
+            | ``QAutoRobot.input_text((By.ID, u'contact_first_name'), "this is value")``
 
         """
-        self.wait_until_element_is_visible(element)
+        self.wait_until_element_is_visible(element, get_config_value("default_timeout"), "", True)
         msg = "Failed to input text after %s seconds" % get_config_value("default_timeout")
         CommonMethodsHelpers.webdriver_wait(lambda driver: self._input_text(element, value, to_print),
                                             self.driver_cache._get_current_driver(), msg)
 
     def _input_text(self, element, value, to_print=True):
-        web_element = self.find_element_if_not_webelement(element)
-        if to_print:
-            try:
-                element_information = repr(element)
-                element_loc = web_element.location
-                DebugLog.log("* Clear and Typing text '%s' into element field '%s%s'" % (value, element_information, element_loc))
-            except:
+        try:
+            locator_by = element[0]
+            locator_value = element[1]
+            web_element = self.find_element_if_not_webelement(element)
+            if to_print:
                 try:
-                    DebugLog.log("* Clear and Typing text '%s' into element field 'Unknown element'" % value)
+                    element_information = repr(element)
+                    element_loc = web_element.location
+                    DebugLog.log("* Clear and Typing text '%s' into element field '%s%s'" % (
+                    value, element_information, element_loc))
                 except:
-                    DebugLog.log("* Clear and Typing text '%s' into element field 'Unknown element'" % value.encode('ascii',
-                                                                                                                    'ignore'))
-        web_element.clear()
-        value = CommonMethodsHelpers.contains_nonascii(value)
-        web_element.send_keys(value)
-        return True
+                    try:
+                        DebugLog.log("* Clear and Typing text '%s' into element field 'Unknown element'" % value)
+                    except:
+                        DebugLog.log(
+                            "* Clear and Typing text '%s' into element field 'Unknown element'" % value.encode('ascii',
+                                                                                                               'ignore'))
+            web_element.clear()
+            value = CommonMethodsHelpers.contains_nonascii(value)
+            web_element.send_keys(value)
+        except Exception as e:
 
+            last_elem = self.last_element_details(True)
+
+            # print("_CLICK_ELEMENT_EXCEPTION2")
+            # print(last_elem)
+            if last_elem == None:
+                # print("!O")
+                msg = "Failed to input element '%s, %s' after %s seconds" % (
+                locator_by.upper(), locator_value, get_config_value("default_timeout"))
+                self.fail(msg)
+                # print("No element")
+                return False
+
+            if last_elem[0] == None and last_elem[1] == None:
+                msg = "Failed to input text to element '%s, %s' after %s seconds" % (
+                locator_by.upper(), locator_value, get_config_value("default_timeout"))
+                self.fail(msg)
+                return False
+            elif last_elem[1] != None:
+                self.input_text_element_at_coordinates(last_elem[0], last_elem[1], last_elem[2], value)
+                return True
+            elif last_elem[0] != None:
+                msg = "UI layout changed. Failed to input text element '%s, %s' after %s seconds" % (
+                locator_by.upper(), locator_value, get_config_value("default_timeout"))
+                self.fail(msg)
+                raise
+
+        return True
 
     def send_keys(self, element, value, to_print=True):
         """
@@ -599,13 +717,9 @@ class CommonMethods(object):
         :Example:
             | *Page model level*
             | using web element
-            | ``self.send_keys(self.ID_CONTACT_FIRST_NAME, "this is value")``
+            | ``QAutoRobot.send_keys(self.ID_CONTACT_FIRST_NAME, "this is value")``
             | using representation
-            | ``self.send_keys((By.ID, u'contact_first_name'), "this is value")``
-            |
-            | *Test level*
-            | using web element
-            | ``self.common_utils.send_keys(self.trial.ID_CONTACT_FIRST_NAME, "this is value")``
+            | ``QAutoRobot.send_keys((By.ID, u'contact_first_name'), "this is value")``
 
         """
         self.wait_until_element_is_visible(element)
@@ -614,7 +728,8 @@ class CommonMethods(object):
             try:
                 element_information = repr(element)
                 element_loc = web_element.location
-                DebugLog.log("* Typing text '%s' into element field '%s'" % (value, str(element_information) + str(element_loc)))
+                DebugLog.log(
+                    "* Typing text '%s' into element field '%s'" % (value, str(element_information) + str(element_loc)))
             except:
                 try:
                     DebugLog.log("* Typing text '%s' into element field '%s'" % (value, "Unknown button"))
@@ -624,8 +739,7 @@ class CommonMethods(object):
         value = CommonMethodsHelpers.contains_nonascii(value)
         web_element.send_keys(value)
 
-
-    def wait_until_element_is_visible(self, element, timeout=None, msg=None):
+    def wait_until_element_is_visible(self, element, timeout=None, msg=None, fallback=False):
         """
         **Wait until element specified is visible**
 
@@ -637,18 +751,12 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_element_is_visible(self.TRIAL)``
+            | ``QAutoRobot.wait_until_element_is_visible(self.TRIAL)``
             | using representation
-            | ``self.common_utils.wait_until_element_is_visible((By.LINK_TEXT, u'Trial'))``
+            | ``QAutoRobot.common_utils.wait_until_element_is_visible((By.LINK_TEXT, u'Trial'))``
             | using timeout
-            | ``self.wait_until_element_is_visible(self.TRIAL, 10)``
-            | ``self.wait_until_element_is_visible((By.LINK_TEXT, u'Trial'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_element_is_visible(self.trial.TRIAL)``
-            | using timeout
-            | ``self.common_utils.wait_until_element_is_visible(self.trial.TRIAL, 10)``
+            | ``QAutoRobot.wait_until_element_is_visible(self.TRIAL, 10)``
+            | ``QAutoRobot.wait_until_element_is_visible((By.LINK_TEXT, u'Trial'), 10)``
 
         """
         if not timeout:
@@ -659,7 +767,7 @@ class CommonMethods(object):
             else:
                 msg = "Element '%s' is not visible for %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_visible(element),
-                                            self.driver_cache._get_current_driver(), msg, timeout)
+                                            self.driver_cache._get_current_driver(), msg, timeout, fallback)
 
 
     def wait_until_element_is_not_visible(self, element, timeout=None, msg=None):
@@ -674,18 +782,13 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_element_is_not_visible(self.TRIAL)``
+            | ``QAutoRobot.wait_until_element_is_not_visible(self.TRIAL)``
             | using representation
-            | ``self.common_utils.wait_until_element_is_not_visible((By.LINK_TEXT, u'Trial'))``
+            | ``QAutoRobot.common_utils.wait_until_element_is_not_visible((By.LINK_TEXT, u'Trial'))``
             | using timeout
-            | ``self.wait_until_element_is_not_visible(self.TRIAL, 10)``
-            | ``self.wait_until_element_is_not_visible((By.LINK_TEXT, u'Trial'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_element_is_not_visible(self.trial.TRIAL)``
-            | using timeout
-            | ``self.common_utils.wait_until_element_is_not_visible(self.trial.TRIAL, 10)``
+            | ``QAutoRobot.wait_until_element_is_not_visible(self.TRIAL, 10)``
+            | ``QAutoRobot.wait_until_element_is_not_visible((By.LINK_TEXT, u'Trial'), 10)``
+
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
@@ -696,7 +799,6 @@ class CommonMethods(object):
                 msg = "Element '%s' is visible for %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: not self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
-
 
     def wait_until_element_is_disabled(self, element, timeout=None, msg=None):
         """
@@ -710,18 +812,12 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_element_is_disabled(self.TRIAL)``
+            | ``QAutoRobot.wait_until_element_is_disabled(self.TRIAL)``
             | using representation
-            | ``self.common_utils.wait_until_element_is_disabled((By.LINK_TEXT, u'Trial'))``
+            | ``QAutoRobot.common_utils.wait_until_element_is_disabled((By.LINK_TEXT, u'Trial'))``
             | using timeout
-            | ``self.wait_until_element_is_disabled(self.TRIAL, 10)``
-            | ``self.wait_until_element_is_disabled((By.LINK_TEXT, u'Trial'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_element_is_disabled(self.trial.TRIAL)``
-            | using timeout
-            | ``self.common_utils.wait_until_element_is_disabled(self.trial.TRIAL, 10)``
+            | ``QAutoRobot.wait_until_element_is_disabled(self.TRIAL, 10)``
+            | ``QAutoRobot.wait_until_element_is_disabled((By.LINK_TEXT, u'Trial'), 10)``
 
         """
         if not timeout:
@@ -734,8 +830,7 @@ class CommonMethods(object):
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_disabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
-
-    def wait_until_element_is_enabled(self, element, timeout=None, msg=None):
+    def wait_until_element_is_enabled(self, element, timeout=None, msg=None, fallback=False):
         """
         **Wait until element is enabled.**
 
@@ -747,18 +842,12 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_element_is_enabled(self.TRIAL)``
+            | ``QAutoRobot.wait_until_element_is_enabled(self.TRIAL)``
             | using representation
-            | ``self.common_utils.wait_until_element_is_enabled((By.LINK_TEXT, u'Trial'))``
+            | ``QAutoRobot.common_utils.wait_until_element_is_enabled((By.LINK_TEXT, u'Trial'))``
             | using timeout
-            | ``self.wait_until_element_is_enabled(self.TRIAL, 10)``
-            | ``self.wait_until_element_is_enabled((By.LINK_TEXT, u'Trial'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_element_is_enabled(self.trial.TRIAL)``
-            | using timeout
-            | ``self.common_utils.wait_until_element_is_enabled(self.trial.TRIAL, 10)``
+            | ``QAutoRobot.wait_until_element_is_enabled(self.TRIAL, 10)``
+            | ``QAutoRobot.wait_until_element_is_enabled((By.LINK_TEXT, u'Trial'), 10)``
 
         """
         if not timeout:
@@ -769,8 +858,7 @@ class CommonMethods(object):
             else:
                 msg = "Element '%s' is not enabled after %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_enabled(element),
-                                            self.driver_cache._get_current_driver(), msg, timeout)
-
+                                            self.driver_cache._get_current_driver(), msg, timeout, fallback)
 
     @classmethod
     def get_timestamp(self):
@@ -782,10 +870,7 @@ class CommonMethods(object):
         ---------------
         :Example:
             | *Page model level example*
-            | ``value = self.get_timestamp()``
-            |
-            | *Test level example*
-            | ``value = self.common_utils.get_timestamp()``
+            | ``value = QAutoRobot.get_timestamp()``
 
         """
         t = datetime.now().timetuple()
@@ -805,16 +890,10 @@ class CommonMethods(object):
         -------------
         :Example:
             | *Page model level example*
-            | ``self.add_dynamic_content_to_parameters(TESTDATA, "param_name", "my_value")``
-            | ``self.add_dynamic_content_to_parameters(TESTDATA, "param_name", "my_value", "my_section")``
+            | ``QAutoRobot.add_dynamic_content_to_parameters(TESTDATA, "param_name", "my_value")``
+            | ``QAutoRobot.add_dynamic_content_to_parameters(TESTDATA, "param_name", "my_value", "my_section")``
             | Using dynamic value
-            | ``self.add_dynamic_content_to_parameters(self.ELEMENT_NAME, parameters["param_name"])``
-            |
-            | *Test level example*
-            | ``self.common_utils.add_dynamic_content_to_parameters(TESTDATA, "param_name", "my_value")``
-            | ``self.common_utils.add_dynamic_content_to_parameters(TESTDATA, "param_name", "my_value", "my_section")``
-            | Using dynamic value
-            | ``self.trial.login(TESTDATA["my_section"])``
+            | ``QAutoRobot.add_dynamic_content_to_parameters(self.ELEMENT_NAME, parameters["param_name"])``
 
         """
         if not section:
@@ -843,10 +922,7 @@ class CommonMethods(object):
         ------------
         :Example:
             | *Page model level example*
-            | ``self.get_measurements("trial")``
-            |
-            | *Test level example*
-            | ``self.common_utils.get_measurements("trial")``
+            | ``QAutoRobot.get_measurements("trial")``
 
         """
         driver = self.driver_cache._get_current_driver()
@@ -859,10 +935,7 @@ class CommonMethods(object):
     # Example:
     # @code
     #   # Page model level example
-    #   self.get_resource_timings("trial")
-    #
-    #   # Test level example
-    #   self.common_utils.get_resource_timings("trial")
+    #   QAutoRobot.get_resource_timings("trial")
     # @endcode
     def get_resource_timings(self, measurement_name):
         """
@@ -873,21 +946,21 @@ class CommonMethods(object):
         ------------
         :Example:
             | *Page model level example*
-            | ``self.get_resource_timings("trial")``
-            |
-            | *Test level example*
-            | ``self.common_utils.get_resource_timings("trial")``
+            | ``QAutoRobot.get_resource_timings("trial")``
 
         """
         try:
-            resource_timings = self.execute_javascript("return window.performance.getEntriesByType('resource');", log=False)
+            resource_timings = self.execute_javascript("return window.performance.getEntriesByType('resource');",
+                                                       log=False)
             if resource_timings:
 
-                measurement_folder = os.path.join(get_config_value("reporting_folder"), GlobalUtils.MEASUREMENTS_FOLDER_NAME)
+                measurement_folder = os.path.join(get_config_value("reporting_folder"),
+                                                  GlobalUtils.MEASUREMENTS_FOLDER_NAME)
                 if not os.path.exists(measurement_folder):
                     os.mkdir(measurement_folder)
                 js_file = os.path.join(measurement_folder, GlobalUtils.RESOURCE_DATA_PREFIX + measurement_name + ".js")
-                jtl_file = os.path.join(measurement_folder, GlobalUtils.RESOURCE_DATA_PREFIX + measurement_name + ".jtl")
+                jtl_file = os.path.join(measurement_folder,
+                                        GlobalUtils.RESOURCE_DATA_PREFIX + measurement_name + ".jtl")
 
                 ts = int(time.time()) * 1000
                 timings_string = "'%s': [" % ts
@@ -898,7 +971,8 @@ class CommonMethods(object):
                 for resource_dict in resource_timings:
                     if 'responseEnd' in resource_dict and resource_dict['responseEnd'] > max_respond_end:
                         max_respond_end = resource_dict['responseEnd']
-                    if 'startTime' in resource_dict and (not min_start_time or resource_dict['startTime'] < min_start_time):
+                    if 'startTime' in resource_dict and (
+                            not min_start_time or resource_dict['startTime'] < min_start_time):
                         min_start_time = resource_dict['startTime']
                     timings_string += "{"
                     for key, value in resource_dict.items():
@@ -910,9 +984,10 @@ class CommonMethods(object):
                 # add total duration
                 total_duration = max_respond_end - min_start_time
                 timings_string += "{'%s': '%s', '%s': '%s'}],\n" % ("name", "All", "duration", total_duration)
-                jtl_timings_string += "\t<sample ts='%s' t='%s' lb='%s'/>\n" % (ts, str(int(total_duration)), measurement_name)
+                jtl_timings_string += "\t<sample ts='%s' t='%s' lb='%s'/>\n" % (
+                ts, str(int(total_duration)), measurement_name)
 
-                if(os.path.isfile(js_file)):
+                if (os.path.isfile(js_file)):
                     read_lines = get_file_lines(js_file)
                     new_lines = read_lines[:-1] + [timings_string] + [read_lines[-1]]
                     content = "".join(new_lines)
@@ -921,7 +996,7 @@ class CommonMethods(object):
                     ending = "};"
                     content = heading + timings_string + ending
 
-                if(os.path.isfile(jtl_file)):
+                if (os.path.isfile(jtl_file)):
                     read_lines = get_file_lines(jtl_file)
                     new_lines = read_lines[:-1] + [jtl_timings_string] + [read_lines[-1]]
                     content_jtl = "".join(new_lines)
@@ -945,7 +1020,6 @@ class CommonMethods(object):
             print("Failed to get resource timings:\n%s" % str(e))
             return None
 
-
     def get_dom_element_count(self, log=True):
         """
         **Counting DOM-elements**
@@ -954,15 +1028,11 @@ class CommonMethods(object):
         -------------
         :Example:
             | *Page model level example*
-            | ``self.get_dom_element_count()``
-            |
-            | *Test level example*
-            | ``self.common_utils.get_dom_element_count()``
+            | ``QAutoRobot.get_dom_element_count()``
 
         """
         dom_count = self.execute_javascript("return document.getElementsByTagName('*').length;", log)
         return dom_count
-
 
     def open_browser(self, browser_name=None, url=None, alias=None, size=None):
         """
@@ -976,10 +1046,7 @@ class CommonMethods(object):
         -------------
         :Example:
             | *Page model level example*
-            | ``self.open_browser("ff", http://qautomate.fi/")``
-            |
-            | *Test level example*
-            | ``self.common_utils.open_browser("ff", "http://qautomate.fi/")``
+            | ``QAutoRobot.open_browser("ff", http://qautomate.fi/")``
 
         """
 
@@ -1002,7 +1069,6 @@ class CommonMethods(object):
 
         return _id
 
-
     def switch_browser(self, id_or_alias):
         """
         **Switch between active browsers using id or alias**
@@ -1011,22 +1077,15 @@ class CommonMethods(object):
         --------------
         :Example:
             | *Page model level example with id*
-            | ``id = self.open_browser("ff", "http://qautomate.fi/")``
-            | ``id2 = self.open_browser("ff", "http://qautomate.fi/")``
+            | ``id = QAutoRobot.open_browser("ff", "http://qautomate.fi/")``
+            | ``id2 = QAutoRobot.open_browser("ff", "http://qautomate.fi/")``
             | run some steps
-            | ``self.switch_browser(id)``
-            |
-            | *Test level example with alias*
-            | ``self.common_utils.open_browser("ff", "http://qautomate.fi/", "alias1")``
-            | ``self.common_utils.open_browser("ff", "http://qautomate.fi/", "alias2")``
-            | run some steps
-            | ``self.common_utils.switch_browser("alias1")``
+            | ``QAutoRobot.switch_browser(id)``
 
         """
 
         DebugLog.log("* Switching browser with id or alias '%s'" % id_or_alias)
         self.driver_cache.switch_driver(id_or_alias)
-
 
     def close_browser(self):
         """
@@ -1034,10 +1093,7 @@ class CommonMethods(object):
 
         :Example:
             | *Page model level example*
-            | ``self.close_browser()``
-            |
-            | *Test level example*
-            | ``self.common_utils.close_browser()``
+            | ``QAutoRobot.close_browser()``
 
         """
 
@@ -1045,23 +1101,18 @@ class CommonMethods(object):
                                                                        self.driver_cache.get_current_id_or_alias()))
         self.driver_cache.close()
 
-
     def close_all_browsers(self):
         """
         **Closes all opened browsers**
 
         :Example:
             | *Page model level example*
-            | ``self.close_all_browsers()``
-            |
-            | *Test level example*
-            | ``self.common_utils.close_all_browsers()``
+            | ``QAutoRobot.close_all_browsers()``
 
         """
 
         DebugLog.log("* Closing all browsers")
         self.driver_cache.close_all()
-
 
     def go_to(self, url, log=True):
         """
@@ -1072,10 +1123,8 @@ class CommonMethods(object):
         -----------------
         :Example:
             | *Page model level example*
-            | ``self.go_to("http://qautomate.fi/")``
-            |
-            | *Test level example*
-            | ``self.common_utils.go_to("http://qautomate.fi/")``
+            | ``QAutoRobot.go_to("http://qautomate.fi/")``
+
         """
         driver = self.driver_cache._get_current_driver()
         if log:
@@ -1086,7 +1135,6 @@ class CommonMethods(object):
 
         driver.get(url)
 
-
     def open_url(self, url, log=True):
         """
         **Open specified url**
@@ -1096,14 +1144,10 @@ class CommonMethods(object):
         --------------
         :Example:
             | *Page model level example*
-            | ``self.open_url("http://qautomate.fi/")``
-            |
-            | *Test level example*
-            | ``self.common_utils.open_url("http://qautomate.fi/")``
+            | ``QAutoRobot.open_url("http://qautomate.fi/")``
 
         """
         self.go_to(url, log)
-
 
     def is_visible(self, element, timeout=None):
         """
@@ -1116,18 +1160,12 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.is_visible(self.TRIAL)``
+            | ``QAutoRobot.is_visible(self.TRIAL)``
             | using representation
-            | ``self.is_visible((By.LINK_TEXT, u'Trial'))``
+            | ``QAutoRobot.is_visible((By.LINK_TEXT, u'Trial'))``
             | using timeout
-            | ``self.is_visible(self.TRIAL, 10)``
-            | ``self.is_visible((By.LINK_TEXT, u'Trial'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.is_visible(self.trial.TRIAL)``
-            | using timeout
-            | ``self.common_utils.is_visible(self.trial.TRIAL, 10)``
+            | ``QAutoRobot.is_visible(self.TRIAL, 10)``
+            | ``QAutoRobot.is_visible((By.LINK_TEXT, u'Trial'), 10)``
 
         """
         self.last_element = element
@@ -1148,7 +1186,6 @@ class CommonMethods(object):
             except:
                 return False
 
-
     def is_disabled(self, element, timeout=None):
         """
         **Return disability of element.**
@@ -1160,18 +1197,12 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.is_disabled(self.TRIAL)``
+            | ``QAutoRobot.is_disabled(self.TRIAL)``
             | using representation
-            | ``self.is_disabled((By.LINK_TEXT, u'Trial'))``
+            | ``QAutoRobot.is_disabled((By.LINK_TEXT, u'Trial'))``
             | using timeout
-            | ``self.is_disabled(self.TRIAL, 10)``
-            | ``self.is_disabled((By.LINK_TEXT, u'Trial'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.is_disabled(self.trial.TRIAL)``
-            | using timeout
-            | ``self.common_utils.is_disabled(self.trial.TRIAL, 10)``
+            | ``QAutoRobot.is_disabled(self.TRIAL, 10)``
+            | ``QAutoRobot.is_disabled((By.LINK_TEXT, u'Trial'), 10)``
 
         """
         self.last_element = element
@@ -1179,9 +1210,9 @@ class CommonMethods(object):
             try:
                 if type(element) in [tuple, QAutoElement]:
                     elements = self.find_elements(element)
-                    return len(elements) > 0 and not(elements[0].is_enabled())
+                    return len(elements) > 0 and not (elements[0].is_enabled())
                 else:
-                    return not(element.is_enabled())
+                    return not (element.is_enabled())
             except WebDriverException:
                 return False
         else:
@@ -1191,7 +1222,6 @@ class CommonMethods(object):
                 return True
             except:
                 return False
-
 
     def is_enabled(self, element, timeout=None):
         """
@@ -1204,18 +1234,12 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.is_enabled(self.TRIAL)``
+            | ``QAutoRobot.is_enabled(self.TRIAL)``
             | using representation
-            | ``self.is_enabled((By.LINK_TEXT, u'Trial'))``
+            | ``QAutoRobot.is_enabled((By.LINK_TEXT, u'Trial'))``
             | using timeout
-            | ``self.is_enabled(self.TRIAL, 10)``
-            | ``self.is_enabled((By.LINK_TEXT, u'Trial'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.is_enabled(self.trial.TRIAL)``
-            | using timeout
-            | ``self.common_utils.is_enabled(self.trial.TRIAL, 10)``
+            | ``QAutoRobot.is_enabled(self.TRIAL, 10)``
+            | ``QAutoRobot.is_enabled((By.LINK_TEXT, u'Trial'), 10)``
 
         """
         self.last_element = element
@@ -1236,7 +1260,6 @@ class CommonMethods(object):
             except:
                 return False
 
-
     def get_text(self, element):
         """
         **Return element's text**
@@ -1247,18 +1270,14 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``value = self.get_text(self.TRIAL)``
+            | ``value = QAutoRobot.get_text(self.TRIAL)``
             | using representation
-            | ``value = self.get_text((By.LINK_TEXT, u'Trial'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``value = self.common_utils.get_text(self.trial.TRIAL)``
+            | ``value = QAutoRobot.get_text((By.LINK_TEXT, u'Trial'))``
+
         """
         self.wait_until_element_is_visible(element)
         element = self.find_element_if_not_webelement(element)
         return element.text
-
 
     def get_value(self, element):
         """
@@ -1270,17 +1289,12 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``value = self.get_value(self.TRIAL)``
+            | ``value = QAutoRobot.get_value(self.TRIAL)``
             | using representation
-            | ``value = self.get_value((By.LINK_TEXT, u'Trial'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``value = self.common_utils.get_value(self.trial.TRIAL)``
+            | ``value = QAutoRobot.get_value((By.LINK_TEXT, u'Trial'))``
 
         """
         return self.get_attribute(element, "value")
-
 
     def compare_screenshots(self, ref_scr_name):
         """
@@ -1290,17 +1304,15 @@ class CommonMethods(object):
         --------------
         :Example:
             | *Page model level example*
-            | ``self.compare_screenshots("ref_scr_name")``
-            |
-            | *Test level example*
-            | ``self.common_utils.compare_screenshots("ref_scr_name")``
+            | ``QAutoRobot.compare_screenshots("ref_scr_name")``
 
         """
 
         if not self.screenshot_parser:
             self.screenshot_parser = XmlScreenshotParser()
 
-        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser, ref_scr_name)
+        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser,
+                                                                                        ref_scr_name)
 
         ref_scr_x = int(xml_meta_data['x'])
         ref_scr_y = int(xml_meta_data['y'])
@@ -1314,7 +1326,6 @@ class CommonMethods(object):
         CommonUtils()._handle_screenshot_comparison(ref_scr_file_name_path, ref_scr_x, ref_scr_y,
                                                     ref_scr_w, ref_scr_h, similarity)
 
-
     def compare_element_screenshots(self, element, ref_scr_name):
         """
         **Compares screenshots of elements**
@@ -1324,7 +1335,7 @@ class CommonMethods(object):
         -------------
         :Example:
             *Page model level example*
-            ``self.compare_element_screenshots(self.TRIAL,"ref_scr_name")``
+            ``QAutoRobot.compare_element_screenshots(self.TRIAL,"ref_scr_name")``
 
         """
 
@@ -1333,13 +1344,13 @@ class CommonMethods(object):
 
         self.wait_until_element_is_visible(element)
 
-        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser, ref_scr_name)
+        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser,
+                                                                                        ref_scr_name)
 
         if get_config_value("runtime_similarity") != '':
             similarity = get_config_value("runtime_similarity")
         else:
             similarity = int(xml_meta_data['similarity'])
-
 
         element = self.find_element_if_not_webelement(element)
 
@@ -1353,7 +1364,6 @@ class CommonMethods(object):
         CommonUtils()._handle_screenshot_comparison(ref_scr_file_name_path, ref_scr_x,
                                                     ref_scr_y, ref_scr_w, ref_scr_h, similarity)
 
-
     def execute_javascript(self, js_script, log=True):
         """
         **Execute JavaScript code**
@@ -1364,17 +1374,13 @@ class CommonMethods(object):
         ---------------
         :Example:
             | *age model level example*
-            | ``value = self.execute_javascript("run_function(variable)")``
-            |
-            | *Test level example*
-            | ``value = self.common_utils.execute_javascript("run_function(variable)")``
+            | ``value = QAutoRobot.execute_javascript("run_function(variable)")``
 
         """
         driver = self.driver_cache._get_current_driver()
         if log:
             DebugLog.log("* Execute javascript: " + str(js_script))
         return driver.execute_script(js_script)
-
 
     def execute_async_javascript(self, js_script, log=True):
         """
@@ -1391,7 +1397,6 @@ class CommonMethods(object):
             DebugLog.log("* Execute javascript: " + str(js_script))
         return driver.execute_async_script(js_script)
 
-
     def get_web_response(self, url, method, auth_file, data):
         """
         **Return response from web service**
@@ -1404,11 +1409,7 @@ class CommonMethods(object):
         --------------
         :Example:
             | *Page model level example*
-            | ``value = self.get_web_response(u'http://api.openweathermap.org/data/2.5/weather?q=London&mode=xml', u'get', u'auth_file.txt', u'')``
-            |
-            | *Test level example*
-            | ``value = self.common_utils.get_web_response(u'http://api.openweathermap.org/data/2.5/weather?q=London&mode=xml', u'get', u'auth_file.txt', u'')``
-
+            | ``value = QAutoRobot.get_web_response(u'http://api.openweathermap.org/data/2.5/weather?q=London&mode=xml', u'get', u'auth_file.txt', u'')``
 
         """
         username = None
@@ -1443,7 +1444,6 @@ class CommonMethods(object):
         except URLError as e:
             print(e.reason)
 
-
     def get_soap_response(self, url, request_file_xml):
         """
         **Gets SOAP response from web service to be used in verify_soap_api**
@@ -1453,10 +1453,7 @@ class CommonMethods(object):
         --------------
         :Example:
             | *Page model level example*
-            | ``value = self.get_soap_response(u'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL', u'soap_xml.xml')``
-            |
-            | *Test level example*
-            | ``value = self.common_utils.get_soap_response(u'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL', u'soap_xml.xml')``
+            | ``value = QAutoRobot.get_soap_response(u'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL', u'soap_xml.xml')``
 
         """
         headers = {'content-type': 'text/xml'}
@@ -1473,7 +1470,6 @@ class CommonMethods(object):
         except ConnectionError as e:
             print(e)
 
-
     def get_text_length(self, element):
         """
         **Return element text length. Spaces are also counted.**
@@ -1484,20 +1480,15 @@ class CommonMethods(object):
         :Example:
             | *Page model level example*
             | using web element
-            | ``value = self.get_text_length(self.TRIAL)``
+            | ``value = QAutoRobot.get_text_length(self.TRIAL)``
             | using representation
-            | ``value = self.get_text_length((By.LINK_TEXT, u'Trial'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``value = self.common_utils.get_text_length(self.trial.TRIAL)``
+            | ``value = QAutoRobot.get_text_length((By.LINK_TEXT, u'Trial'))``
 
         """
         self.wait_until_element_is_visible(element)
         element = self.find_element_if_not_webelement(element)
         print("Element text length: ", len(element.text))
         return len(element.text)
-
 
     def start_zapproxy_daemon(self, installation_dir):
         """
@@ -1511,10 +1502,8 @@ class CommonMethods(object):
         ------------------
         :Example:
             | *Page model level example*
-            | ``zap, zap_session = self.start_zapproxy_daemon('C:\\ZedAttackProxy\\zap.bat')``
-            |
-            | *Test level example*
-            | ``zap, zap_session = self.common_utils.start_zapproxy_daemon('C:\\ZedAttackProxy\\zap.bat')``
+            | ``zap, zap_session = QAutoRobot.start_zapproxy_daemon('C:\\ZedAttackProxy\\zap.bat')``
+
         """
         try:
             from zapv2 import ZAPv2
@@ -1527,7 +1516,7 @@ class CommonMethods(object):
             if not os.path.exists(zap_test_measurement_folder):
                 os.mkdir(zap_test_measurement_folder)
         except Exception as e:
-                print("Could not create zap measurements folder:\n%s" % str(e))
+            print("Could not create zap measurements folder:\n%s" % str(e))
 
         session_name = "qautorobot_zap_session_" + self.get_timestamp()
         try:
@@ -1548,7 +1537,6 @@ class CommonMethods(object):
         except Exception as e:
             print("Failed to start zap proxy and session! Please check installation path and settings." + str(e))
 
-
     def stop_zapproxy_daemon(self, zap):
         """
         **Stop Zap proxy daemon**
@@ -1560,8 +1548,8 @@ class CommonMethods(object):
         -------------
         :Example:
             | *Test level example*
-            | ``zap, zap_session = self.common_utils.start_zapproxy_daemon('C:\\ZedAttackProxy\\zap.bat')``
-            | ``self.common_utils.stop_zapproxy_daemon(zap)``
+            | ``zap, zap_session = QAutoRobot.common_utils.start_zapproxy_daemon('C:\\ZedAttackProxy\\zap.bat')``
+            | ``QAutoRobot.common_utils.stop_zapproxy_daemon(zap)``
 
         """
         try:
@@ -1570,7 +1558,6 @@ class CommonMethods(object):
         except Exception as e:
             print("Zap " + str(e))
         time.sleep(4)
-
 
     def generate_zap_test_report(self, installation_dir, session_name, report_name="qautorobot_zap_report.html"):
         """
@@ -1585,16 +1572,17 @@ class CommonMethods(object):
         --------------
         :Example:
             | Test level example
-            | ``zap, zap_session = self.common_utils.start_zapproxy_daemon('C:\\ZedAttackProxy\\zap.bat')``
-            | ``self.common_utils.stop_zapproxy_daemon(zap)``
+            | ``zap, zap_session = QAutoRobot.common_utils.start_zapproxy_daemon('C:\\ZedAttackProxy\\zap.bat')``
+            | ``QAutoRobot.common_utils.stop_zapproxy_daemon(zap)``
             |
-            | ``self.oommon_utils.generate_zap_test_report('C:\\ZedAttackProxy\\zap.bat', zap_session)``
-            | ``or self.common_utils.generate_zap_test_report('C:\\ZedAttackProxy\\zap.bat', zap_session, "qautorobot_zap.html")``
+            | ``QAutoRobot.common_utils.generate_zap_test_report('C:\\ZedAttackProxy\\zap.bat', zap_session)``
+            | ``or QAutoRobot.common_utils.generate_zap_test_report('C:\\ZedAttackProxy\\zap.bat', zap_session, "qautorobot_zap.html")``
         """
         try:
             zap_test_report_folder = get_config_value("reporting_folder")
             zap_test_measurement_folder = os.path.join(zap_test_report_folder, GlobalUtils.MEASUREMENTS_FOLDER_NAME)
-            subprocess.Popen(installation_dir + " -last_scan_report " + zap_test_report_folder + os.path.sep + report_name + " -session " + zap_test_measurement_folder + os.path.sep + session_name + " -cmd")
+            subprocess.Popen(
+                installation_dir + " -last_scan_report " + zap_test_report_folder + os.path.sep + report_name + " -session " + zap_test_measurement_folder + os.path.sep + session_name + " -cmd")
         except Exception as e:
             print("Failed to generate zap test report" + str(e))
         time.sleep(1)
@@ -1608,8 +1596,7 @@ class WebMethods(CommonMethods):
     def __init__(self, driver_cache=None):
         self.driver_cache = driver_cache and driver_cache or DriverCache()
         CommonMethods.__init__(self, self.driver_cache)
-        #print "WebMethods"
-
+        # print "WebMethods"
 
     def get_selected_list_value(self, element):
         """
@@ -1621,17 +1608,13 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_selected_list_value(self.ID_DROPDOWN)``
+            | ``QAutoRobot.get_selected_list_value(self.ID_DROPDOWN)``
             | using representation
-            | ``self.get_selected_list_value((By.ID, u'dropdown'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_selected_list_value(self.elements.ID_DROPDOWN)``
+            | ``QAutoRobot.get_selected_list_value((By.ID, u'dropdown'))``
+
         """
         element = self.find_element_if_not_webelement(element)
         return Select(element).first_selected_option.get_attribute('value')
-
 
     def get_selected_list_label(self, element):
         """
@@ -1643,17 +1626,13 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_selected_list_label(self.ID_DROPDOWN)``
+            | ``QAutoRobot.get_selected_list_label(self.ID_DROPDOWN)``
             | using representation
-            | ``self.get_selected_list_label((By.ID, u'dropdown'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_selected_list_label(self.elements.ID_DROPDOWN)``
+            | ``QAutoRobot.get_selected_list_label((By.ID, u'dropdown'))``
+
         """
         element = self.find_element_if_not_webelement(element)
         return Select(element).first_selected_option.text
-
 
     def select_from_list_by_value(self, element, value):
         """
@@ -1665,13 +1644,10 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.select_from_list_by_value(self.ID_DROPDOWN, 10)``
+            | ``QAutoRobot.select_from_list_by_value(self.ID_DROPDOWN, 10)``
             | using representation
-            | ``self.select_from_list_by_value((By.ID, u'dropdown'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.select_from_list_by_value(self.elements.ID_DROPDOWN, 10)``
+            | ``QAutoRobot.select_from_list_by_value((By.ID, u'dropdown'), 10)``
+
         """
         self.wait_until_element_is_visible(element)
         element = self.find_element_if_not_webelement(element)
@@ -1681,7 +1657,6 @@ class WebMethods(CommonMethods):
         except:
             DebugLog.log("* Selecting from dropdown list")
         element.select_by_value(value)
-
 
     def select_from_list_by_label(self, element, text):
         """
@@ -1693,13 +1668,10 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.select_from_list_by_label(self.ID_DROPDOWN, "value")``
+            | ``QAutoRobot.select_from_list_by_label(self.ID_DROPDOWN, "value")``
             | using representation
-            | ``self.select_from_list_by_label((By.ID, u'dropdown'), "value")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.select_from_list_by_label(self.elements.ID_DROPDOWN, "value")``
+            | ``QAutoRobot.select_from_list_by_label((By.ID, u'dropdown'), "value")``
+
         """
         self.wait_until_element_is_visible(element)
         msg = "Failed to select from list after %s seconds" % get_config_value("default_timeout")
@@ -1716,7 +1688,6 @@ class WebMethods(CommonMethods):
         element.select_by_visible_text(text)
         return True
 
-
     def select_from_list_by_random_option(self, element, *val_to_skip):
         """
         **Select random option from dropdown list**
@@ -1727,19 +1698,15 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.select_from_list_by_random_option(self.ID_DROPDOWN)``
+            | ``QAutoRobot.select_from_list_by_random_option(self.ID_DROPDOWN)``
             | using representation
-            | ``self.select_from_list_by_random_option((By.ID, u'dropdown'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.select_from_list_by_random_option(self.elements.ID_DROPDOWN)``
+            | ``QAutoRobot.select_from_list_by_random_option((By.ID, u'dropdown'))``
+
         """
         self.wait_until_element_is_visible(element)
         options = self.get_selected_list_labels(element)
         option_to_select = self._get_random_value(options, *val_to_skip)
         self.select_from_list_by_label(element, option_to_select)
-
 
     def unselect_checkbox(self, element, status="unchecked"):
         """
@@ -1751,24 +1718,21 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.unselect_checkbox(self.ID_CHECKBOX1)``
+            | ``QAutoRobot.unselect_checkbox(self.ID_CHECKBOX1)``
             | using representation
-            | ``self.unselect_checkbox((By.ID, u'checkbox1'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.unselect_checkbox(self.elements.ID_CHECKBOX1)``
+            | ``QAutoRobot.unselect_checkbox((By.ID, u'checkbox1'))``
+
         """
         if self.get_attribute(element, "type") == "checkbox":
             if status == "unchecked":
-                if self.get_attribute(element, "checked") == "true" or self.get_attribute(element, "checked") == "checked":
+                if self.get_attribute(element, "checked") == "true" or self.get_attribute(element,
+                                                                                          "checked") == "checked":
                     DebugLog.log("* Unchecking the checkbox")
                     self.click_element(element)
                 else:
                     DebugLog.log("* Checkbox is already unchecked")
         else:
             DebugLog.log("Element might be not a checkbox")
-
 
     def select_checkbox(self, element, status="checked"):
         """
@@ -1780,15 +1744,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.select_checkbox(self.ID_CHECKBOX1)``
-            | ``self.select_checkbox(self.ID_CHECKBOX1, "unchecked")``
+            | ``QAutoRobot.select_checkbox(self.ID_CHECKBOX1)``
+            | ``QAutoRobot.select_checkbox(self.ID_CHECKBOX1, "unchecked")``
             | using representation
-            | ``self.select_checkbox((By.ID, u'checkbox1'))``
-            | ``self.select_checkbox((By.ID, u'checkbox1'), "unchecked")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.select_checkbox(self.elements.ID_CHECKBOX1)``
+            | ``QAutoRobot.select_checkbox((By.ID, u'checkbox1'))``
+            | ``QAutoRobot.select_checkbox((By.ID, u'checkbox1'), "unchecked")``
 
         """
         self.wait_until_element_is_visible(element)
@@ -1805,7 +1765,8 @@ class WebMethods(CommonMethods):
                 else:
                     DebugLog.log("* Checkbox is already checked")
             elif status == "unchecked":
-                if self.get_attribute(element, "checked") == "true" or self.get_attribute(element, "checked") == "checked":
+                if self.get_attribute(element, "checked") == "true" or self.get_attribute(element,
+                                                                                          "checked") == "checked":
                     DebugLog.log("* Unchecking the checkbox")
                     self.click_element(element)
                 else:
@@ -1824,13 +1785,9 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``text_list = self.get_selected_list_labels(self.ID_DROPDOWN)``
+            | ``text_list = QAutoRobot.get_selected_list_labels(self.ID_DROPDOWN)``
             | using representation
-            | ``text_list = self.get_selected_list_labels((By.ID, u'dropdown'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``text_list = self.common_utils.get_selected_list_labels(self.elements.ID_DROPDOWN)``
+            | ``text_list = QAutoRobot.get_selected_list_labels((By.ID, u'dropdown'))``
 
         """
         self.wait_until_element_is_visible(element)
@@ -1839,7 +1796,6 @@ class WebMethods(CommonMethods):
         for value in Select(element).options:
             values.append(self.get_text(value))
         return values
-
 
     def get_selected_list_values(self, element):
         """
@@ -1851,13 +1807,9 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``text_list = self.get_selected_list_values(self.ID_DROPDOWN)``
+            | ``text_list = QAutoRobot.get_selected_list_values(self.ID_DROPDOWN)``
             | using representation
-            | ``text_list = self.get_selected_list_values((By.ID, u'dropdown'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``text_list = self.common_utils.get_selected_list_values(self.elements.ID_DROPDOWN)``
+            | ``text_list = QAutoRobot.get_selected_list_values((By.ID, u'dropdown'))``
 
         """
         self.wait_until_element_is_visible(element)
@@ -1866,7 +1818,6 @@ class WebMethods(CommonMethods):
         for value in Select(element).options:
             values.append(self.get_attribute(value, "value"))
         return values
-
 
     def get_attribute(self, element, attr):
         """
@@ -1879,18 +1830,14 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_attribute(self.ID_DROPDOWN, "name")``
+            | ``QAutoRobot.get_attribute(self.ID_DROPDOWN, "name")``
             | using representation
-            | ``self.get_attribute((By.ID, u'dropdown'), "name")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_attribute(self.elements.ID_DROPDOWN, "name")``
+            | ``QAutoRobot.get_attribute((By.ID, u'dropdown'), "name")``
+
         """
         self.wait_until_element_is_visible(element)
         element = self.find_element_if_not_webelement(element)
         return element.get_attribute(attr)
-
 
     def wait_until_element_is_present(self, element, timeout=None):
         """
@@ -1903,18 +1850,12 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_element_is_present(self.ID_TESTINPUT)``
+            | ``QAutoRobot.wait_until_element_is_present(self.ID_TESTINPUT)``
             | using representation
-            | ``self.wait_until_element_is_present((By.ID, u'testInput'))``
+            | ``QAutoRobot.wait_until_element_is_present((By.ID, u'testInput'))``
             | using timeout
-            | ``self.wait_until_element_is_present(self.ID_TESTINPUT, 10)``
-            | ``self.wait_until_element_is_present((By.ID, u'testInput'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_element_is_present(self.elements.ID_TESTINPUT)``
-            | using timeout
-            | ``self.common_utils.wait_until_element_is_present(self.elements.ID_TESTINPUT, 10)``
+            | ``QAutoRobot.wait_until_element_is_present(self.ID_TESTINPUT, 10)``
+            | ``QAutoRobot.wait_until_element_is_present((By.ID, u'testInput'), 10)``
 
         """
         if not timeout:
@@ -1922,7 +1863,6 @@ class WebMethods(CommonMethods):
         message = "Element {By: '%s', value: '%s'} is not presented for %s seconds" % (element[0], element[1], timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_present(element),
                                             self.driver_cache._get_current_driver(), message, timeout)
-
 
     def wait_until_element_is_not_present(self, element, timeout=None):
         """
@@ -1935,18 +1875,12 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_element_is_not_present(self.ID_TESTINPUT)``
+            | ``QAutoRobot.wait_until_element_is_not_present(self.ID_TESTINPUT)``
             | using representation
-            | ``self.wait_until_element_is_not_present((By.ID, u'testInput'))``
+            | ``QAutoRobot.wait_until_element_is_not_present((By.ID, u'testInput'))``
             | using timeout
-            | ``self.wait_until_element_is_not_present(self.ID_TESTINPUT, 10)``
-            | ``self.wait_until_element_is_not_present((By.ID, u'testInput'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_element_is_not_present(self.elements.ID_TESTINPUT)``
-            | using timeout
-            | ``self.common_utils.wait_until_element_is_not_present(self.elements.ID_TESTINPUT, 10)``
+            | ``QAutoRobot.wait_until_element_is_not_present(self.ID_TESTINPUT, 10)``
+            | ``QAutoRobot.wait_until_element_is_not_present((By.ID, u'testInput'), 10)``
 
         """
         if not timeout:
@@ -1954,7 +1888,6 @@ class WebMethods(CommonMethods):
         message = "Element {By: '%s', value: '%s'} is presented for %s seconds" % (element[0], element[1], timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: not self.is_present(element),
                                             self.driver_cache._get_current_driver(), message, timeout)
-
 
     def wait_until_table_size_changes(self, element, timeout=None, msg=None):
         """
@@ -1968,18 +1901,13 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_table_size_changes(self.ID_TABLETEST)``
+            | ``QAutoRobot.wait_until_table_size_changes(self.ID_TABLETEST)``
             | using representation
-            | ``self.wait_until_table_size_changes((By.ID, u'tableTest'))``
+            | ``QAutoRobot.wait_until_table_size_changes((By.ID, u'tableTest'))``
             | using timeout
-            | ``self.wait_until_table_size_changes(self.ID_TABLETEST, 10)``
-            | ``self.wait_until_table_size_changes((By.ID, u'tableTest'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_table_size_changes(self.demo.tableTest)``
-            | using timeout
-            | ``self.common_utils.wait_until_table_size_changes(self.demo.tableTest, 10)``
+            | ``QAutoRobot.wait_until_table_size_changes(self.ID_TABLETEST, 10)``
+            | ``QAutoRobot.wait_until_table_size_changes((By.ID, u'tableTest'), 10)``
+
         """
         size = self.get_table_size(element)
         if not timeout:
@@ -1992,7 +1920,6 @@ class WebMethods(CommonMethods):
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_table_size(element)[0] != size[0],
                                             self.driver_cache._get_current_driver(), msg, timeout)
 
-
     def mouse_over(self, element):
         """
         **Mouse over\hover element**
@@ -2002,18 +1929,12 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.mouse_over(self.TRIAL)``
+            | ``QAutoRobot.mouse_over(self.TRIAL)``
             | using representation
-            | ``self.mouse_over((By.LINK_TEXT, u'Trial'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.mouse_over(self.trial.TRIAL)``
-
+            | ``QAutoRobot.mouse_over((By.LINK_TEXT, u'Trial'))``
 
         """
         self.mouse_over_by_offset(element, 0, 0)
-
 
     def mouse_over_by_offset(self, element, xoffset, yoffset):
         """
@@ -2026,13 +1947,10 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.mouse_over_by_offset(self.TRIAL, 0, 0)``
+            | ``QAutoRobot.mouse_over_by_offset(self.TRIAL, 0, 0)``
             | using representation
-            | ``self.mouse_over_by_offset((By.LINK_TEXT, u'Trial'), 0, 0)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.mouse_over_by_offset(self.trial.TRIAL, 0, 0)``
+            | ``QAutoRobot.mouse_over_by_offset((By.LINK_TEXT, u'Trial'), 0, 0)``
+
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
@@ -2043,7 +1961,6 @@ class WebMethods(CommonMethods):
             DebugLog.log("* Mouse over")
         actions.move_to_element(element).move_by_offset(xoffset, yoffset).perform()
 
-
     def open_context_menu(self, element):
         """
         **Mouse right click at element opening context menu**
@@ -2053,13 +1970,10 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.open_context_menu(self.TRIAL)``
+            | ``QAutoRobot.open_context_menu(self.TRIAL)``
             | using representation
-            | ``self.open_context_menu((By.LINK_TEXT, u'Trial'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.open_context_menu(self.trial.TRIAL)``
+            | ``QAutoRobot.open_context_menu((By.LINK_TEXT, u'Trial'))``
+
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
@@ -2069,7 +1983,6 @@ class WebMethods(CommonMethods):
         except:
             DebugLog.log("* Right click")
         actions.context_click(element).perform()
-
 
     def mouse_right_click_by_offset(self, element, xoffset, yoffset):
         """
@@ -2082,13 +1995,9 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.mouse_right_click_by_offset(self.TRIAL, 0, 0)``
+            | ``QAutoRobot.mouse_right_click_by_offset(self.TRIAL, 0, 0)``
             | using representation
-            | ``self.mouse_right_click_by_offset((By.LINK_TEXT, u'Trial'), 0, 0)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.mouse_right_click_by_offset(self.trial.TRIAL, 0, 0)``
+            | ``QAutoRobot.mouse_right_click_by_offset((By.LINK_TEXT, u'Trial'), 0, 0)``
 
         """
         actions = self._get_actions()
@@ -2100,7 +2009,6 @@ class WebMethods(CommonMethods):
             DebugLog.log("* Right click")
         actions.move_to_element(element).move_by_offset(xoffset, yoffset).context_click().perform()
 
-
     def mouse_down(self, element):
         """
         **Click and hold mouse left button at element. Element is pressed without releasing button**
@@ -2110,13 +2018,10 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.mouse_down(self.TRIAL)``
+            | ``QAutoRobot.mouse_down(self.TRIAL)``
             | using representation
-            | ``self.mouse_down((By.LINK_TEXT, u'Trial'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.mouse_down(self.trial.TRIAL)``
+            | ``QAutoRobot.mouse_down((By.LINK_TEXT, u'Trial'))``
+
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
@@ -2136,13 +2041,10 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.mouse_up(self.TRIAL)``
+            | ``QAutoRobot.mouse_up(self.TRIAL)``
             | using representation
-            | ``self.mouse_up((By.LINK_TEXT, u'Trial'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.mouse_up(self.trial.TRIAL)``
+            | ``QAutoRobot.mouse_up((By.LINK_TEXT, u'Trial'))``
+
         """
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
@@ -2152,7 +2054,6 @@ class WebMethods(CommonMethods):
         except:
             DebugLog.log("* Mouse click up")
         actions.release(element).perform()
-
 
     def drag_and_drop_by_offset(self, element, xoffset, yoffset):
         """
@@ -2165,13 +2066,9 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.drag_and_drop_by_offset(self.ID_DRAG1, 0, 0)``
+            | ``QAutoRobot.drag_and_drop_by_offset(self.ID_DRAG1, 0, 0)``
             | using representation
-            | ``self.drag_and_drop_by_offset((By.CSS_SELECTOR, u'div>p'), 0, 0)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.drag_and_drop_by_offset(self.elements.ID_DRAG1, 0, 0)``
+            | ``QAutoRobot.drag_and_drop_by_offset((By.CSS_SELECTOR, u'div>p'), 0, 0)``
 
         """
         actions = self._get_actions()
@@ -2182,7 +2079,6 @@ class WebMethods(CommonMethods):
         except:
             DebugLog.log("* Drag and drop by offset")
         actions.drag_and_drop_by_offset(draggable, xoffset, yoffset).perform()
-
 
     def is_present(self, element, timeout=None):
         """
@@ -2195,18 +2091,12 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.is_present(self.ID_TESTINPUT)``
+            | ``QAutoRobot.is_present(self.ID_TESTINPUT)``
             | using representation
-            | ``self.is_present((By.ID, u'testInput'))``
+            | ``QAutoRobot.is_present((By.ID, u'testInput'))``
             | using timeout
-            | ``self.is_present(self.ID_TESTINPUT, 10)``
-            | ``self.is_present(By.ID, u'testInput'), 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.is_present(self.elements.ID_TESTINPUT)``
-            | using timeout
-            | ``self.common_utils.is_present(self.elements.ID_TESTINPUT, 10)``
+            | ``QAutoRobot.is_present(self.ID_TESTINPUT, 10)``
+            | ``QAutoRobot.is_present(By.ID, u'testInput'), 10)``
 
         """
         if not timeout:
@@ -2220,7 +2110,6 @@ class WebMethods(CommonMethods):
             except:
                 return False
 
-
     def get_elements_count(self, element):
         """
         **Return number of found elements**
@@ -2230,10 +2119,7 @@ class WebMethods(CommonMethods):
         --------------
         :Example:
             | *Page model level example*
-            | ``self.get_elements_count((By.CSS_SELECTOR, u"img"))``
-            |
-            | *Test level example*
-            | ``self.common_utils.get_elements_count((By.CSS_SELECTOR, u"img"))``
+            | ``QAutoRobot.get_elements_count((By.CSS_SELECTOR, u"img"))``
 
         """
         return len(self.find_elements(element))
@@ -2252,7 +2138,6 @@ class WebMethods(CommonMethods):
 
         return value
 
-
     def wait_until_page_contains(self, text, timeout=None):
         """
         **Wait until page's contains text**
@@ -2263,18 +2148,13 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_page_contains(u'Cell text is this')``
+            | ``QAutoRobot.wait_until_page_contains(u'Cell text is this')``
             | using representation
-            | ``self.wait_until_page_contains((u'Cell text is this')``
+            | ``QAutoRobot.wait_until_page_contains((u'Cell text is this')``
             | using timeout
-            | ``self.wait_until_page_contains(u'Cell text is this', 10)``
-            | ``self.wait_until_page_contains(u'Cell text is this', 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_page_contains(u'Cell text is this')``
-            | using timeout
-            | ``self.common_utils.wait_until_page_contains(u'Cell text is this', 10)``
+            | ``QAutoRobot.wait_until_page_contains(u'Cell text is this', 10)``
+            | ``QAutoRobot.wait_until_page_contains(u'Cell text is this', 10)``
+
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
@@ -2287,7 +2167,6 @@ class WebMethods(CommonMethods):
         except:
             DebugLog.log("* Page contains text")
 
-
     def wait_until_page_does_not_contain(self, text, timeout=None):
         """
         **Wait until page's does not contain text**
@@ -2298,18 +2177,13 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_page_contain(u'Cell text is this')``
+            | ``QAutoRobot.wait_until_page_contain(u'Cell text is this')``
             | using representation
-            | ``self.wait_until_page_contain((u'Cell text is this')``
+            | ``QAutoRobot.wait_until_page_contain((u'Cell text is this')``
             | using timeout
-            | ``self.wait_until_page_contain(u'Cell text is this', 10)``
-            | ``self.wait_until_page_contain(u'Cell text is this', 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_page_contain(u'Cell text is this')``
-            | using timeout
-            | ``self.common_utils.wait_until_page_contain(u'Cell text is this', 10)``
+            | ``QAutoRobot.wait_until_page_contain(u'Cell text is this', 10)``
+            | ``QAutoRobot.wait_until_page_contain(u'Cell text is this', 10)``
+
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
@@ -2322,7 +2196,6 @@ class WebMethods(CommonMethods):
         except:
             DebugLog.log("* Page does not contain text")
 
-
     def wait_until_element_does_not_contain(self, element, text, timeout=None):
         """
         **Wait until element's does not contains text**
@@ -2334,18 +2207,12 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_element_does_not_contain(self.TEST, u'Cell text changed')``
+            | ``QAutoRobot.wait_until_element_does_not_contain(self.TEST, u'Cell text changed')``
             | using representation
-            | ``self.wait_until_element_does_not_contain((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text changed')``
+            | ``QAutoRobot.wait_until_element_does_not_contain((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text changed')``
             | using timeout
-            | ``self.wait_until_element_does_not_contain(self.TEST, u'Cell text changed', 10)``
-            | ``self.wait_until_element_does_not_contain((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text changed', 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_element_does_not_contain(self.elements.TEST, u'Cell text changed')``
-            | using timeout
-            | ``self.common_utils.wait_until_element_does_not_contain(self.elements.TEST, u'Cell text changed', 10)``
+            | ``QAutoRobot.wait_until_element_does_not_contain(self.TEST, u'Cell text changed', 10)``
+            | ``QAutoRobot.wait_until_element_does_not_contain((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text changed', 10)``
 
         """
         if not timeout:
@@ -2353,7 +2220,6 @@ class WebMethods(CommonMethods):
         msg = "Text '%s' did not disappear in '%s' seconds from element" % (text, timeout)
         text = CommonMethodsHelpers.contains_nonascii(text)
         CommonMethodsHelpers.webdriver_wait(lambda driver: text not in self.get_text(element), msg, timeout)
-
 
     def wait_until_element_contains(self, element, text, timeout=None):
         """
@@ -2366,14 +2232,8 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.common_utils.wait_until_element_contains(self.elements.TEST, u'Cell text is this')``
-            | ``self.wait_until_element_contains((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this'1', 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_element_contains(self.elements.TEST, u'Cell text is this')``
-            | using timeout
-            | ``self.common_utils.wait_until_element_contains(self.elements.TEST, u'Cell text is this', 10)``
+            | ``QAutoRobot.common_utils.wait_until_element_contains(self.elements.TEST, u'Cell text is this')``
+            | ``QAutoRobot.wait_until_element_contains((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this'1', 10)``
 
         """
         if not timeout:
@@ -2381,7 +2241,6 @@ class WebMethods(CommonMethods):
         msg = "Text '%s' did not appear in '%s' seconds from element" % (text, timeout)
         text = CommonMethodsHelpers.contains_nonascii(text)
         CommonMethodsHelpers.webdriver_wait(lambda driver: text in self.get_text(element), msg, timeout)
-
 
     def wait_until_element_should_not_be(self, element, text, timeout=None):
         """
@@ -2394,18 +2253,12 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_element_should_not_be(self.TEST, u'Cell text changed')``
+            | ``QAutoRobot.wait_until_element_should_not_be(self.TEST, u'Cell text changed')``
             | using representation
-            | ``self.wait_until_element_should_not_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text changed')``
+            | ``QAutoRobot.wait_until_element_should_not_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text changed')``
             | using timeout
-            | ``self.wait_until_element_should_not_be(self.TEST, u'Cell text changed', 10)``
-            | ``self.wait_until_element_should_not_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text changed', 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_element_should_not_be(self.elements.TEST, u'Cell text changed')``
-            | using timeout
-            | ``self.common_utils.wait_until_element_should_not_be(self.elements.TEST, u'Cell text changed', 10)``
+            | ``QAutoRobot.wait_until_element_should_not_be(self.TEST, u'Cell text changed', 10)``
+            | ``QAutoRobot.wait_until_element_should_not_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text changed', 10)``
 
         """
         if not timeout:
@@ -2413,7 +2266,6 @@ class WebMethods(CommonMethods):
         msg = "Text equals '%s' did not disappear in '%s' seconds from element" % (text, timeout)
         text = CommonMethodsHelpers.contains_nonascii(text)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_text(element) != text, msg, timeout)
-
 
     def wait_until_element_should_be(self, element, text, timeout=None):
         """
@@ -2426,25 +2278,19 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_element_should_be(self.TEST, u'Cell text is this')``
+            | ``QAutoRobot.wait_until_element_should_be(self.TEST, u'Cell text is this')``
             | using representation
-            | ``self.wait_until_element_should_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this')``
+            | ``QAutoRobot.wait_until_element_should_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this')``
             | using timeout
-            | ``self.wait_until_element_should_be(self.TEST, u'Cell text is this', 10)``
-            | ``self.wait_until_element_should_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this'1', 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_element_should_be(self.elements.TEST, u'Cell text is this')``
-            | using timeout
-            | ``self.common_utils.wait_until_element_should_be(self.elements.TEST, u'Cell text is this', 10)``
+            | ``QAutoRobot.wait_until_element_should_be(self.TEST, u'Cell text is this', 10)``
+            | ``QAutoRobot.wait_until_element_should_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this'1', 10)``
+
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         msg = "Text equals '%s' did not appear in '%s' seconds from element" % (text, timeout)
         text = CommonMethodsHelpers.contains_nonascii(text)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_text(element) == text, msg, timeout)
-
 
     def wait_until_element_attribute_contains(self, element, attr, expected_value, timeout=None):
         """
@@ -2458,26 +2304,20 @@ class WebMethods(CommonMethods):
          :Example:
             | *Page model level example*
             | using web element
-            | ``self.wait_until_element_attribute_contains(self.ID_DROPDOWN, "name", "dropdown")``
+            | ``QAutoRobot.wait_until_element_attribute_contains(self.ID_DROPDOWN, "name", "dropdown")``
             | using representation
-            | ``self.wait_until_element_attribute_contains((By.ID, u'dropdown'), "name", "dropdown")``
+            | ``QAutoRobot.wait_until_element_attribute_contains((By.ID, u'dropdown'), "name", "dropdown")``
             | using timeout
-            | ``self.wait_until_element_attribute_contains(self.ID_DROPDOWN, "name", "dropdown", 10)``
-            | ``self.wait_until_element_attribute_contains((By.ID, u'dropdown'), "name", "dropdown", 10)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.wait_until_element_attribute_contains(self.elements.ID_DROPDOWN, "name" "dropdown")``
-            | using timeout
-            | ``self.common_utils.wait_until_element_attribute_contains(self.elements.ID_DROPDOWN, "name" "dropdown", 10)``
+            | ``QAutoRobot.wait_until_element_attribute_contains(self.ID_DROPDOWN, "name", "dropdown", 10)``
+            | ``QAutoRobot.wait_until_element_attribute_contains((By.ID, u'dropdown'), "name", "dropdown", 10)``
 
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
         expected_value = CommonMethodsHelpers.contains_nonascii(expected_value)
         msg = "Webelement's attribute '%s' doesn't contains '%s'" % (attr, expected_value)
-        CommonMethodsHelpers.webdriver_wait(lambda driver: expected_value in self.get_attribute(element, attr), msg, timeout)
-
+        CommonMethodsHelpers.webdriver_wait(lambda driver: expected_value in self.get_attribute(element, attr), msg,
+                                            timeout)
 
     def wait_until_document_ready(self):
         """
@@ -2487,15 +2327,11 @@ class WebMethods(CommonMethods):
 
         :Example:
             | *Page model level example*
-            | ``self.wait_until_document_ready()``
-            |
-            | *Test level example*
-            | ``self.common_utils.wait_until_document_ready()``
+            | ``QAutoRobot.wait_until_document_ready()``
 
         """
         self.wait_for_condition("return document.readyState", "complete")
         DebugLog.log("* Browser loaded webpage")
-
 
     def wait_for_condition(self, js_script, value, msg=None):
         """
@@ -2515,7 +2351,6 @@ class WebMethods(CommonMethods):
                                             CommonMethodsHelpers.contains_nonascii(value),
                                             self.driver_cache._get_current_driver(), msg)
 
-
     def wait_until_jquery_ajax_loaded(self, timeout=None):
         """
         **Wait until browser is finished loading jQuery**
@@ -2526,10 +2361,8 @@ class WebMethods(CommonMethods):
         ----------------
         :Example:
             | *Page model level example*
-            | ``self.wait_until_jquery_ajax_loaded()``
-            |
-            | *Test level example*
-            | ``self.common_utils.wait_until_jquery_ajax_loaded()``
+            | ``QAutoRobot.wait_until_jquery_ajax_loaded()``
+
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
@@ -2538,10 +2371,10 @@ class WebMethods(CommonMethods):
                                                                                    log=False) != "undefined",
                                             self.driver_cache._get_current_driver(), msg, timeout)
         msg = "Ajax jQuery is not loaded for %s seconds" % timeout
-        CommonMethodsHelpers.webdriver_wait(lambda driver: self.execute_javascript("return jQuery.active;", log=False) == 0,
-                                            self.driver_cache._get_current_driver(), msg, timeout)
+        CommonMethodsHelpers.webdriver_wait(
+            lambda driver: self.execute_javascript("return jQuery.active;", log=False) == 0,
+            self.driver_cache._get_current_driver(), msg, timeout)
         DebugLog.log("* jQuery loaded on webpage")
-
 
     def select_frame(self, element):
         """
@@ -2552,19 +2385,15 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.select_frame(self.IFRAME)``
+            | ``QAutoRobot.select_frame(self.IFRAME)``
             | using representation
-            | ``self.select_frame((By.CSS_SELECTOR, u'iframe'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.select_frame(self.home.IFRAME)``
+            | ``QAutoRobot.select_frame((By.CSS_SELECTOR, u'iframe'))``
+
         """
         driver = self.driver_cache._get_current_driver()
         element = self.find_element_if_not_webelement(element)
         DebugLog.log("* Switching frame to")
         driver.switch_to_frame(element)
-
 
     def select_frame_default_content(self):
         """
@@ -2572,15 +2401,11 @@ class WebMethods(CommonMethods):
 
         :Example:
             | *Page model level example*
-            | ``self.select_frame_default_content()``
-            |
-            | *Test level example*
-            | ``self.common_utils.select_frame_default_content()``
+            | ``QAutoRobot.select_frame_default_content()``
 
         """
         DebugLog.log("* Switching to default content")
         self.driver_cache._get_current_driver().switch_to_default_content()
-
 
     def close_window_and_focus_to_previous(self):
         """
@@ -2588,10 +2413,7 @@ class WebMethods(CommonMethods):
 
         :Example:
             | *Page model level example*
-            | ``self.close_window_and_focus_to_previous()``
-            |
-            | *Test level example*
-            | ``self.common_utils.close_window_and_focus_to_previous()``
+            | ``QAutoRobot.close_window_and_focus_to_previous()``
 
         """
         driver = self.driver_cache._get_current_driver()
@@ -2604,17 +2426,13 @@ class WebMethods(CommonMethods):
         else:
             DebugLog.log("* The only browser window cannot be closed.")
 
-
     def close_window(self):
         """
         **Close current window**
 
         :Example:
             | *Page model level example*
-            | ``self.close_window()``
-            |
-            | *Test level example*
-            | ``self.common_utils.close_window()``
+            | ``QAutoRobot.close_window()``
 
         """
         driver = self.driver_cache._get_current_driver()
@@ -2626,7 +2444,6 @@ class WebMethods(CommonMethods):
         else:
             DebugLog.log("* The only browser window cannot be closed.")
 
-
     def get_window_size(self):
         """
         **Returns current window size width, height**
@@ -2635,15 +2452,12 @@ class WebMethods(CommonMethods):
         -----------------
         :Example:
             | *Page model level example*
-            | ``self.get_window_size()``
-            |
-            | *Test level example*
-            | ``self.common_utils.get_window_size()``
+            | ``QAutoRobot.get_window_size()``
+
         """
         driver = self.driver_cache._get_current_driver()
         size = driver.get_window_size()
         return size['width'], size['height']
-
 
     def set_window_size(self, width, height):
         """
@@ -2654,15 +2468,11 @@ class WebMethods(CommonMethods):
         -------------------
         :Example:
             | *Page model level example*
-            | ``self.set_window_size(800, 600)``
-            |
-            | *Test level example*
-            | ``self.common_utils.set_window_size(800, 600)``
+            | ``QAutoRobot.set_window_size(800, 600)``
 
         """
         driver = self.driver_cache._get_current_driver()
         driver.set_window_size(width, height)
-
 
     def get_table_size(self, element):
         """
@@ -2674,14 +2484,10 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_table_size(self.TABLE)``
-            | ``element_rowtable = self.get_table_size(self.ID_TABLE)``
+            | ``QAutoRobot.get_table_size(self.TABLE)``
+            | ``element_rowtable = QAutoRobot.get_table_size(self.ID_TABLE)``
             | using representation
-            | ``self.get_table_size((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'))``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_table_size(self.elements.TABLE)``
+            | ``QAutoRobot.get_table_size((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'))``
 
         """
         self.wait_until_element_is_visible(element)
@@ -2700,7 +2506,6 @@ class WebMethods(CommonMethods):
         cells = table_rows * table_columns
         return cells, table_rows, table_columns
 
-
     def table_contains_text(self, element, value):
         """
         **Checks if table contains text**
@@ -2711,19 +2516,15 @@ class WebMethods(CommonMethods):
         --------------
         :Example:
             | using web element
-            | ``self.table_contains_text(self.TABLE, u'in_table')``
+            | ``QAutoRobot.table_contains_text(self.TABLE, u'in_table')``
             | using representation
-            | ``self.table_contains_text((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'in_table')``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.table_contains_text(self.elements.TABLE, u'in_table')``
+            | ``QAutoRobot.table_contains_text((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'in_table')``
+
         """
         if value in self.find_element(element).text:
             return True
         else:
             return False
-
 
     def get_table_column_and_row_by_text_contains(self, element, text, row="TBODY/TR", cell="TD"):
         """
@@ -2738,15 +2539,12 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_table_column_and_row_by_text_contains(self.TABLE, "text_to_find")``
-            | ``element_rowtable = self.get_table_column_and_row_by_text_contains(self.ID_TABLE, parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
+            | ``QAutoRobot.get_table_column_and_row_by_text_contains(self.TABLE, "text_to_find")``
+            | ``element_rowtable = QAutoRobot.get_table_column_and_row_by_text_contains(self.ID_TABLE, parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
             | ``element_rowtable[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_table_column_and_row_by_text_contains((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find_contains")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_table_column_and_row_by_text_contains(self.elements.TABLE, "text_to_find_contains")``
+            | ``QAutoRobot.get_table_column_and_row_by_text_contains((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find_contains")``
+
         """
 
         self.wait_until_element_is_visible(element)
@@ -2768,7 +2566,6 @@ class WebMethods(CommonMethods):
 
         self.fail("* Text '%s' contains not found from table" % text)
 
-
     def get_table_column_and_row_by_text(self, element, text, row="TBODY/TR", cell="TD"):
         """
         **Find table column and row number by text**
@@ -2782,15 +2579,12 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_table_column_and_row_by_text(self.TABLE, "text_to_find")``
-            | ``element_rowtable = self.get_table_column_and_row_by_text(self.ID_TABLE, parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
+            | ``QAutoRobot.get_table_column_and_row_by_text(self.TABLE, "text_to_find")``
+            | ``element_rowtable = QAutoRobot.get_table_column_and_row_by_text(self.ID_TABLE, parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
             | ``element_rowtable[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_table_column_and_row_by_text((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_table_column_and_row_by_text(self.elements.TABLE, "text_to_find")``
+            | ``QAutoRobot.get_table_column_and_row_by_text((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find")``
+
         """
 
         self.wait_until_element_is_visible(element)
@@ -2812,7 +2606,6 @@ class WebMethods(CommonMethods):
 
         self.fail("* Text '%s' not found from table" % text)
 
-
     def get_table_column_and_row_by_value_contains(self, element, value, row="TBODY/TR", cell="TD"):
         """
         **Find table column and row number by contains value**
@@ -2826,15 +2619,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_table_column_and_row_by_value_contains(self.TABLE, "text_to_find")``
-            | ``element_rowtable = self.get_table_column_and_row_by_value_contains(self.ID_TABLE, parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
+            | ``QAutoRobot.get_table_column_and_row_by_value_contains(self.TABLE, "text_to_find")``
+            | ``element_rowtable = QAutoRobot.get_table_column_and_row_by_value_contains(self.ID_TABLE, parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
             | ``element_rowtable[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_table_column_and_row_by_value_contains((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find_contains")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_table_column_and_row_by_value_contains(self.elements.TABLE, "text_to_find_contains")``
+            | ``QAutoRobot.get_table_column_and_row_by_value_contains((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find_contains")``
 
         """
 
@@ -2857,7 +2646,6 @@ class WebMethods(CommonMethods):
 
         self.fail("* Value '%s' contains not found from table" % value)
 
-
     def get_table_column_and_row_by_value(self, element, value, row="TBODY/TR", cell="TD"):
         """
         **Find table column and row number by value**
@@ -2871,15 +2659,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_table_column_and_row_by_value(self.TABLE, "text_to_find")``
-            | ``element_rowtable = self.get_table_column_and_row_by_value(self.ID_TABLE, parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
+            | ``QAutoRobot.get_table_column_and_row_by_value(self.TABLE, "text_to_find")``
+            | ``element_rowtable = QAutoRobot.get_table_column_and_row_by_value(self.ID_TABLE, parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
             | ``element_rowtable[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_table_column_and_row_by_value((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_table_column_and_row_by_value(self.elements.TABLE, "text_to_find")``
+            | ``QAutoRobot.get_table_column_and_row_by_value((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find")``
 
         """
 
@@ -2916,15 +2700,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_table_column_and_row_by_attribute_value(self.TABLE, "name", "attribute_to_find")``
-            | ``element_rowtable = self.get_table_column_and_row_by_attribute_value(self.ID_TABLE, "name", parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
+            | ``QAutoRobot.get_table_column_and_row_by_attribute_value(self.TABLE, "name", "attribute_to_find")``
+            | ``element_rowtable = QAutoRobot.get_table_column_and_row_by_attribute_value(self.ID_TABLE, "name", parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
             | ``element_rowtable[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_table_column_and_row_by_attribute_value((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "name", "attribute_to_find")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_table_column_and_row_by_attribute_value(self.elements.TABLE, "name", "attribute_to_find")``
+            | ``QAutoRobot.get_table_column_and_row_by_attribute_value((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "name", "attribute_to_find")``
 
         """
 
@@ -2947,8 +2727,8 @@ class WebMethods(CommonMethods):
 
         self.fail("* Attribute with value '%s' not found from table" % value)
 
-
-    def get_table_column_and_row_by_attribute_value_contains(self, element, attribute, value, row="TBODY/TR", cell="TD"):
+    def get_table_column_and_row_by_attribute_value_contains(self, element, attribute, value, row="TBODY/TR",
+                                                             cell="TD"):
         """
         **Find table column and row number by attribute value contains**
 
@@ -2962,15 +2742,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_table_column_and_row_by_attribute_value_contains(self.TABLE, "name", "attribute_to_find")``
-            | ``element_rowtable = self.get_table_column_and_row_by_attribute_value_contains(self.ID_TABLE, "name", parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
+            | ``QAutoRobot.get_table_column_and_row_by_attribute_value_contains(self.TABLE, "name", "attribute_to_find")``
+            | ``element_rowtable = QAutoRobot.get_table_column_and_row_by_attribute_value_contains(self.ID_TABLE, "name", parameters[u'member_id'],"TBODY/TR","TD/SPAN")``
             | ``element_rowtable[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_table_column_and_row_by_attribute_value_contains((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "name", "attribute_to_find")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_table_column_and_row_by_attribute_value_contains(self.elements.TABLE, "name", "attribute_to_find")``
+            | ``QAutoRobot.get_table_column_and_row_by_attribute_value_contains((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "name", "attribute_to_find")``
 
         """
 
@@ -2993,7 +2769,6 @@ class WebMethods(CommonMethods):
 
         self.fail("* Attribute with value '%s' not found from table" % value)
 
-
     def get_table_column_and_row_by_multiple_text(self, element, text1, text2, row="TBODY/TR", cell="TD"):
         """
         **Find table column and row number by text**
@@ -3008,15 +2783,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_table_column_and_row_by_multiple_text(self.TABLE, "text_to_find1", "text_to_find2")``
-            | ``element_rowtable = self.get_table_column_and_row_by_multiple_text(self.ID_TABLE, parameters[u'member_id'], parameters[u'group_id'],"TBODY/TR","TD/SPAN")``
+            | ``QAutoRobot.get_table_column_and_row_by_multiple_text(self.TABLE, "text_to_find1", "text_to_find2")``
+            | ``element_rowtable = QAutoRobot.get_table_column_and_row_by_multiple_text(self.ID_TABLE, parameters[u'member_id'], parameters[u'group_id'],"TBODY/TR","TD/SPAN")``
             | ``element_rowtable[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_table_column_and_row_by_multiple_text((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_table_column_and_row_by_text(self.elements.TABLE, "text_to_find")``
+            | ``QAutoRobot.get_table_column_and_row_by_multiple_text((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find")``
 
         """
 
@@ -3050,7 +2821,6 @@ class WebMethods(CommonMethods):
 
         self.fail("* Texts '%s' and '%s' not found from table in same row" % (text1, text2))
 
-
     def get_table_cell_text_by_column_and_row(self, element, column, row, cell="TD"):
         """
         **get table cell text by given column and row.**
@@ -3064,13 +2834,9 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_table_cell_text_by_column_and_row(self.TABLE, 1, 1)``
+            | ``QAutoRobot.get_table_cell_text_by_column_and_row(self.TABLE, 1, 1)``
             | using representation
-            | ``self.get_table_cell_text_by_column_and_row((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), 1, 1)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_table_cell_text_by_column_and_row(self.elements.TABLE, 1, 1)``
+            | ``QAutoRobot.get_table_cell_text_by_column_and_row((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), 1, 1)``
 
         """
         self.wait_until_element_is_visible(element)
@@ -3080,7 +2846,6 @@ class WebMethods(CommonMethods):
         table_text = element_row.find_elements(By.XPATH, cell)[int(column) - 1].text
         print("* Found text '%s' from column '%s' and row '%s'" % (table_text, str(column), str(row)))
         return table_text
-
 
     def click_table_cell_by_column_and_row(self, element, column, row, cell="TD"):
         """
@@ -3094,13 +2859,9 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.click_table_cell_by_column_and_row(self.TABLE, 1, 1)``
+            | ``QAutoRobot.click_table_cell_by_column_and_row(self.TABLE, 1, 1)``
             | using representation
-            | ``self.click_table_cell_by_column_and_row((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), 1, 1)``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.click_table_cell_by_column_and_row(self.elements.TABLE, 1, 1)``
+            | ``QAutoRobot.click_table_cell_by_column_and_row((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), 1, 1)``
 
         """
         self.wait_until_element_is_visible(element)
@@ -3108,7 +2869,6 @@ class WebMethods(CommonMethods):
 
         element_row = element.find_elements(By.XPATH, "TBODY/TR")[int(row) - 1]
         self.click_element(element_row.find_elements(By.XPATH, cell)[int(column) - 1])
-
 
     def click_element_from_table_row(self, element, row, element_path):
         """
@@ -3121,13 +2881,9 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.click_table_cell_by_column_and_row(self.TABLE, 1, "TD/DIV/H4/A")``
+            | ``QAutoRobot.click_table_cell_by_column_and_row(self.TABLE, 1, "TD/DIV/H4/A")``
             | using representation
-            | ``self.click_table_cell_by_column_and_row((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), 1, "TD/DIV/H4/A")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.click_table_cell_by_column_and_row(self.elements.TABLE, 1, "TD/DIV/H4/A")``
+            | ``QAutoRobot.click_table_cell_by_column_and_row((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), 1, "TD/DIV/H4/A")``
 
         """
         self.wait_until_element_is_visible(element)
@@ -3135,7 +2891,6 @@ class WebMethods(CommonMethods):
 
         element_row = element.find_elements(By.XPATH, "TBODY/TR")[int(row) - 1]
         self.click_element(element_row.find_element(By.XPATH, element_path))
-
 
     def get_list_row_by_text_contains(self, element, text, row="LI", cell=""):
         """
@@ -3150,15 +2905,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_list_row_by_text_contains(self.LIST, "text_to_find")``
-            | ``element_rowlist = self.get_list_row_by_text_contains(self.ID_LIST, parameters[u'member_id'],"LI")``
+            | ``QAutoRobot.get_list_row_by_text_contains(self.LIST, "text_to_find")``
+            | ``element_rowlist = QAutoRobot.get_list_row_by_text_contains(self.ID_LIST, parameters[u'member_id'],"LI")``
             | ``element_rowlist[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_list_row_by_text_contains((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_list_row_by_text_contains(self.elements.LIST, "text_to_find")``
+            | ``QAutoRobot.get_list_row_by_text_contains((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find")``
 
         """
 
@@ -3187,7 +2938,6 @@ class WebMethods(CommonMethods):
         print("* Text '%s' not found from list" % text)
         return None, None
 
-
     def get_list_row_by_text(self, element, text, row="LI", cell=""):
         """
         **Find list item row number by text from UL list**
@@ -3201,15 +2951,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_list_row_by_text(self.LIST, "text_to_find")``
-            | ``element_rowlist = self.get_list_row_by_text(self.LIST, parameters[u'member_id'],"LI")``
+            | ``QAutoRobot.get_list_row_by_text(self.LIST, "text_to_find")``
+            | ``element_rowlist = QAutoRobot.get_list_row_by_text(self.LIST, parameters[u'member_id'],"LI")``
             | ``element_rowlist[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_list_row_by_text((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_list_row_by_text(self.elements.LIST, "text_to_find")``
+            | ``QAutoRobot.get_list_row_by_text((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), "text_to_find")``
 
         """
 
@@ -3239,7 +2985,6 @@ class WebMethods(CommonMethods):
         print("* Text '%s' not found from list" % text)
         return None, None
 
-
     def get_list_row_by_value(self, element, value, row="LI", cell=""):
         """
         **Find list item row number by value from UL list**
@@ -3253,15 +2998,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_list_row_by_value(self.LIST, "value_to_find")``
-            | ``element_rowlist = self.get_list_row_by_value(self.LIST, parameters[u'member_id'],"LI")``
+            | ``QAutoRobot.get_list_row_by_value(self.LIST, "value_to_find")``
+            | ``element_rowlist = QAutoRobot.get_list_row_by_value(self.LIST, parameters[u'member_id'],"LI")``
             | ``element_rowlist[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_list_row_by_value((By.CSS_SELECTOR, u'#list'), "value_to_find")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_list_row_by_value(self.elements.LIST, "value_to_find")``
+            | ``QAutoRobot.get_list_row_by_value((By.CSS_SELECTOR, u'#list'), "value_to_find")``
 
         """
 
@@ -3291,7 +3032,6 @@ class WebMethods(CommonMethods):
         print("* Value '%s' not found from list" % value)
         return None, None
 
-
     def get_list_row_by_value_contains(self, element, value, row="LI", cell=""):
         """
         **Find list item row number by value contains from UL list**
@@ -3305,15 +3045,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_list_row_by_value_contains(self.LIST, "value_to_find")``
-            | ``element_rowlist = self.get_list_row_by_value_contains(self.LIST, parameters[u'member_id'],"LI","span")``
+            | ``QAutoRobot.get_list_row_by_value_contains(self.LIST, "value_to_find")``
+            | ``element_rowlist = QAutoRobot.get_list_row_by_value_contains(self.LIST, parameters[u'member_id'],"LI","span")``
             | ``element_rowlist[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_list_row_by_value_contains((By.CSS_SELECTOR, u'#list'), "value_to_find")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_list_row_by_value_contains(self.elements.LIST, "value_to_find")``
+            | ``QAutoRobot.get_list_row_by_value_contains((By.CSS_SELECTOR, u'#list'), "value_to_find")``
 
         """
 
@@ -3342,7 +3078,6 @@ class WebMethods(CommonMethods):
         print("* Value '%s' contains not found from list" % value)
         return None, None
 
-
     def get_list_row_by_attribute_value(self, element, attribute, value, row="LI", cell=""):
         """
         **Find list item row number by attribute value contains from UL list**
@@ -3357,15 +3092,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_list_row_by_attribute_value(self.LIST, "name", "value_to_find")``
-            | ``element_rowlist = self.get_list_row_by_attribute_value(self.LIST, "name", parameters[u'member_id'], "LI","span")``
+            | ``QAutoRobot.get_list_row_by_attribute_value(self.LIST, "name", "value_to_find")``
+            | ``element_rowlist = QAutoRobot.get_list_row_by_attribute_value(self.LIST, "name", parameters[u'member_id'], "LI","span")``
             | ``element_rowlist[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_list_row_by_attribute_value((By.CSS_SELECTOR, u'#list'), "name", "value_to_find")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_list_row_by_attribute_value(self.elements.LIST, "name", "value_to_find")``
+            | ``QAutoRobot.get_list_row_by_attribute_value((By.CSS_SELECTOR, u'#list'), "name", "value_to_find")``
 
         """
         self.wait_until_element_is_visible(element)
@@ -3393,7 +3124,6 @@ class WebMethods(CommonMethods):
         print("* Attribute with value '%s' contains not found from list" % value)
         return None, None
 
-
     def get_list_row_by_attribute_value_contains(self, element, attribute, value, row="LI", cell=""):
         """
         **Find list item row number by attribute value contains from UL list**
@@ -3408,15 +3138,11 @@ class WebMethods(CommonMethods):
         :Example:
             | *Page model level example*
             | using web element
-            | ``self.get_list_row_by_attribute_value_contains(self.LIST, "name", "value_to_find","span")``
-            | ``element_rowlist = self.get_list_row_by_attribute_value_contains(self.LIST, "name", parameters[u'member_id'],"LI")``
+            | ``QAutoRobot.get_list_row_by_attribute_value_contains(self.LIST, "name", "value_to_find","span")``
+            | ``element_rowlist = QAutoRobot.get_list_row_by_attribute_value_contains(self.LIST, "name", parameters[u'member_id'],"LI")``
             | ``element_rowlist[0].find_element(By.CSS_SELECTOR, '.fa-wrench').click()``
             | using representation
-            | ``self.get_list_row_by_attribute_value_contains((By.CSS_SELECTOR, u'#list'), "name", "value_to_find")``
-            |
-            | *Test level example*
-            | using web element
-            | ``self.common_utils.get_list_row_by_attribute_value_contains(self.elements.LIST, "name", "value_to_find")``
+            | ``QAutoRobot.get_list_row_by_attribute_value_contains((By.CSS_SELECTOR, u'#list'), "name", "value_to_find")``
 
         """
         self.wait_until_element_is_visible(element)
@@ -3444,23 +3170,18 @@ class WebMethods(CommonMethods):
         print("* Attribute with value '%s' contains not found from list" % value)
         return None, None
 
-
     def go_back(self):
         """
         **Simulates pressing Back button in browser window**
 
         :Example:
             | *Page model level example*
-            | ``self.go_back()``
-            |
-            | *Test level example*
-            | ``self.common_utils.go_back()``
+            | ``QAutoRobot.go_back()``
 
         """
         driver = self.driver_cache._get_current_driver()
         DebugLog.log("* Go back in browser")
         driver.back()
-
 
     def delete_all_cookies(self):
         """
@@ -3468,16 +3189,12 @@ class WebMethods(CommonMethods):
 
         :Example:
             | *Page model level example*
-            | ``self.delete_all_cookies()``
-            |
-            | *Test level example*
-            | ``self.common_utils.delete_all_cookies()``
+            | ``QAutoRobot.delete_all_cookies()``
 
         """
         driver = self.driver_cache._get_current_driver()
         DebugLog.log("* Delete all cookies")
         driver.delete_all_cookies()
-
 
     def alert_is_present(self):
         """
@@ -3487,10 +3204,7 @@ class WebMethods(CommonMethods):
         --------------
         :Example:
             | *Page model level example*
-            | ``self.alert_is_present()``
-            |
-            | *Test level example*
-            | ``self.common_utils.alert_is_present()``
+            | ``QAutoRobot.alert_is_present()``
 
         """
         driver = self.driver_cache._get_current_driver()
@@ -3501,7 +3215,6 @@ class WebMethods(CommonMethods):
         except NoAlertPresentException:
             return False
 
-
     def alert_should_be_present(self):
         """
         **Check if alert is present**
@@ -3510,10 +3223,7 @@ class WebMethods(CommonMethods):
         ---------------------
         :Example:
             | *Page model level example*
-            | ``self.alert_is_present()``
-            |
-            | *Test level example*
-            | ``self.common_utils.alert_is_present()``
+            | ``QAutoRobot.alert_is_present()``
 
         """
         driver = self.driver_cache._get_current_driver()
@@ -3522,23 +3232,18 @@ class WebMethods(CommonMethods):
         except NoAlertPresentException:
             return False
 
-
     def accept_alert(self):
         """
         **Accepts current alert window**
 
         :Example:
             | *Page model level example*
-            | ``self.accept_alert()``
-            |
-            | *Test level example*
-            | ``self.common_utils.accept_alert()``
+            | ``QAutoRobot.accept_alert()``
 
         """
         driver = self.driver_cache._get_current_driver()
         driver.switch_to_alert().accept()
         DebugLog.log("* Click Accept/OK in alert box")
-
 
     def dismiss_alert(self):
         """
@@ -3546,15 +3251,12 @@ class WebMethods(CommonMethods):
 
         :Example:
             | *Page model level example*
-            | ``self.dismiss_alert()``
-            |
-            | *Test level example*
-            | ``self.common_utils.dismiss_alert()``
+            | ``QAutoRobot.dismiss_alert()``
+
         """
         driver = self.driver_cache._get_current_driver()
         driver.switch_to_alert().dismiss()
         DebugLog.log("* Click Dismiss/Cancel in alert box")
-
 
     def reload_page(self):
         """
@@ -3562,16 +3264,12 @@ class WebMethods(CommonMethods):
 
         :Example:
             | *Page model level example*
-            | ``self.refresh_page()``
-            |
-            | *Test level example*
-            | ``self.common_utils.refresh_page()``
+            | ``QAutoRobot.refresh_page()``
 
         """
         driver = self.driver_cache._get_current_driver()
         DebugLog.log("* Reload weg page")
         driver.refresh()
-
 
     def get_js_memory_heap(self, measurement_name):
         """
@@ -3581,10 +3279,7 @@ class WebMethods(CommonMethods):
         -------------------
         :Example:
             | *Page model level example*
-            | ``self.get_js_memory_heap(measurement_name)``
-            |
-            | *Test level example*
-            | ``self.common_utils.get_js_memory_heap(measurement_name)``
+            | ``QAutoRobot.get_js_memory_heap(measurement_name)``
 
         """
         if not self.driver_cache._is_gc():
@@ -3597,7 +3292,8 @@ class WebMethods(CommonMethods):
             ts = int(time.time()) * 1000
 
             try:
-                measurement_folder = os.path.join(get_config_value("reporting_folder"), GlobalUtils.MEASUREMENTS_FOLDER_NAME)
+                measurement_folder = os.path.join(get_config_value("reporting_folder"),
+                                                  GlobalUtils.MEASUREMENTS_FOLDER_NAME)
                 if not os.path.exists(measurement_folder):
                     os.mkdir(measurement_folder)
             except Exception as e:
@@ -3607,9 +3303,10 @@ class WebMethods(CommonMethods):
 
             # javascript file
             try:
-                if(os.path.isfile(js_file)):
+                if (os.path.isfile(js_file)):
                     read_lines = get_file_lines(js_file)
-                    str_to_insert = "{'memoryHeap': '" + str(memory_data['usedJSHeapSize']) + "', 'timestamp': '" + str(ts) + \
+                    str_to_insert = "{'memoryHeap': '" + str(memory_data['usedJSHeapSize']) + "', 'timestamp': '" + str(
+                        ts) + \
                                     "', 'label': '" + str(measurement_name) + "'},\n"
                     new_lines = read_lines[:-1] + [str_to_insert] + [read_lines[-1]]
                     content = "".join(new_lines)
@@ -3635,9 +3332,9 @@ class CanvasMethods(object):
     """
     **Class that contains methods for Canvas based areas**
     """
+
     def __init__(self, driver_cache=None):
         self.driver_cache = driver_cache and driver_cache or DriverCache()
-
 
     def click_canvas(self, element):
         """
@@ -3647,7 +3344,7 @@ class CanvasMethods(object):
 
         """
         html5_element = self.find_element_canvas(element)
-        #print "html5 element: ", html5_element.text
+        # print "html5 element: ", html5_element.text
         driver = self.driver_cache._get_current_driver()
 
         if html5_element:
@@ -3659,7 +3356,8 @@ class CanvasMethods(object):
 
             if all_canvases:
                 correct_canvas = None
-                if len(all_canvases) == 1 and (all_canvases[0].size['width'] == 0 or all_canvases[0].size['height'] == 0):
+                if len(all_canvases) == 1 and (
+                        all_canvases[0].size['width'] == 0 or all_canvases[0].size['height'] == 0):
                     unittest.TestCase("assertTrue").assertTrue(False, "No canvas elements found")
                 else:
                     for canvas in all_canvases:
@@ -3688,7 +3386,6 @@ class CanvasMethods(object):
         else:
             unittest.TestCase("assertTrue").assertTrue(False, "Correct object inside canvas element not found")
 
-
     def compare_screenshots_canvas(self, ref_scr_name):
         """
         **Compares screenshots or part of screenshots**
@@ -3700,7 +3397,8 @@ class CanvasMethods(object):
         if not self.screenshot_parser:
             self.screenshot_parser = XmlScreenshotParser()
 
-        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser, ref_scr_name)
+        xml_meta_data, ref_scr_file_name_path = CommonUtils._check_screenshot_file_name(self.screenshot_parser,
+                                                                                        ref_scr_name)
 
         ref_scr_x = int(xml_meta_data['x'])
         ref_scr_y = int(xml_meta_data['y'])
@@ -3713,7 +3411,6 @@ class CanvasMethods(object):
 
         CommonUtils()._handle_screenshot_comparison(ref_scr_file_name_path, ref_scr_x, ref_scr_y,
                                                     ref_scr_w, ref_scr_h, similarity)
-
 
     def compare_element_screenshots_canvas(self, element, ref_scr_name):
         """
@@ -3738,7 +3435,8 @@ class CanvasMethods(object):
 
                 if all_canvases:
                     correct_canvas = None
-                    if len(all_canvases) == 1 and all_canvases[0].size['width'] == 0 and all_canvases[0].size['height'] == 0:
+                    if len(all_canvases) == 1 and all_canvases[0].size['width'] == 0 and all_canvases[0].size[
+                        'height'] == 0:
                         return False
                     else:
                         for canvas in all_canvases:
@@ -3784,10 +3482,10 @@ class Asserts(object):
     """
     **Class that contains methods for making verifications**
     """
+
     def __init__(self, driver_cache=None):
         self.driver_cache = driver_cache and driver_cache or DriverCache()
         self._wm = WebMethods(self.driver_cache)
-
 
     def element_text_should_be(self, element, text):
         """
@@ -3797,10 +3495,9 @@ class Asserts(object):
         :param text: String text
         ---------------
         :Example:
-            | ``self.element_text_should_be(self.element, text)``
+            | ``QAutoRobot.element_text_should_be(self.element, text)``
         """
         CommonMethodsHelpers.assert_equal(text, self._wm.get_text(element))
-
 
     def element_value_should_be(self, element, value):
         """
@@ -3810,10 +3507,9 @@ class Asserts(object):
         :param value: String
         ------------
         :Example:
-            | ``self.element_text_should_be(self.element, value)``
+            | ``QAutoRobot.element_text_should_be(self.element, value)``
         """
         CommonMethodsHelpers.assert_equal(value, self._wm.get_value(element))
-
 
     def list_value_should_be(self, element, value):
         """
@@ -3823,11 +3519,10 @@ class Asserts(object):
         :param value: Value of the item
         -------------------
         :Example:
-            | ``self.list_value_should_be(self.element, value)``
+            | ``QAutoRobot.list_value_should_be(self.element, value)``
 
         """
         CommonMethodsHelpers.assert_equal(value, self._wm.get_selected_list_value(element))
-
 
     def list_label_should_be(self, element, text):
         """
@@ -3837,10 +3532,9 @@ class Asserts(object):
         :param text: String text
         --------------
         :Example:
-            | ``self.list_label_should_be(self.element, text)``
+            | ``QAutoRobot.list_label_should_be(self.element, text)``
         """
         CommonMethodsHelpers.assert_equal(text, self._wm.get_selected_list_label(element))
-
 
     def element_attribute_should_be(self, element, attribute, value):
         """
@@ -3851,10 +3545,9 @@ class Asserts(object):
         :param value: String text
         ---------------
         :Example:
-            | ``self.wait_until_element_should_not_be(self.element, attribute, value)``
+            | ``QAutoRobot.wait_until_element_should_not_be(self.element, attribute, value)``
         """
         CommonMethodsHelpers.assert_equal(value, self._wm.get_attribute(element, attribute))
-
 
     def element_attribute_should_contains(self, element, attr, expected_value):
         """
@@ -3865,7 +3558,7 @@ class Asserts(object):
         :param expected_value: Element's attribute value which should be contained
         -------------
         :Example:
-            | ``self.element_attribute_should_contains(self.CONTACT_QAUTOMATE_FI, u'href', u'mailto')``
+            | ``QAutoRobot.element_attribute_should_contains(self.CONTACT_QAUTOMATE_FI, u'href', u'mailto')``
         """
         atr_text = self._wm.get_attribute(element, attr)
         try:
@@ -3878,7 +3571,6 @@ class Asserts(object):
         except:
             pass
 
-
     def elements_count_should_be(self, element, value_int):
         """
         **Verifies if count of elements corresponds to expected one**
@@ -3887,10 +3579,9 @@ class Asserts(object):
         :param value_int: Integer number
         -----------------
         :Example:
-            | ``self.elements_count_should_be(self.element, value_int)``
+            | ``QAutoRobot.elements_count_should_be(self.element, value_int)``
         """
         CommonMethodsHelpers.assert_equal(int(value_int), self._wm.get_elements_count(element))
-
 
     def element_should_contain(self, element, text):
         """
@@ -3900,7 +3591,7 @@ class Asserts(object):
         :param text: String text
         ------------------
         :Example:
-            | ``self.element_should_contain(self.CLASS_MAIN_HEADER, text)``
+            | ``QAutoRobot.element_should_contain(self.CLASS_MAIN_HEADER, text)``
         """
         el_text = self._wm.get_text(element)
         try:
@@ -3908,7 +3599,6 @@ class Asserts(object):
         except:
             msg = "Element text doesn't contain correct text"
         unittest.TestCase("assertTrue").assertTrue(text in el_text, msg)
-
 
     def element_should_be_visible(self, element):
         """
@@ -3925,12 +3615,12 @@ class Asserts(object):
         by = element[0]
         value = element[1]
         visible = self._wm.is_visible(element)
-        unittest.TestCase("assertTrue").assertTrue(visible, "Element {By: '%s', value: '%s'} is not visible" % (by, value))
+        unittest.TestCase("assertTrue").assertTrue(visible,
+                                                   "Element {By: '%s', value: '%s'} is not visible" % (by, value))
         try:
             DebugLog.log("* Element 'By: %s, value: %s' is visible" % (by, value))
         except:
             DebugLog.log("* Element is visible")
-
 
     def element_should_be_present(self, element):
         """
@@ -3947,12 +3637,12 @@ class Asserts(object):
         by = element[0]
         value = element[1]
         present = self._wm.is_present(element)
-        unittest.TestCase("assertTrue").assertTrue(present, "Element {By: '%s', value: '%s'} is not present" % (by, value))
+        unittest.TestCase("assertTrue").assertTrue(present,
+                                                   "Element {By: '%s', value: '%s'} is not present" % (by, value))
         try:
             DebugLog.log("* Element 'By: %s, value: %s' is present" % (by, value))
         except:
             DebugLog.log("* Element is present")
-
 
     def element_should_be_disabled(self, element):
         """
@@ -3969,12 +3659,12 @@ class Asserts(object):
         by = element[0]
         value = element[1]
         present = self._wm.is_disabled(element)
-        unittest.TestCase("assertTrue").assertTrue(present, "Element {By: '%s', value: '%s'} is not disabled" % (by, value))
+        unittest.TestCase("assertTrue").assertTrue(present,
+                                                   "Element {By: '%s', value: '%s'} is not disabled" % (by, value))
         try:
             DebugLog.log("* Element 'By: %s, value: %s' is disabled" % (by, value))
         except:
             DebugLog.log("* Element is disabled")
-
 
     def element_should_be_enabled(self, element):
         """
@@ -3992,12 +3682,12 @@ class Asserts(object):
         by = element[0]
         value = element[1]
         present = self._wm.is_enabled(element)
-        unittest.TestCase("assertTrue").assertTrue(present, "Element {By: '%s', value: '%s'} is not enabled" % (by, value))
+        unittest.TestCase("assertTrue").assertTrue(present,
+                                                   "Element {By: '%s', value: '%s'} is not enabled" % (by, value))
         try:
             DebugLog.log("* Element 'By: %s, value: %s' is enabled" % (by, value))
         except:
             DebugLog.log("* Element is enabled")
-
 
     def title_should_be(self, string):
         """
@@ -4011,7 +3701,6 @@ class Asserts(object):
         msgpass = "Page title: %s" % title
         msg = "Wrong page title"
         CommonMethodsHelpers.assert_equal(string, title, msgpass, msg)
-
 
     def element_should_be_table_column_and_row(self, element, text, column, row, cell="TD"):
         """
@@ -4036,9 +3725,9 @@ class Asserts(object):
         element_row = element.find_elements(By.XPATH, "TBODY/TR")[int(row) - 1]
         msgpass = "* Text found from table: %s" % text
         msg = "Wrong text in table:"
-        CommonMethodsHelpers.assert_equal(text, self._wm.get_text(element_row.find_elements(By.XPATH, cell)[int(column) - 1]),
+        CommonMethodsHelpers.assert_equal(text,
+                                          self._wm.get_text(element_row.find_elements(By.XPATH, cell)[int(column) - 1]),
                                           msgpass, msg)
-
 
     def verify_rest_api_xml_value(self, url, method, expected_file, auth_file, request_file_xml):
         """
@@ -4054,16 +3743,17 @@ class Asserts(object):
         ----------------
         :Example:
             | ``url = u'http://api.openweathermap.org/data/2.5/weather?q=London,uk&appid=2de143494c0b295cca9337e1e96b00e0&mode=xml'``
-            | ``self.verify_rest_api_xml_value(url, u'get', u'expected.txt', u'', u'')``
+            | ``QAutoRobot.verify_rest_api_xml_value(url, u'get', u'expected.txt', u'', u'')``
             |
-            | ``self.verify_rest_api_xml_value(u'http://exampleurl.com', u'post', u'expected_response.txt', u'auth.txt', u'request.xml')``
+            | ``QAutoRobot.verify_rest_api_xml_value(u'http://exampleurl.com', u'post', u'expected_response.txt', u'auth.txt', u'request.xml')``
         """
         if method.lower() not in ('get', 'post', 'put', 'delete'):
             self._wm.fail("Rest method not recognized")
         if method.lower() == 'get':
             root = etree.fromstring(self._wm.get_web_response(url, "get", auth_file, data=None).text)
         else:
-            request_file = os.path.abspath(os.path.join(os.getcwd(), GlobalUtils.XML_REQUEST_FOLDER_NAME, request_file_xml))
+            request_file = os.path.abspath(
+                os.path.join(os.getcwd(), GlobalUtils.XML_REQUEST_FOLDER_NAME, request_file_xml))
             root = etree.fromstring(self._wm.get_web_response(url, method, auth_file, request_file).text)
         try:
             response = etree.tostring(root, pretty_print=True)
@@ -4073,14 +3763,14 @@ class Asserts(object):
                                                                                        GlobalUtils.XML_DEBUG_FOLDER_NAME,
                                                                                        "response_file.xml")))
 
-        expected_response_file = get_file_lines(os.path.abspath(os.path.join(os.getcwd(), GlobalUtils.XML_RESPONSE_FOLDER_NAME,
-                                                                             expected_file)))
+        expected_response_file = get_file_lines(
+            os.path.abspath(os.path.join(os.getcwd(), GlobalUtils.XML_RESPONSE_FOLDER_NAME,
+                                         expected_file)))
         msgpass = "* Values are equal"
         msg = "Values are not equal"
         for line in expected_response_file:
             (xpath, expected_value) = line.split()
             CommonMethodsHelpers.assert_equal(expected_value, ''.join(root.xpath(xpath)), msgpass, msg)
-
 
     def verify_rest_api_json_value(self, url, method, expected_file, auth_file, request_file_json):
         """
@@ -4096,30 +3786,33 @@ class Asserts(object):
         -----------------
         :Example:
             | ``url = u'http://api.openweathermap.org/data/2.5/weather?q=London,uk&appid=2de143494c0b295cca9337e1e96b00e0'``
-            | ``self.verify_rest_api_json_value(url, u'get', u'expected.txt', u'', u'')``
+            | ``QAutoRobot.verify_rest_api_json_value(url, u'get', u'expected.txt', u'', u'')``
             |
-            | ``self.verify_rest_api_json_value(u'http://exampleurl.com', u'post', u'expected_response.txt', u'auth.txt', u'request.txt')``
+            | ``QAutoRobot.verify_rest_api_json_value(u'http://exampleurl.com', u'post', u'expected_response.txt', u'auth.txt', u'request.txt')``
         """
         if method.lower() not in ('get', 'post', 'put', 'delete'):
             self._wm.fail("Rest method not recognized")
         if method.lower() == 'get':
             response = loads(self._wm.get_web_response(url, method, auth_file, data=None).text)
         else:
-            request_file = os.path.abspath(os.path.join(os.getcwd(), GlobalUtils.JSON_REQUEST_FOLDER_NAME, request_file_json))
+            request_file = os.path.abspath(
+                os.path.join(os.getcwd(), GlobalUtils.JSON_REQUEST_FOLDER_NAME, request_file_json))
             response = loads(self._wm.get_web_response(url, method, auth_file, get_file_content(request_file)).text)
 
         response_to_file = dumps(response, sort_keys=True, indent=4, separators=(',', ': '))
         save_content_to_file(str(response_to_file.strip('\r\n')),
-                             os.path.abspath(os.path.join(os.getcwd(), GlobalUtils.JSON_DEBUG_FOLDER_NAME, "response_file.txt")))
+                             os.path.abspath(
+                                 os.path.join(os.getcwd(), GlobalUtils.JSON_DEBUG_FOLDER_NAME, "response_file.txt")))
 
-        expected_response_file = get_file_lines(os.path.abspath(os.path.join(os.getcwd(), GlobalUtils.JSON_RESPONSE_FOLDER_NAME,
-                                                                             expected_file)))
+        expected_response_file = get_file_lines(
+            os.path.abspath(os.path.join(os.getcwd(), GlobalUtils.JSON_RESPONSE_FOLDER_NAME,
+                                         expected_file)))
         msgpass = "* Values are equal"
         msg = "Values are not equal"
         for line in expected_response_file:
             (key, expected_value) = line.split()
-            CommonMethodsHelpers.assert_equal(expected_value, str(reduce(dict.get, key.split("."), response)), msgpass, msg)
-
+            CommonMethodsHelpers.assert_equal(expected_value, str(reduce(dict.get, key.split("."), response)), msgpass,
+                                              msg)
 
     def verify_soap_api_value(self, url, request_file_xml, response_file, full_file=True):
         """
@@ -4135,13 +3828,13 @@ class Asserts(object):
         :param full_file: Boolean: If true verify full reponse, if false verify single values
         ---------------
         :Example:
-            | ``self.verify_soap_api(u'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL', u'soap_xml.xml', response_file.txt)``
+            | ``QAutoRobot.verify_soap_api(u'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL', u'soap_xml.xml', response_file.txt)``
         """
         response = self._wm.get_soap_response(url, request_file_xml)
         if full_file:
             expected = get_file_content(os.path.abspath(os.path.join(os.getcwd(), GlobalUtils.SOAP_RESPONSE_FOLDER_NAME,
                                                                      response_file)))
-            try:    # Pretty print doesn't work if there is tag mismatch
+            try:  # Pretty print doesn't work if there is tag mismatch
                 tree = etree.XML(expected.decode('utf-8').encode('ascii'))
                 expected = etree.tostring(tree, pretty_print=True)
                 root = etree.fromstring(response)
@@ -4172,7 +3865,6 @@ class Asserts(object):
                 (xpath, expected_value) = line.split()
                 CommonMethodsHelpers.assert_equal(expected_value, ''.join(root.xpath(xpath)), msgpass, msg)
 
-
     def element_text_length_should_be(self, element, expected_length):
         """
         **Verifies if element text length is equal to expected. Spaces are also counted.**
@@ -4181,7 +3873,7 @@ class Asserts(object):
         :param expected_length: User provided expected length
         -----------------
         :Example:
-            | ``self.verify_text_length(self.FEATURELIST_FEATURE, u'13')``
+            | ``QAutoRobot.verify_text_length(self.FEATURELIST_FEATURE, u'13')``
         """
         self._wm.wait_until_element_is_visible(element)
         element = self.find_element_if_not_webelement(element)
@@ -4190,14 +3882,13 @@ class Asserts(object):
         msg = "Text length is different than expected"
         CommonMethodsHelpers.assert_equal(str(expected_length), str(len(element.text)), msgpass, msg)
 
-
     def checkbox_should_be_selected(self, element):
         """
         **Check radiobutton is selected.**
 
         :param element: Radiobutton element
         :Example:
-            | ``self.checkbox_should_be_selected(self.CLASS_RADIO)``
+            | ``QAutoRobot.checkbox_should_be_selected(self.CLASS_RADIO)``
         """
         if self._wm.get_attribute(element, "type") == "checkbox":
             msg = "%s checkbox should have been selected" % self._wm.get_attribute(element, "name")
@@ -4209,7 +3900,6 @@ class Asserts(object):
         else:
             print("Element might be not a radiobutton")
 
-
     def checkbox_should_not_be_selected(self, element):
         """
         **Check radiobutton is not selected.**
@@ -4217,7 +3907,7 @@ class Asserts(object):
         :param element: Radiobutton element
         ------------------
         :Example:
-            | ``self.checkbox_should_not_be_selected(self.CLASS_RADIO)``
+            | ``QAutoRobot.checkbox_should_not_be_selected(self.CLASS_RADIO)``
         """
         if self._wm.get_attribute(element, "type") == "checkbox":
             msg = "%s checkbox should not have been selected" % self._wm.get_attribute(element, "name")
@@ -4303,6 +3993,7 @@ class Wrappers(CommonWrappers):
     def go_to(self, parameters):
         self._wm.go_to(parameters)
 
+
 class CanvasWrappers(object):
     def __init__(self, driver_cache=None):
         self.driver_cache = driver_cache and driver_cache or DriverCache()
@@ -4351,9 +4042,9 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         :Example:
             | `` __generate_tests("data.csv", "search") -> ""``
             | ``def test_search_data_row_1(self):``
-            | ``self.search('value from first row')``
+            | ``QAutoRobot.search('value from first row')``
             | ``def test_search_data_row_2(self):``
-            | ``self.search('value from second row')``
+            | ``QAutoRobot.search('value from second row')``
 
         """
         template = """def test_{0}_data_row_{1}(self):
@@ -4420,8 +4111,8 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         def wrapper(func):
             self.DATA_TEST_CASES_AND_DATA_FILES[func] = data_file
             return func
-        return wrapper
 
+        return wrapper
 
     @classmethod
     def catch_exc(cls, message, *args, **kwargs):
@@ -4438,6 +4129,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             |   ``def open_url(url):``
 
         """
+
         def out_wrapper(func, *args, **kwargs):
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -4447,9 +4139,10 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
                     etype, value, tb = sys.exc_info()
                     traceback.print_exception(etype, value, tb)
                     print(message)
-            return wrapper
-        return out_wrapper
 
+            return wrapper
+
+        return out_wrapper
 
     def measure_exc_time(self, func, *args, **kwargs):
         """
@@ -4468,6 +4161,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             | ``@measure_exc_time``
             | ``def go_to(url):``
         """
+
         def wrapper(*args, **kwargs):
             t1 = time.clock()
             res = func(*args, **kwargs)
@@ -4477,8 +4171,8 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             except:
                 print("MEASURE")
             return res
-        return wrapper
 
+        return wrapper
 
     def _get_actions(self):
         """
@@ -4494,7 +4188,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         driver = self.get_current_driver()
         return ActionChains(driver)
 
-
     def execute_javascript_with_args(self, js_script, *args):
         """
         **Execute JavaScript code with arguments**
@@ -4505,7 +4198,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         """
         driver = self.get_current_driver()
         return driver.execute_script(js_script, *args)
-
 
     def save_screenshot(self, saving_dir=None, action=''):
         """
@@ -4529,7 +4221,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         except:
             print("* Saving screenshot")
         self.get_current_driver().save_screenshot(path_to_file)
-
 
     def get_random_value(self, _list, *val_to_skip):
         """
@@ -4555,7 +4246,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             print("* Random value")
 
         return value
-
 
     def select_window(self, function, *args):
         """
@@ -4584,7 +4274,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         except:
             DebugLog.log("* Switching window")
 
-
     def get_number_from_string(self, pattern, text):
         """
         **Gets integer from string using regex**
@@ -4602,7 +4291,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         first_text = search(pattern, text).group()
         return search("\\d+", first_text).group()
 
-
     def get_page_source(self):
         """
         **Returns page source**
@@ -4610,8 +4298,8 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         :return: page source
         --------------------
         :Example:
-            | ``self.go_to("http://www.maps.nokia.com")``
-            | ``html_source = self.get_page_source()``
+            | ``QAutoRobot.go_to("http://www.maps.nokia.com")``
+            | ``html_source = QAutoRobot.get_page_source()``
             | ``if "City and Country Maps" in html_source:``
             |   ``do something``
             | ``else:``
@@ -4621,7 +4309,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         driver = self.get_current_driver()
         return driver.page_source
 
-
     def drag_and_drop(self, draggable, droppable):
         """
         **Drags draggable element onto droppable**
@@ -4630,7 +4317,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         :param droppable: Element to drop onto
         -------------------
         :Example:
-            | ``self.drag_and_drop(self.ID_DRAG1, self.ID_DRAGDIV2)``
+            | ``QAutoRobot.drag_and_drop(self.ID_DRAG1, self.ID_DRAGDIV2)``
 
         """
         actions = self._get_actions()
@@ -4641,7 +4328,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
 
         actions.drag_and_drop(draggable, droppable).perform()
 
-
     def drag_and_drop_html5(self, draggable, droppable):
         """
         **Drags draggable element onto droppable (HTML5)**
@@ -4650,7 +4336,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         :param droppable: Element to drop onto
         -----------------
         :Example:
-            | ``self.drag_and_drop_html5(self.ID_DRAG1, self.ID_DRAGDIV2)``
+            | ``QAutoRobot.drag_and_drop_html5(self.ID_DRAG1, self.ID_DRAGDIV2)``
 
         """
         self.wait_until_element_is_visible(draggable)
@@ -4669,7 +4355,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         DebugLog.log("* Executing drag and drop element onto droppable")
         self.execute_javascript_with_args(drag_and_drop_helper + drag_and_drop_js, draggable, droppable)
 
-
     @classmethod
     def write_value_jtl_file(self, measurement_name, sample):
         """
@@ -4684,7 +4369,8 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         t = int(round(sample * 1000))
 
         try:
-            measurement_folder = os.path.join(get_config_value("reporting_folder"), GlobalUtils.MEASUREMENTS_FOLDER_NAME)
+            measurement_folder = os.path.join(get_config_value("reporting_folder"),
+                                              GlobalUtils.MEASUREMENTS_FOLDER_NAME)
             if not os.path.exists(measurement_folder):
                 os.mkdir(measurement_folder)
         except Exception as e:
@@ -4695,7 +4381,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
 
         # jtl file
         try:
-            if(os.path.isfile(jtl_file)):
+            if (os.path.isfile(jtl_file)):
                 read_lines = get_file_lines(jtl_file)
                 str_to_insert = "<sample t='" + str(t) + "'" + " ts='" + str(ts) + "'" + " lb='" \
                                 + str(measurement_name) + "' s='true' rc='200' rm='OK'/>\n"
@@ -4715,7 +4401,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
 
         # javascript file
         try:
-            if(os.path.isfile(js_file)):
+            if (os.path.isfile(js_file)):
                 read_lines = get_file_lines(js_file)
                 str_to_insert = "{'load': '" + str(t) + "', 'timestamp': '" + str(ts) + "', 'succes': true, 'label': '" \
                                 + str(measurement_name) + "', 'response_code': '200', 'response_msg': 'OK'},\n"
@@ -4732,7 +4418,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
                 save_content_to_file(content, js_file)
         except Exception as e:
             print("Could not generate js file:\n%s" % str(e))
-
 
     def create_ref_screenshot(self, ref_scr_name, ref_scr_x, ref_scr_y, ref_scr_w, ref_scr_h):
         """
@@ -4763,7 +4448,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             scr_created = False
 
         return scr_created
-
 
     def create_element_ref_screenshot(self, element, ref_scr_name):
         """
@@ -4803,7 +4487,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
 
         return element_found
 
-
     def create_ref_screenshot_canvas(self, ref_scr_name, x_coord, y_coord, width, height):
         """
         **Creates reference screenshot of an element**
@@ -4817,8 +4500,9 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         """
         scr_created = True
         try:
-            ref_scr_name = ref_scr_name.split(".png")[0] + "_%s_%s_%s_%s.png" % (str(x_coord).strip(), str(y_coord).strip(),
-                                                                                 str(width).strip(), str(height).strip())
+            ref_scr_name = ref_scr_name.split(".png")[0] + "_%s_%s_%s_%s.png" % (
+            str(x_coord).strip(), str(y_coord).strip(),
+            str(width).strip(), str(height).strip())
 
             self.take_full_screenshot(GlobalUtils.COMPARE_SCREENSHOT)
 
@@ -4856,18 +4540,21 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
                                                         "Reference screenshot: %s.") % ref_scr_file_name)
         else:
             # screenshot not found in xml, try to find best match
-            found, xml_meta_data, new_file_name, msg = screenshot_parser._find_best_match(ref_scr_name, browser, screenres)
+            found, xml_meta_data, new_file_name, msg = screenshot_parser._find_best_match(ref_scr_name, browser,
+                                                                                          screenres)
             unittest.TestCase("assertTrue").assertTrue(found is True,
                                                        "%s Reference screenshot: %s." % (msg, new_file_name))
             # found screenshot with different browser
-            print ("WARNING: Reference screenshot (%s) not found. Using screenshot (%s), " +
-                   "which was created different browser (%s).") % (ref_scr_file_name, new_file_name, xml_meta_data['browser'])
+            print("WARNING: Reference screenshot (%s) not found. Using screenshot (%s), " +
+                  "which was created different browser (%s).") % (
+            ref_scr_file_name, new_file_name, xml_meta_data['browser'])
             ref_scr_file_name = new_file_name
             ref_scr_file_name_path = os.path.join(current_dir, GlobalUtils.SCREENSHOTS_FOLDER_NAME, ref_scr_file_name)
 
         return xml_meta_data, ref_scr_file_name_path
 
-    def _handle_screenshot_comparison(self, ref_scr_file_name_path, ref_scr_x, ref_scr_y, ref_scr_w, ref_scr_h, similarity):
+    def _handle_screenshot_comparison(self, ref_scr_file_name_path, ref_scr_x, ref_scr_y, ref_scr_w, ref_scr_h,
+                                      similarity):
         current_dir = os.getcwd()
         ref_scr_file_name = os.path.basename(ref_scr_file_name_path)
         scr_ref = Image.open(ref_scr_file_name_path)
@@ -4898,16 +4585,18 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
                     abs(int(scr_ref_list[i][1]) - int(scr_curr_list[i][1])) +
                     abs(int(scr_ref_list[i][2]) - int(scr_curr_list[i][2])))
 
-        #difference = int(round(100 * float(diff) / float(len(scr_curr_list) * 3 * 255)))
+        # difference = int(round(100 * float(diff) / float(len(scr_curr_list) * 3 * 255)))
         difference = round(100 * float(diff) / float(len(scr_curr_list) * 3 * 255), 2)
         is_similar = (100 - difference) >= similarity
 
         unittest.TestCase("assertTrue").assertTrue(is_similar,
-                                                   ("Screenshots do not match. Reference screenshot: %s. Similarity level " +
-                                                    "is '%s' percent") % (ref_scr_file_name, str(100 - difference)))
+                                                   (
+                                                               "Screenshots do not match. Reference screenshot: %s. Similarity level " +
+                                                               "is '%s' percent") % (
+                                                   ref_scr_file_name, str(100 - difference)))
 
-        print ("Comparing screenshots... Screenshots match. Reference screenshot: %s. "
-               "Similarity level is %s.") % (ref_scr_file_name, str(100 - difference) + "%")
+        print("Comparing screenshots... Screenshots match. Reference screenshot: %s. "
+              "Similarity level is %s.") % (ref_scr_file_name, str(100 - difference) + "%")
 
     @classmethod
     def _get_browser_and_resolution(cls):
@@ -4917,7 +4606,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         display_size = wx.DisplaySize()
         screen_res = str(display_size[0]) + "x" + str(display_size[1])
         return browser_name, screen_res
-    
+
     def get_current_url(self):
         """
         **Get current active browsers url as a String.**
@@ -4941,7 +4630,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         """
         return self.driver_cache._get_current_browser()
 
-
     def is_current_driver(self):
         """
         **Is there current active webdriver object.**
@@ -4949,7 +4637,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         :return: True or False
         """
         return self.driver_cache._is_current_driver()
-
 
     def is_ie(self):
         """
@@ -4959,7 +4646,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         """
         return self.driver_cache._is_ie()
 
-
     def is_ff(self):
         """
         **Returns True is browser is Firefox, else - False.**
@@ -4967,7 +4653,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         :return: True is browser is Firefox, else - False.
         """
         return self.driver_cache._is_ff()
-
 
     def is_gc(self):
         """
@@ -4985,7 +4670,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         """
         driver = self.get_current_driver()
 
-        #TODO: how to get version info from new firefox versions
+        # TODO: how to get version info from new firefox versions
         if "version" in driver.desired_capabilities:
             return driver.desired_capabilities["version"]
         return ""
@@ -5019,7 +4704,8 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             doc_width = viewport_width
 
         viewport_height = driver.execute_script("return window.innerHeight")
-        doc_height = driver.execute_script("return Math.max(document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight);")
+        doc_height = driver.execute_script(
+            "return Math.max(document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight);")
 
         if height_override is not None:
             doc_height = height_override
@@ -5077,7 +4763,6 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             previous = rectangle
 
         stitched_image.save(pic_name)
-
 
 
 ## Class allows to measure time
