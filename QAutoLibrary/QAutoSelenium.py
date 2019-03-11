@@ -1008,10 +1008,7 @@ class CommonMethods(object):
                 save_content_to_file(content, js_file)
                 save_content_to_file(content_jtl, jtl_file)
 
-                if self.driver_cache._is_gc():
-                    self.execute_javascript("return window.performance.webkitClearResourceTimings();", log=False)
-                else:
-                    self.execute_javascript("return window.performance.clearResourceTimings();", log=False)
+                self.execute_javascript("return window.performance.clearResourceTimings();", log=False)
                 return resource_timings
             else:
                 print("%s: No resource timings to measure!!" % measurement_name)
