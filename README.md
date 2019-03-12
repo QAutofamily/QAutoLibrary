@@ -8,9 +8,24 @@ Library is installed using setup.py. **Note!** Optionally library could be used 
 
 ### Prerequisites
 
-For libary to be usable you need to install [Python 2.7](https://docs.python.org/2/), [Selenium](https://www.seleniumhq.org/docs/) and [RobotFramework](http://robotframework.org/#documentation).
+For libary to be usable you need to install [Python 3.7](https://docs.python.org/3/), [Selenium](https://www.seleniumhq.org/docs/) and [RobotFramework](http://robotframework.org/#documentation), [Requests] (http://docs.python-requests.org/en/master/), [Pillow] (https://pillow.readthedocs.io/en/stable/), [LXML] (https://lxml.de/) and [SimpleJSON] (https://simplejson.readthedocs.io/en/latest/).
+
+```
+pip install selenium
+pip install robotframework
+pip install Pillow
+pip install requests
+pip install lxml
+pip install simplejson
+```
 
 ### Installing
+
+#### Download
+
+pip install --upgrade https://customer.qautomate.fi/downloadQautoLibrary.html
+
+#### From source
 
 Library installation is done using setup.py file.
 
@@ -21,7 +36,8 @@ python -m setup.py install
 ```
 
 ## Built With
-* [Python 2.7](https://docs.python.org/2/) - Programming language
+* [Python 3.7](https://docs.python.org/3/) - Programming language
+* [Python 2.7](https://docs.python.org/2/) - Programming language Old
 * [Selenium](https://www.seleniumhq.org/docs/) - Web-testing framework
 
 ## Contributing
