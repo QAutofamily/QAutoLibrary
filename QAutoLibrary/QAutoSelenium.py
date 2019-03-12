@@ -1511,8 +1511,7 @@ class CommonMethods(object):
             print("ZAP installation does not found or missing!" + str(e))
         print('Starting ZAP ...')
         try:
-            zap_test_measurement_folder = os.path.join(get_config_value("reporting_folder"),
-                                                       GlobalUtils.MEASUREMENTS_FOLDER_NAME)
+            zap_test_measurement_folder = os.getcwd() + os.sep + "test_reports"
             if not os.path.exists(zap_test_measurement_folder):
                 os.mkdir(zap_test_measurement_folder)
         except Exception as e:
@@ -1520,7 +1519,8 @@ class CommonMethods(object):
 
         session_name = "qautorobot_zap_session_" + self.get_timestamp()
         try:
-            newsession = zap_test_measurement_folder + os.path.sep + session_name
+            newsession = zap_test_measurement_folder + os.sep + session_name
+            print(newsession)
             subprocess.Popen(installation_dir + " -daemon -newsession " + newsession)
             print('Waiting for ZAP to load ...')
             zap = ZAPv2(proxies={'http': 'http://127.0.0.1:8092', 'https': 'http://127.0.0.1:8092'})
@@ -1547,9 +1547,9 @@ class CommonMethods(object):
         :param zap: Zap proxy object
         -------------
         :Example:
-            | *Test level example*
-            | ``zap, zap_session = QAutoRobot.common_utils.start_zapproxy_daemon('C:\\ZedAttackProxy\\zap.bat')``
-            | ``QAutoRobot.common_utils.stop_zapproxy_daemon(zap)``
+            | *Pagemodel level example*
+            | ``zap, zap_session = QAutoRobot.start_zapproxy_daemon('C:\\ZedAttackProxy\\zap.bat')``
+            | ``QAutoRobot.stop_zapproxy_daemon(zap)``
 
         """
         try:
@@ -1571,18 +1571,16 @@ class CommonMethods(object):
         :param report_name: Zap report name
         --------------
         :Example:
-            | Test level example
-            | ``zap, zap_session = QAutoRobot.common_utils.start_zapproxy_daemon('C:\\ZedAttackProxy\\zap.bat')``
-            | ``QAutoRobot.common_utils.stop_zapproxy_daemon(zap)``
+            | Pagemodel level example
             |
-            | ``QAutoRobot.common_utils.generate_zap_test_report('C:\\ZedAttackProxy\\zap.bat', zap_session)``
-            | ``or QAutoRobot.common_utils.generate_zap_test_report('C:\\ZedAttackProxy\\zap.bat', zap_session, "qautorobot_zap.html")``
+            | ``QAutoRobot.generate_zap_test_report('C:\\ZedAttackProxy\\zap.bat', zap_session)``
+            | ``or QAutoRobot.generate_zap_test_report('C:\\ZedAttackProxy\\zap.bat', zap_session, "qautorobot_zap.html")``
         """
         try:
-            zap_test_report_folder = get_config_value("reporting_folder")
-            zap_test_measurement_folder = os.path.join(zap_test_report_folder, GlobalUtils.MEASUREMENTS_FOLDER_NAME)
+            zap_test_report_folder = os.getcwd() + os.sep + "test_reports"
+            print("Generating zap report")
             subprocess.Popen(
-                installation_dir + " -last_scan_report " + zap_test_report_folder + os.path.sep + report_name + " -session " + zap_test_measurement_folder + os.path.sep + session_name + " -cmd")
+                installation_dir + " -last_scan_report " + zap_test_report_folder + os.path.sep + report_name + " -session " + zap_test_report_folder + os.path.sep + session_name + " -cmd")
         except Exception as e:
             print("Failed to generate zap test report" + str(e))
         time.sleep(1)
