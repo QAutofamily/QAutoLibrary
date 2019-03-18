@@ -250,16 +250,16 @@ class CommonMethods(object):
 
     def _save_screen_element(self, element, x, y, w, h, image_name):
         driver = self.driver_cache._get_current_driver()
-        driver.save_screenshot(os.getcwd() + os.sep + "/test_reports/" + image_name);
+        driver.save_screenshot(os.getcwd() + os.sep + "test_reports" + os.sep + image_name);
 
-        x = x;
-        y = y;
-        width = x + w;
-        height = y + h;
+        x = x
+        y = y
+        width = x + w
+        height = y + h
 
-        im = Image.open(os.getcwd() + os.sep + '/test_reports' + image_name)
+        im = Image.open(os.getcwd() + os.sep + "test_reports" + os.sep + image_name)
         im = im.crop((int(x), int(y), int(width), int(height)))
-        im.save(os.getcwd() + os.sep + 'test_reports/' + image_name)
+        im.save(os.getcwd() + os.sep + "test_reports" + os.sep + image_name)
 
     def get_xpath(self, element):
         if element != None:
@@ -395,10 +395,9 @@ class CommonMethods(object):
                         self.warning("#Testcase: " + test_name + " ---> Searched element locator is changed: " + str(
                             self.last_element.locator) + " .Element locator needs to be updated. ")
                     self._save_screen_element(element, element_location['x'], element_location['y'],
-                                              element_size['width'], element_size['height'], "${TEST NAME}" + "_element.png")
+                                              element_size['width'], element_size['height'], test_name + "_element.png")
 
-
-                    BuiltIn().log("<img src='" + "${TEST NAME}" + "_element.png" + "'>", "HTML")
+                    BuiltIn().log("<img src='" + test_name + "_element.png" + "'>", "HTML")
                     return (element, str(int(elem_middle_x)), str(int(elem_middle_y)))
                 else:
                     return (element, None, None)
@@ -680,14 +679,11 @@ class CommonMethods(object):
 
             last_elem = self.last_element_details(True)
 
-            # print("_CLICK_ELEMENT_EXCEPTION2")
-            # print(last_elem)
+
             if last_elem == None:
-                # print("!O")
                 msg = "Failed to input element '%s, %s' after %s seconds" % (
                 locator_by.upper(), locator_value, get_config_value("default_timeout"))
                 self.fail(msg)
-                # print("No element")
                 return False
 
             if last_elem[0] == None and last_elem[1] == None:
