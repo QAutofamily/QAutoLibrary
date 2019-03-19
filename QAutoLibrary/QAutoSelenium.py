@@ -11,7 +11,7 @@ from PIL import Image  # @UnresolvedImport
 from collections import OrderedDict
 from datetime import datetime
 from functools import wraps
-from lxml import etree
+from lxml import etree, html
 from re import search
 from urllib.error import URLError, HTTPError
 
@@ -248,7 +248,7 @@ class CommonMethods(object):
 
         return False
 
-    def _save_screen_element(self, element, x, y, w, h, image_name):
+    def _save_screen_element(self, x, y, w, h, image_name):
         driver = self.driver_cache._get_current_driver()
         driver.save_screenshot(os.getcwd() + os.sep + "test_reports" + os.sep + image_name);
 
@@ -355,10 +355,11 @@ class CommonMethods(object):
 
             driver = self.driver_cache._get_current_driver()
             dimensions = driver.get_window_size()
-            print("Searched element coordinates and size: x: " + str(x) + " y: " + str(y) + " w: " + str(
+            BuiltIn().log("Searched element coordinates and size: x: " + str(x) + " y: " + str(y) + " w: " + str(
                 w) + " h: " + str(h))
             # check if coordinates are empty or outside current screen
-            if x and y and w and h and dimensions.get("height") > int(x) and dimensions.get("width") > int(y):
+            if x and y and w and h and dimensions.get("height") > int(y) and dimensions.get("width") > int(x):
+                test_name = BuiltIn().get_variable_value("${TEST NAME}")
                 elem_middle_x = int(w) / 2
                 elem_middle_y = int(h) / 2
                 click_x = int(x) + elem_middle_x
@@ -366,8 +367,7 @@ class CommonMethods(object):
                 element = self.find_element_with_coordinates(click_x, click_y)
                 element_size = element.size
                 element_location = element.location
-                print("Current element coordinates and size:  x: " + str(element_location['x']) + " y: " + str(
-                    element_location['y']) + " w: " + str(element_size['width']) + " h: " + str(element_size['height']))
+                
                 locator_id = element.get_attribute('id')
                 locator_class = element.get_attribute('class')
                 element_tag_name = element.tag_name
@@ -383,9 +383,18 @@ class CommonMethods(object):
                 except:
                     htmldoc = element.get_attribute("outerHTML")
                 print("")
-                print(htmldoc)
 
-                test_name = BuiltIn().get_variable_value("${TEST NAME}")
+                document_root = html.fromstring(htmldoc)
+                print(etree.tostring(document_root, encoding='unicode', pretty_print=True))
+                self._save_screen_element(x, y, w, h, "Searched_" + test_name + "_element.png")
+                BuiltIn().log("<img src='" + "Searched_" + test_name + "_element.png" + "'>", "HTML")
+                BuiltIn().log("Current element coordinates and size:  x: " + str(element_location['x']) + " y: " + str(
+                    element_location['y']) + " w: " + str(element_size['width']) + " h: " + str(element_size['height']))
+                if fallback:
+                    self._save_screen_element(element_location['x'], element_location['y'], element_size['width'], element_size['height'], "Current_" + test_name + "_element.png")
+                    BuiltIn().log("<img src='" + "Current_" + test_name + "_element.png" + "'>", "HTML")
+                    
+                
                 if h == element_size['height'] and w == element_size['width']:
                     if fallback:
                         self.warning(
@@ -394,14 +403,11 @@ class CommonMethods(object):
                     else:
                         self.warning("#Testcase: " + test_name + " ---> Searched element locator is changed: " + str(
                             self.last_element.locator) + " .Element locator needs to be updated. ")
-                    self._save_screen_element(element, element_location['x'], element_location['y'],
-                                              element_size['width'], element_size['height'], test_name + "_element.png")
 
-                    BuiltIn().log("<img src='" + test_name + "_element.png" + "'>", "HTML")
                     return (element, str(int(elem_middle_x)), str(int(elem_middle_y)))
                 else:
                     return (element, None, None)
-        except:
+        except Exception as e:
             return (None, None, None)
 
     def click_element(self, element, to_print=True):
