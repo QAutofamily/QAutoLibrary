@@ -7,6 +7,7 @@ from types import FunctionType
 from QAutoLibrary.QAutoSelenium import CommonUtils
 
 from QAutoLibrary.extension.screencast.vlc_recorder import VlcRecorder
+from robot.libraries.BuiltIn import BuiltIn
 
 DefaultDirectory = ["pagemodel"]
 TestReportFolder = "test_reports"
@@ -67,6 +68,9 @@ class QAutoRobot(CommonUtils):
         for library in library_files:
             try:
                 full_path = os.path.join(os.getcwd(), directory, library)
+                sys.path.insert(0, os.path.join(os.getcwd(), directory))
+                BuiltIn().import_variables(library)
+
                 # Make library name from
                 library = os.path.basename(library).replace(".py", "")
                 # Import library module
@@ -110,11 +114,11 @@ class QAutoRobot(CommonUtils):
         library_class = _class()
         # List of method names in python lib object (ignore private methods)
         method_names = self.get_class_method_names(_class)
+        # Set python library object
+        self.set_attribute(self, library, library_class, rename_duplicate=False)
         for _method_name in method_names:
             # Get method
             _method = getattr(library_class, _method_name)
-            # Set python library object
-            self.set_attribute(self, library, library_class, rename_duplicate=False)
             # Set method with library name + . + method name
             self.set_attribute(self, library + "." + _method_name, _method, rename_duplicate=True)
             # Set method with method name
