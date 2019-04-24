@@ -5,6 +5,7 @@ import inspect
 from types import FunctionType
 
 from QAutoLibrary.QAutoSelenium import CommonUtils
+from QAutoLibrary.JsonLogger import JsonLogger
 
 from QAutoLibrary.extension.screencast.vlc_recorder import VlcRecorder
 
@@ -17,7 +18,7 @@ LibraryScope = 'TEST SUITE'
 LibraryAttributeName = "QAutoRobot"
 
 
-class QAutoRobot(CommonUtils):
+class QAutoRobot(CommonUtils, JsonLogger):
     """
     Robot library for dynamically adding all qautorobot methods to robot runnable state or in robot project libraries
     """
