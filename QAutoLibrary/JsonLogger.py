@@ -1,5 +1,4 @@
 # encoding: utf-8+
-import QAutoRobot
 from QAutoLibrary.QAutoElement import QAutoElement
 from time import sleep
 import datetime
@@ -102,5 +101,5 @@ class JsonLogger():
             with io.open(filename, "a", encoding='utf-8') as myfile:
                 myfile.write(json.dumps(to_save, ensure_ascii=False, indent=4))
         except IOError as e:
-            QAutoRobot.fail("Error writing data to the file ({0}): {1}".format(e.errno, e.strerror))
+            self.fail("Error writing data to the file ({0}): {1}".format(e.errno, e.strerror))
 
