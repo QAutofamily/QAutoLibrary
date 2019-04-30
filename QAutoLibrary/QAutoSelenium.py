@@ -1021,8 +1021,9 @@ class CommonMethods(object):
 
                 save_content_to_file(content, js_file)
                 save_content_to_file(content_jtl, jtl_file)
-
+                print("Total loading time: " + str(round(total_duration)) + " ms")
                 self.execute_javascript("return window.performance.clearResourceTimings();", log=False)
+                BuiltIn().set_test_documentation("*Webpage loading times:*\n\n*" + measurement_name.capitalize() + "* total loading time: *" + str(round(total_duration)) + "* ms\n\n", append=True)
                 return resource_timings
             else:
                 print("%s: No resource timings to measure!!" % measurement_name)
