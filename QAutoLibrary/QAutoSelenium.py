@@ -874,6 +874,22 @@ class CommonMethods(object):
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_enabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout, fallback)
 
+
+    def get_browser_console_log(self):
+        """
+                **Return browser console log**
+
+                :return: console log
+                ---------------
+                :Example:
+                    | *Page model level example*
+                    | ``value = QAutoRobot.get_browser_console_log()``
+
+        """
+        console_log = self.driver_cache._get_current_driver().get_log("browser")
+        print(console_log)
+        return console_log
+
     @classmethod
     def get_timestamp(self):
         """
