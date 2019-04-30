@@ -26,6 +26,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.remote.webelement import WebElement
 
+from time import sleep
 from simplejson import loads, dumps
 from urllib3.exceptions import ConnectionError
 
@@ -100,7 +101,16 @@ class CommonMethods(object):
         self.driver_cache = driver_cache and driver_cache or DriverCache()
         self.screenshot_parser = None
         self.last_element = None
+        self.selenium_speed = 0
+        
+    def set_speed(self, timeout):
+        """
+        **Set selenium speed**
 
+        :param timeout: timeout in seconds
+        """   
+        self.selenium_speed = timeout
+        
     def find_element_if_not_webelement(self, element):
         """
         **Find element if its not selenium web element**
@@ -108,6 +118,8 @@ class CommonMethods(object):
         :param element: element to find
         :return: Web element
         """
+        # Set selenium speed
+        sleep(self.selenium_speed)
         element_type = type(element)
         if element_type in [QAutoElement, tuple]:
             return self.find_element(element)
