@@ -109,7 +109,7 @@ class CommonMethods(object):
 
         :param timeout: timeout in seconds
         """   
-        self.selenium_speed = timeout
+        self.selenium_speed = float(timeout)
         
     def find_element_if_not_webelement(self, element):
         """
