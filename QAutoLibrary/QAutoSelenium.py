@@ -14,6 +14,7 @@ from functools import wraps
 from lxml import etree, html
 from re import search
 from urllib.error import URLError, HTTPError
+from sys import platform as _platform
 
 from logging import warn, log
 from robot.libraries.BuiltIn import BuiltIn
@@ -874,6 +875,46 @@ class CommonMethods(object):
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_enabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout, fallback)
 
+
+    def get_download_time(self, downloads_folder="", max_download_time=120):
+        """
+                **Return file download time in Chrome**
+                
+                :param downloads_folder: Chrome download folder
+                :param max_download_time: Max timeout to download
+                :return: time
+                ---------------
+                :Example:
+                    | *Page model level example*
+                    | ``value = QAutoRobot.get_download_time()``
+
+        """
+        downloadtime = None
+        path_to_downloads = ""
+        if downloads_folder != "":
+            path_to_downloads = downloads_folder
+        else:
+            if "win" in _platform:
+                path_to_downloads = os.path.join(os.environ['USERPROFILE'], "Downloads")
+            else:
+                path_to_downloads = os.path.join("/home", os.environ['USER'], "Downloads")
+        for x in range(1, 100):
+            time.sleep(0.1)
+            for filename in os.listdir(path_to_downloads):
+                if filename.endswith('.crdownload'):
+                    DL_start_time = datetime.now()
+                    print(path_to_downloads + os.sep + filename)
+                    while (os.path.isfile(path_to_downloads + os.sep + filename) == True):
+                        currentdownloadtime = datetime.now() - DL_start_time
+                        if int(round(currentdownloadtime.total_seconds(),1)) > int(max_download_time):
+                            print("Download max timeout exceeded: " + str(max_download_time) + " seconds")
+                            return None
+                        time.sleep(0.05)
+                        pass
+                    downloadtime = datetime.now() - DL_start_time
+                    BuiltIn().set_test_documentation(filename[:-11] + " downloaded in " + str(downloadtime) + "\n",
+                                                     append=True)
+            return downloadtime
 
     def get_browser_console_log(self):
         """
