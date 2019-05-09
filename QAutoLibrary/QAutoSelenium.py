@@ -451,14 +451,13 @@ class CommonMethods(object):
         try:
 
             web_element = self.find_element_if_not_webelement(element)
+            element_loc = web_element.location
             try:
                 if web_element.text != "":
-                    printout = "* Clicking at '%s'" % web_element.text
+                    printout = "* Clicking at '%s' '%s:%s' in %s" % (web_element.text, locator_by, locator_value,str(element_loc))
                 else:
                     try:
-                        element_information = repr(element)
-                        element_loc = web_element.location
-                        printout = "* Clicking at '%s'" % str(element_information) + str(element_loc)
+                        printout = "* Clicking at '%s:%s' in %s" % (locator_by, locator_value, str(element_loc))
                     except:
                         printout = "* Clicking at Unknown button"
             except:
@@ -517,22 +516,23 @@ class CommonMethods(object):
             | ``QAutoRobot.double_click_element((By.LINK_TEXT, u'Trial'))``
 
         """
+        locator_by = element[0]
+        locator_value = element[1]
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
         web_element = self.find_element_if_not_webelement(element)
         if to_print:
             try:
                 if web_element.text != "":
-                    DebugLog.log("* Double clicking at '%s'" % web_element.text)
+                    DebugLog.log("Double clicking at '%s' '%s:%s' in %s" % (web_element.text, locator_by, locator_value,str(element_loc)))
                 else:
                     try:
-                        element_information = repr(element)
                         element_loc = web_element.location
-                        DebugLog.log("* Double clicking at '%s'" % str(element_information) + str(element_loc))
+                        DebugLog.log("Double clicking at '%s:%s' in %s" % (locator_by, locator_value, str(element_loc)))
                     except:
-                        DebugLog.log("* Double clicking at UNKNOWN BUTTON")
+                        DebugLog.log("Double clicking at UNKNOWN BUTTON")
             except:
-                DebugLog.log("* Double clicking at UNKNOWN BUTTON")
+                DebugLog.log("Double clicking at UNKNOWN BUTTON")
 
         actions.double_click(web_element).perform()
 
@@ -680,10 +680,9 @@ class CommonMethods(object):
             web_element = self.find_element_if_not_webelement(element)
             if to_print:
                 try:
-                    element_information = repr(element)
                     element_loc = web_element.location
-                    DebugLog.log("* Clear and Typing text '%s' into element field '%s%s'" % (
-                    value, element_information, element_loc))
+                    DebugLog.log("* Clear and Typing text '%s' into element field '%s:%s' in %s" % (
+                    value, locator_by,locator_value, element_loc))
                 except:
                     try:
                         DebugLog.log("* Clear and Typing text '%s' into element field 'Unknown element'" % value)
@@ -814,6 +813,7 @@ class CommonMethods(object):
                 msg = "Element '%s' is visible for %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: not self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
+        print("Element ("+element[0]+":"+element[1]+") not visible in "+timeout+" seconds")
 
     def wait_until_element_is_disabled(self, element, timeout=None, msg=None):
         """
@@ -898,23 +898,34 @@ class CommonMethods(object):
                 path_to_downloads = os.path.join(os.environ['USERPROFILE'], "Downloads")
             else:
                 path_to_downloads = os.path.join("/home", os.environ['USER'], "Downloads")
-        for x in range(1, 100):
+
+        search_start = datetime.now()
+
+        while(1):
+            # Searching .crdownload file
             time.sleep(0.1)
+            currenttime = datetime.now() - search_start
+            if int(round(currenttime.total_seconds(),1)) > 8: # Search timeout 8 seconds
+                print(".crdownload not found after: " + "8" + " seconds")
+                return None
+
+            # Go through files in path_to_downloads    
             for filename in os.listdir(path_to_downloads):
                 if filename.endswith('.crdownload'):
+                    print("File found")
+                    # File found! start tracking download time        
                     DL_start_time = datetime.now()
                     print(path_to_downloads + os.sep + filename)
                     while (os.path.isfile(path_to_downloads + os.sep + filename) == True):
-                        currentdownloadtime = datetime.now() - DL_start_time
+                        currentdownloadtime = datetime.now() - DL_start_time #Tracking download time
                         if int(round(currentdownloadtime.total_seconds(),1)) > int(max_download_time):
                             print("Download max timeout exceeded: " + str(max_download_time) + " seconds")
                             return None
                         time.sleep(0.05)
-                        pass
                     downloadtime = datetime.now() - DL_start_time
                     BuiltIn().set_test_documentation(filename[:-11] + " downloaded in " + str(downloadtime) + "\n",
                                                      append=True)
-            return downloadtime
+                    return downloadtime
 
     def get_browser_console_log(self):
         """
@@ -2358,6 +2369,7 @@ class WebMethods(CommonMethods):
         msg = "Text equals '%s' did not appear in '%s' seconds from element" % (text, timeout)
         text = CommonMethodsHelpers.contains_nonascii(text)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_text(element) == text, msg, timeout)
+        print("Element locator "+element[0]+":"+element[1])
 
     def wait_until_element_attribute_contains(self, element, attr, expected_value, timeout=None):
         """
@@ -3565,6 +3577,7 @@ class Asserts(object):
             | ``QAutoRobot.element_text_should_be(self.element, text)``
         """
         CommonMethodsHelpers.assert_equal(text, self._wm.get_text(element))
+        print("Element locator "+element[0]+":"+element[1])
 
     def element_value_should_be(self, element, value):
         """
@@ -3577,6 +3590,7 @@ class Asserts(object):
             | ``QAutoRobot.element_text_should_be(self.element, value)``
         """
         CommonMethodsHelpers.assert_equal(value, self._wm.get_value(element))
+        print("Element locator "+element[0]+":"+element[1])
 
     def list_value_should_be(self, element, value):
         """
@@ -3590,6 +3604,7 @@ class Asserts(object):
 
         """
         CommonMethodsHelpers.assert_equal(value, self._wm.get_selected_list_value(element))
+        print("Element locator "+element[0]+":"+element[1])
 
     def list_label_should_be(self, element, text):
         """
@@ -3602,6 +3617,7 @@ class Asserts(object):
             | ``QAutoRobot.list_label_should_be(self.element, text)``
         """
         CommonMethodsHelpers.assert_equal(text, self._wm.get_selected_list_label(element))
+        print("Element locator "+element[0]+":"+element[1])
 
     def element_attribute_should_be(self, element, attribute, value):
         """
@@ -3615,6 +3631,7 @@ class Asserts(object):
             | ``QAutoRobot.wait_until_element_should_not_be(self.element, attribute, value)``
         """
         CommonMethodsHelpers.assert_equal(value, self._wm.get_attribute(element, attribute))
+        print("Element locator "+element[0]+":"+element[1])
 
     def element_attribute_should_contains(self, element, attr, expected_value):
         """
@@ -3628,6 +3645,7 @@ class Asserts(object):
             | ``QAutoRobot.element_attribute_should_contains(self.CONTACT_QAUTOMATE_FI, u'href', u'mailto')``
         """
         atr_text = self._wm.get_attribute(element, attr)
+        print("Element locator "+element[0]+":"+element[1])
         try:
             msg = "Element attribute '%s' doesn't contain text '%s'" % (attr, expected_value)
         except:
@@ -3649,6 +3667,7 @@ class Asserts(object):
             | ``QAutoRobot.elements_count_should_be(self.element, value_int)``
         """
         CommonMethodsHelpers.assert_equal(int(value_int), self._wm.get_elements_count(element))
+        print("Element locator "+element[0]+":"+element[1])
 
     def element_should_contain(self, element, text):
         """
@@ -3661,6 +3680,7 @@ class Asserts(object):
             | ``QAutoRobot.element_should_contain(self.CLASS_MAIN_HEADER, text)``
         """
         el_text = self._wm.get_text(element)
+        print("Element locator "+element[0]+":"+element[1])
         try:
             msg = "Element text '%s' doesn't contain text '%s'" % (el_text, text)
         except:
