@@ -3,6 +3,7 @@ import sys
 import imp
 import inspect
 from types import FunctionType
+from robot.libraries.BuiltIn import BuiltIn
 
 from QAutoLibrary.QAutoSelenium import CommonUtils
 from QAutoLibrary.JsonLogger import JsonLogger
@@ -31,6 +32,7 @@ class QAutoRobot(CommonUtils, JsonLogger):
         """
         super(QAutoRobot, self).__init__()
 
+
         # Set directory's to add
         self.default_directory = DefaultDirectory
         self.shared_directory = [x for x in shared_directory]
@@ -53,6 +55,10 @@ class QAutoRobot(CommonUtils, JsonLogger):
             # Append path to 1 up in directory
             sys.path.append(os.path.join(directory, ".."))
             self.set_module_methods(directory)
+        try:
+            self.AppiumLibrary = BuiltIn().get_library_instance("AppiumLibrary")
+        except:
+            pass
 
     def set_module_methods(self, directory):
         """
