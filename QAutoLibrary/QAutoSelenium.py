@@ -360,6 +360,7 @@ class CommonMethods(object):
         return driver.find_elements(by, value)
 
     def last_element_details(self, fallback=False):
+        self.print_keywords()
         try:
             x = self.last_element.coordinates[0]
             y = self.last_element.coordinates[1]
