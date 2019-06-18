@@ -9,6 +9,7 @@ from QAutoLibrary.QAutoSelenium import CommonUtils
 from QAutoLibrary.JsonLogger import JsonLogger
 
 from QAutoLibrary.extension.screencast.vlc_recorder import VlcRecorder
+from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils
 
 DefaultDirectory = ["pagemodel"]
 TestReportFolder = "test_reports"
@@ -25,13 +26,16 @@ class QAutoRobot(CommonUtils, JsonLogger):
     """
     ROBOT_LIBRARY_SCOPE = LibraryScope
     KEYWORDS = {}
+    ROBOT_LISTENER_API_VERSION = 2
 
     def __init__(self, *shared_directory):
         """
         During initilization adds dynamically all library methods to library
         """
         super(QAutoRobot, self).__init__()
-
+        self.ROBOT_LIBRARY_LISTENER = self
+        self.keywords = []
+        self.keyword_paths = {}
 
         # Set directory's to add
         self.default_directory = DefaultDirectory
@@ -40,6 +44,31 @@ class QAutoRobot(CommonUtils, JsonLogger):
 
         # Set all dynamic imports
         self.dynamically_import_librarys()
+
+    def _start_keyword(self, name, attrs):
+        self.keywords.append(name)
+
+    def print_keywords(self):
+        for i in reversed(self.keywords):
+            try:
+                self.find_keyword_file_and_line(i)
+                break
+            except Exception as e:
+                print(e)
+
+
+    def find_keyword_file_and_line(self, kw):
+        pm_kw = "def " + kw.rpartition('.')[2].replace(" ", "_").lower()
+        for folder, dirs, files in os.walk(os.getcwd()):
+            for file in files:
+                if file.endswith('.py') or file.endswith('.robot'):
+                    fullpath = os.path.join(folder, file)
+                    with open(fullpath, 'r') as f:
+                        for num, line in enumerate(f, 1):
+                            if pm_kw in line and file.endswith('.py'):
+                                print("Error in", pm_kw[4:], "in", fullpath, "at line", num)
+                                with open(os.path.join(GlobalUtils.TOOL_CACHE, "failed_keyword"), 'w+') as file:
+                                    file.write(kw.rpartition('.')[2].replace(" ", "_"))
 
     def dynamically_import_librarys(self):
         """
@@ -85,7 +114,7 @@ class QAutoRobot(CommonUtils, JsonLogger):
                     break
                 # Get keyword library from module
                 _class = getattr(_module, library_name)
-                self.set_library_module_methods(library, _class)
+                self.set_library_module_methods(library, _class, full_path)
             except Exception as e:
                 self.warning(library + ": " + str(e))
 
@@ -105,7 +134,7 @@ class QAutoRobot(CommonUtils, JsonLogger):
         except IndexError:
             return None
 
-    def set_library_module_methods(self, library, _class):
+    def set_library_module_methods(self, library, _class, full_path):
         """
         Set library methods to qautorobot
 
@@ -117,11 +146,14 @@ class QAutoRobot(CommonUtils, JsonLogger):
         library_class = _class()
         # List of method names in python lib object (ignore private methods)
         method_names = self.get_class_method_names(_class)
+
+        # Set python library object
+        self.set_attribute(self, library, library_class, rename_duplicate=False)
+
         for _method_name in method_names:
             # Get method
             _method = getattr(library_class, _method_name)
-            # Set python library object
-            self.set_attribute(self, library, library_class, rename_duplicate=False)
+            self.keyword_paths["QAutoLibrary.QAutoRobot.".lower() + _method_name.replace("_", "").lower()] = full_path
             # Set method with library name + . + method name
             self.set_attribute(self, library + "." + _method_name, _method, rename_duplicate=True)
             # Set method with method name
