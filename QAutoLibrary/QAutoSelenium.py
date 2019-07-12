@@ -679,18 +679,27 @@ class CommonMethods(object):
             locator_by = element[0]
             locator_value = element[1]
             web_element = self.find_element_if_not_webelement(element)
+            valuelog = value
+            try:
+                elementtype = web_element.get_attribute("type")
+                if elementtype == "password":
+                    valuelog = "***********"
+            except:
+                pass
+
             if to_print:
                 try:
                     element_loc = web_element.location
                     DebugLog.log("* Clear and Typing text '%s' into element field '%s:%s' in %s" % (
-                    value, locator_by,locator_value, element_loc))
+                        valuelog, locator_by, locator_value, element_loc))
                 except:
                     try:
-                        DebugLog.log("* Clear and Typing text '%s' into element field 'Unknown element'" % value)
+                        DebugLog.log("* Clear and Typing text '%s' into element field 'Unknown element'" % valuelog)
                     except:
                         DebugLog.log(
-                            "* Clear and Typing text '%s' into element field 'Unknown element'" % value.encode('ascii',
-                                                                                                               'ignore'))
+                            "* Clear and Typing text '%s' into element field 'Unknown element'" % valuelog.encode(
+                                'ascii',
+                                'ignore'))
             web_element.clear()
             value = CommonMethodsHelpers.contains_nonascii(value)
             web_element.send_keys(value)
