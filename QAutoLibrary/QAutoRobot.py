@@ -48,6 +48,10 @@ class QAutoRobot(CommonUtils, JsonLogger):
     def _start_keyword(self, name, attrs):
         self.keywords.append(name)
 
+    def _end_test(self, name, attrs):
+        with open(os.path.join(GlobalUtils.TOOL_CACHE, "test_status"), 'w+') as file:
+            file.write(attrs['status'])
+
     def print_keywords(self):
         for i in reversed(self.keywords):
             try:
