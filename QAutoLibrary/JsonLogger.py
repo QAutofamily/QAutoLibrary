@@ -5,7 +5,9 @@ import datetime
 import os, errno
 import json
 import io
+import re
 import platform
+
 
 class JsonLogger():
 
@@ -26,16 +28,14 @@ class JsonLogger():
 
         """
 
-
         if os.path.isfile(os.getcwd() + os.sep + "test_reports" + os.sep + filename):
             print("File to be append")
         else:
             print("To be created")
-            robot_list = [{"Robot":robotname, "Sections": []}]
+            robot_list = [{"Robot": robotname, "Sections": []}]
             print(str(type(robot_list)))
             print(robot_list)
             self.append_to_json_file(os.getcwd() + os.sep + "test_reports" + os.sep + filename, robot_list)
-
 
     def append_to_jsondoc(self, fname=None, robotname=None, sectionname=None, message=None):
         """
@@ -49,19 +49,23 @@ class JsonLogger():
         timestamp = datetime.datetime.now().isoformat().split(".")[0]
         entry = None
         messages = None
-        entry_message = {"Timestamp": timestamp, "Type": "Normal", "Text": message}
-        entry_section = {"Messages": [{"Timestamp": timestamp, "Type": "Normal", "Text": message}], "Title":sectionname}
+        value = re.sub("[^0-9.,]", "", message).strip()
+        print(value)
+        print("!!!!!!!!!!!")
+        entry_message = {"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value)}
+        entry_section = {"Messages": [{"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value)}],
+                         "Title": sectionname}
         print("Appending to json...")
         with open(os.getcwd() + os.sep + "test_reports" + os.sep + fname) as feedsjson:
             feeds = json.load(feedsjson)
-        
+
         print(feeds)
         already_added = False
         for section in feeds:
             messages = section["Sections"]
             for message in messages:
                 try:
-                    title = message["Title"]    
+                    title = message["Title"]
                     if title == sectionname:
                         print("Exists already")
                         messa = message["Messages"]
@@ -70,7 +74,7 @@ class JsonLogger():
                         break
                     else:
                         print("New section")
-                        secto = section["Sections"]                    
+                        secto = section["Sections"]
                 except Exception as e:
                     print("Error in adding")
                     print(e)
@@ -83,17 +87,15 @@ class JsonLogger():
         with open(os.getcwd() + os.sep + "test_reports" + os.sep + fname, mode='w') as f:
             f.write(json.dumps(feeds, indent=4))
 
- 
     def file_exists(self, filepath):
         return os.path.isfile(filepath)
-
 
     def append_to_json_file(self, filename=None, to_save=None):
         """
         :param filename: Path to the .json file where the information will be saved. Must be full path.
         :param to_save: Information to save to the json file
         -------------
-        
+
         Constructs a string based on the message and time and saves it to the filename under the robotname key
         """
 
