@@ -9,11 +9,15 @@ kwlist = xmldoc.getElementsByTagName('kw')
 
 JsonLogger().json_logger_init("time_stack.json", itemlist[0].attributes['name'].value)
 FMT = '%Y%m%d %H:%M:%S.%f'
+index = 0
 for s in kwlist:
+    if "run keyword if" in s.attributes['name'].value.lower() and index == 0:
+        index = index + 1
+        pass
     if s.attributes['name'].value == "Teardown":
         break
     elif "suite" in s.attributes['name'].value.lower() or "log" in s.attributes['name'].value.lower() or "setup" in \
-            s.attributes['name'].value.lower():
+            s.attributes['name'].value.lower() or "open browser" in s.attributes['name'].value.lower():
         pass
     else:
         s1 = s.getElementsByTagName("status")[0].attributes['starttime'].value
