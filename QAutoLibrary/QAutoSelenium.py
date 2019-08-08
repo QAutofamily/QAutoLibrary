@@ -18,6 +18,7 @@ from sys import platform as _platform
 
 from logging import warn, log
 from robot.libraries.BuiltIn import BuiltIn
+from QAutoLibrary.Cryptomodule import AESCipher
 
 from requests.auth import HTTPBasicAuth
 from selenium.common.exceptions import WebDriverException, NoAlertPresentException
@@ -653,7 +654,7 @@ class CommonMethods(object):
         # actions.move_to_element(web_element).move_by_offset(x, y).send_keys_to_element(web_element, text).perform()
         actions.send_keys_to_element(web_element, text).perform()
 
-    def input_text(self, element, value, to_print=True):
+    def input_text(self, element, value, to_print=True, encrypt=False):
         """
         **Clear and types text to input element**
 
@@ -671,10 +672,23 @@ class CommonMethods(object):
         """
         self.wait_until_element_is_visible(element, get_config_value("default_timeout"), "", True)
         msg = "Failed to input text after %s seconds" % get_config_value("default_timeout")
-        CommonMethodsHelpers.webdriver_wait(lambda driver: self._input_text(element, value, to_print),
+        CommonMethodsHelpers.webdriver_wait(lambda driver: self._input_text(element, value, to_print, encrypt),
                                             self.driver_cache._get_current_driver(), msg)
 
-    def _input_text(self, element, value, to_print=True):
+    def _input_text(self, element, value, to_print=True, encrypt=False):
+        try:
+            if encrypt:
+                project_folder = os.getcwd()
+                DebugLog.log("Encrypted password")
+                _key = ""
+                _key = get_file_content(project_folder + os.sep + "key.txt")
+
+                cipher = AESCipher(_key)
+                plain_password = cipher.decrypt(value)
+                value = plain_password
+        except Exception as e:
+            DebugLog.log(e)
+
         try:
             locator_by = element[0]
             locator_value = element[1]
@@ -684,8 +698,8 @@ class CommonMethods(object):
                 elementtype = web_element.get_attribute("type")
                 if elementtype == "password":
                     valuelog = "***********"
-            except:
-                pass
+            except Exception as e:
+                print(e)
 
             if to_print:
                 try:
@@ -707,16 +721,15 @@ class CommonMethods(object):
 
             last_elem = self.last_element_details(True)
 
-
             if last_elem == None:
                 msg = "Failed to input element '%s, %s' after %s seconds" % (
-                locator_by.upper(), locator_value, get_config_value("default_timeout"))
+                    locator_by.upper(), locator_value, get_config_value("default_timeout"))
                 self.fail(msg)
                 return False
 
             if last_elem[0] == None and last_elem[1] == None:
                 msg = "Failed to input text to element '%s, %s' after %s seconds" % (
-                locator_by.upper(), locator_value, get_config_value("default_timeout"))
+                    locator_by.upper(), locator_value, get_config_value("default_timeout"))
                 self.fail(msg)
                 return False
             elif last_elem[1] != None:
@@ -724,7 +737,7 @@ class CommonMethods(object):
                 return True
             elif last_elem[0] != None:
                 msg = "UI layout changed. Failed to input text element '%s, %s' after %s seconds" % (
-                locator_by.upper(), locator_value, get_config_value("default_timeout"))
+                    locator_by.upper(), locator_value, get_config_value("default_timeout"))
                 self.fail(msg)
                 raise
 
