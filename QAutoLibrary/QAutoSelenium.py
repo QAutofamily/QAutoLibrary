@@ -836,7 +836,7 @@ class CommonMethods(object):
                 msg = "Element '%s' is visible for %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: not self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
-        print("Element ("+element[0]+":"+element[1]+") not visible in "+timeout+" seconds")
+        print("Element ("+element[0]+":"+element[1]+") not visible in "+ str(timeout) + " seconds")
 
     def wait_until_element_is_disabled(self, element, timeout=None, msg=None):
         """
