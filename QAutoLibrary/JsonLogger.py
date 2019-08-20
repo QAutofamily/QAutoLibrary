@@ -33,8 +33,6 @@ class JsonLogger():
         else:
             print("To be created")
             robot_list = [{"Robot": robotname, "Sections": []}]
-            print(str(type(robot_list)))
-            print(robot_list)
             self.append_to_json_file(os.getcwd() + os.sep + "test_reports" + os.sep + filename, robot_list)
 
     def append_to_jsondoc(self, fname=None, robotname=None, sectionname=None, message=None):
@@ -53,11 +51,10 @@ class JsonLogger():
         entry_message = {"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value)}
         entry_section = {"Messages": [{"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value)}],
                          "Title": sectionname}
-        print("Appending to json...")
+        print("Appending to json...", entry_message)
         with open(os.getcwd() + os.sep + "test_reports" + os.sep + fname) as feedsjson:
             feeds = json.load(feedsjson)
 
-        print(feeds)
         already_added = False
         for section in feeds:
             messages = section["Sections"]
@@ -65,13 +62,11 @@ class JsonLogger():
                 try:
                     title = message["Title"]
                     if title == sectionname:
-                        print("Exists already")
                         messa = message["Messages"]
                         messa.append(entry_message)
                         already_added = True
                         break
                     else:
-                        print("New section")
                         secto = section["Sections"]
                 except Exception as e:
                     print("Error in adding")
