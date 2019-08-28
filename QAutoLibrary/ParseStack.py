@@ -17,7 +17,9 @@ for s in kwlist:
     if s.attributes['name'].value == "Teardown":
         break
     elif "suite" in s.attributes['name'].value.lower() or "log" in s.attributes['name'].value.lower() or "setup" in \
-            s.attributes['name'].value.lower() or "open browser" in s.attributes['name'].value.lower():
+            s.attributes['name'].value.lower() or "open browser" in s.attributes['name'].value.lower() or "set speed" \
+            in s.attributes['name'].value.lower() or "start recording" in s.attributes['name'].value.lower() or \
+            "run keyword if" in s.attributes['name'].value.lower():
         pass
     else:
         s1 = s.getElementsByTagName("status")[0].attributes['starttime'].value
