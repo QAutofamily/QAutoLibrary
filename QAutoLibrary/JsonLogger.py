@@ -47,7 +47,7 @@ class JsonLogger():
         timestamp = datetime.datetime.now().isoformat().split(".")[0]
         entry = None
         messages = None
-        value = re.sub("[^0-9.,]", "", message).strip()
+        value = re.sub("[^0-9.,-]", "", message).strip()
         entry_message = {"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value)}
         entry_section = {"Messages": [{"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value)}],
                          "Title": sectionname}
