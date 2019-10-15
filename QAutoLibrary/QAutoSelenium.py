@@ -359,6 +359,32 @@ class CommonMethods(object):
         value = element[1]
 
         return driver.find_elements(by, value)
+        
+    def fallback_element(self, element):
+        locator_by = element[0]
+        locator_value = element[1]
+        last_elem = self.last_element_details(True)
+
+        if last_elem == None:
+            msg = "Failed to click element '%s, %s' after %s seconds" % (
+            locator_by.upper(), locator_value, get_config_value("default_timeout"))
+            self.fail(msg)
+            return False
+
+        if last_elem[0] == None and last_elem[1] == None:
+            msg = "Failed to click element '%s, %s' after %s seconds" % (
+            locator_by.upper(), locator_value, get_config_value("default_timeout"))
+            self.fail(msg)
+            return False
+        elif last_elem[1] != None:
+            self.click_element_at_coordinates(last_elem[0], last_elem[1], last_elem[2])
+            return True
+        elif last_elem[0] != None:
+            msg = "UI layout changed. Failed to click element '%s, %s' after %s seconds" % (
+            locator_by.upper(), locator_value, get_config_value("default_timeout"))
+            self.fail(msg)
+            raise
+
 
     def last_element_details(self, fallback=False):
         self.print_keywords()
@@ -439,64 +465,48 @@ class CommonMethods(object):
             | using representation
             | ``QAutoRobot.click_element((By.LINK_TEXT, u'Trial'))``
         """
-        self.wait_until_element_is_visible(element, get_config_value("default_timeout"), "", True)
-        self.wait_until_element_is_enabled(element, 5, "", True)
-        msg = "Failed to click element after %s seconds" % get_config_value("default_timeout")
-        CommonMethodsHelpers.webdriver_wait(lambda driver: self._click_element(element, to_print),
-                                            self.driver_cache._get_current_driver(), msg, True)
 
+        
+        start = time.time()
+        self.wait_until_element_is_visible(element, get_config_value("default_timeout"), "", True)
+        self.wait_until_element_is_enabled(element, 1, "", True)
+        end = time.time()
+        duration = end - start
+        click_timeout = get_config_value("default_timeout")
+        if duration > 20:
+            click_timeout = 3
+        msg = "Failed to click element after %s seconds" % get_config_value("default_timeout")
+        try:
+            CommonMethodsHelpers.webdriver_wait(lambda driver: self._click_element(element, to_print),
+                                                self.driver_cache._get_current_driver(), msg, click_timeout, False)
+        except:
+            self.fallback_element(element)
+                                            
     def _click_element(self, element, to_print=True):
         printout = ""
         locator_by = element[0]
         locator_value = element[1]
 
+        web_element = self.find_element_if_not_webelement(element)
+        element_loc = web_element.location
         try:
-
-            web_element = self.find_element_if_not_webelement(element)
-            element_loc = web_element.location
-            try:
-                if web_element.text != "":
-                    printout = "* Clicking at '%s' '%s:%s' in %s" % (web_element.text, locator_by, locator_value,str(element_loc))
-                else:
-                    try:
-                        printout = "* Clicking at '%s:%s' in %s" % (locator_by, locator_value, str(element_loc))
-                    except:
-                        printout = "* Clicking at Unknown button"
-            except:
-                print("* Clicking at Unknown button")
-            try:
-                web_element.click()
-            except WebDriverException as e:
-                if "is not clickable at point" in e.msg:
-                    DebugLog.log("Retry click after exception: " + e.msg)
-                    return False
-                else:
-                    DebugLog.log("Stopped running on WebDriverException: " + e.msg)
-                    raise
-
-        except Exception as e:
-
-            last_elem = self.last_element_details(True)
-
-            if last_elem == None:
-                msg = "Failed to click element '%s, %s' after %s seconds" % (
-                locator_by.upper(), locator_value, get_config_value("default_timeout"))
-                self.fail(msg)
-                # print("No element")
+            if web_element.text != "":
+                printout = "* Clicking at '%s' '%s:%s' in %s" % (web_element.text, locator_by, locator_value,str(element_loc))
+            else:
+                try:
+                    printout = "* Clicking at '%s:%s' in %s" % (locator_by, locator_value, str(element_loc))
+                except:
+                    printout = "* Clicking at Unknown button"
+        except:
+            print("* Clicking at Unknown button")
+        try:
+            web_element.click()
+        except WebDriverException as e:
+            if "is not clickable at point" in e.msg:
+                DebugLog.log("Retry click after exception: " + e.msg)
                 return False
-
-            if last_elem[0] == None and last_elem[1] == None:
-                msg = "Failed to click element '%s, %s' after %s seconds" % (
-                locator_by.upper(), locator_value, get_config_value("default_timeout"))
-                self.fail(msg)
-                return False
-            elif last_elem[1] != None:
-                self.click_element_at_coordinates(last_elem[0], last_elem[1], last_elem[2])
-                return True
-            elif last_elem[0] != None:
-                msg = "UI layout changed. Failed to click element '%s, %s' after %s seconds" % (
-                locator_by.upper(), locator_value, get_config_value("default_timeout"))
-                self.fail(msg)
+            else:
+                DebugLog.log("Stopped running on WebDriverException: " + e.msg)
                 raise
 
         if to_print:
