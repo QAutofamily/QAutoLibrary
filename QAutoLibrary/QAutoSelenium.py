@@ -104,15 +104,15 @@ class CommonMethods(object):
         self.screenshot_parser = None
         self.last_element = None
         self.selenium_speed = 0
-        
+
     def set_speed(self, timeout):
         """
         **Set selenium speed**
 
         :param timeout: timeout in seconds
-        """   
+        """
         self.selenium_speed = float(timeout)
-        
+
     def find_element_if_not_webelement(self, element):
         """
         **Find element if its not selenium web element**
@@ -359,34 +359,43 @@ class CommonMethods(object):
         value = element[1]
 
         return driver.find_elements(by, value)
-        
-    def fallback_element(self, element):
+
+    def fallback_element(self, element, action, value=""):
         locator_by = element[0]
         locator_value = element[1]
-        last_elem = self.last_element_details(True)
+        last_elem = self.last_element_details(True, action)
 
         if last_elem == None:
-            msg = "Failed to click element '%s, %s' after %s seconds" % (
-            locator_by.upper(), locator_value, get_config_value("default_timeout"))
+            msg = "Failed to click %s '%s, %s' after %s seconds" % (action,
+                                                                    locator_by.upper(), locator_value,
+                                                                    get_config_value("default_timeout"))
             self.fail(msg)
             return False
 
         if last_elem[0] == None and last_elem[1] == None:
-            msg = "Failed to click element '%s, %s' after %s seconds" % (
-            locator_by.upper(), locator_value, get_config_value("default_timeout"))
+            msg = "Failed to %s element '%s, %s' after %s seconds" % (action,
+                                                                      locator_by.upper(), locator_value,
+                                                                      get_config_value("default_timeout"))
             self.fail(msg)
             return False
         elif last_elem[1] != None:
-            self.click_element_at_coordinates(last_elem[0], last_elem[1], last_elem[2])
+            if action == "input":
+                self.input_text_element_at_coordinates(last_elem[0], last_elem[1], last_elem[2], value)
+                sleep(1)
+            else:
+                self.click_element_at_coordinates(last_elem[0], last_elem[1], last_elem[2])
+                sleep(1)
             return True
         elif last_elem[0] != None:
-            msg = "UI layout changed. Failed to click element '%s, %s' after %s seconds" % (
-            locator_by.upper(), locator_value, get_config_value("default_timeout"))
+            msg = "UI layout changed. Failed to %s element '%s, %s' after %s seconds" % (action,
+                                                                                         locator_by.upper(),
+                                                                                         locator_value,
+                                                                                         get_config_value(
+                                                                                             "default_timeout"))
             self.fail(msg)
             raise
 
-
-    def last_element_details(self, fallback=False):
+    def last_element_details(self, fallback=False, action=""):
         self.print_keywords()
         try:
             x = self.last_element.coordinates[0]
@@ -408,7 +417,7 @@ class CommonMethods(object):
                 element = self.find_element_with_coordinates(click_x, click_y)
                 element_size = element.size
                 element_location = element.location
-                
+
                 locator_id = element.get_attribute('id')
                 locator_class = element.get_attribute('class')
                 element_tag_name = element.tag_name
@@ -427,15 +436,16 @@ class CommonMethods(object):
 
                 document_root = html.fromstring(htmldoc)
                 print(etree.tostring(document_root, encoding='unicode', pretty_print=True))
-                self._save_screen_element(x, y, w, h, "Searched_" + test_name + "_element.png")
-                BuiltIn().log("<img src='" + "Searched_" + test_name + "_element.png" + "'>", "HTML")
+                self._save_screen_element(x, y, w, h, "Searched_" + test_name + "_" + action + "_element.png")
+                BuiltIn().log("<img src='" + "Searched_" + test_name + "_" + action + "_element.png" + "'>", "HTML")
                 BuiltIn().log("Current element coordinates and size:  x: " + str(element_location['x']) + " y: " + str(
                     element_location['y']) + " w: " + str(element_size['width']) + " h: " + str(element_size['height']))
                 if fallback:
-                    self._save_screen_element(element_location['x'], element_location['y'], element_size['width'], element_size['height'], "Current_" + test_name + "_element.png")
-                    BuiltIn().log("<img src='" + "Current_" + test_name + "_element.png" + "'>", "HTML")
-                    
-                
+                    self._save_screen_element(element_location['x'], element_location['y'], element_size['width'],
+                                              element_size['height'],
+                                              "Current_" + test_name + "_" + action + "_element.png")
+                    BuiltIn().log("<img src='" + "Current_" + test_name + "_" + action + "_element.png" + "'>", "HTML")
+
                 if h == element_size['height'] and w == element_size['width']:
                     if fallback:
                         self.warning(
@@ -466,7 +476,6 @@ class CommonMethods(object):
             | ``QAutoRobot.click_element((By.LINK_TEXT, u'Trial'))``
         """
 
-        
         start = time.time()
         self.wait_until_element_is_visible(element, get_config_value("default_timeout"), "", True)
         self.wait_until_element_is_enabled(element, 1, "", True)
@@ -480,8 +489,8 @@ class CommonMethods(object):
             CommonMethodsHelpers.webdriver_wait(lambda driver: self._click_element(element, to_print),
                                                 self.driver_cache._get_current_driver(), msg, click_timeout, False)
         except:
-            self.fallback_element(element)
-                                            
+            self.fallback_element(element, "click")
+
     def _click_element(self, element, to_print=True):
         printout = ""
         locator_by = element[0]
@@ -491,7 +500,8 @@ class CommonMethods(object):
         element_loc = web_element.location
         try:
             if web_element.text != "":
-                printout = "* Clicking at '%s' '%s:%s' in %s" % (web_element.text, locator_by, locator_value,str(element_loc))
+                printout = "* Clicking at '%s' '%s:%s' in %s" % (
+                web_element.text, locator_by, locator_value, str(element_loc))
             else:
                 try:
                     printout = "* Clicking at '%s:%s' in %s" % (locator_by, locator_value, str(element_loc))
@@ -536,7 +546,8 @@ class CommonMethods(object):
         if to_print:
             try:
                 if web_element.text != "":
-                    DebugLog.log("Double clicking at '%s' '%s:%s' in %s" % (web_element.text, locator_by, locator_value,str(element_loc)))
+                    DebugLog.log("Double clicking at '%s' '%s:%s' in %s" % (
+                    web_element.text, locator_by, locator_value, str(element_loc)))
                 else:
                     try:
                         element_loc = web_element.location
@@ -608,16 +619,16 @@ class CommonMethods(object):
             try:
                 if web_element.text != "":
                     print("* Clicking at element (%s, %s, %s)" % (
-                    web_element.text + " ", x + ",", y + " ") + " coordinates")
+                        web_element.text + " ", x + ",", y + " ") + " coordinates")
                 else:
                     try:
                         element_information = repr(element)
                         element_loc = web_element.location
                         DebugLog.log("* Clicking at element (%s, %s, %s)" % (
-                        str(element_information) + str(element_loc) + " " + x + ",", y + " ") + " coordinates")
+                            str(element_information) + str(element_loc) + " " + x + ",", y + " ") + " coordinates")
                     except:
                         DebugLog.log("* Clicking at element (%s, %s, %s)" % (
-                        "Unknown button" + " ", x + ",", y + " ") + " coordinates")
+                            "Unknown button" + " ", x + ",", y + " ") + " coordinates")
             except:
                 DebugLog.log(
                     "* Clicking at element (%s, %s, %s)" % ("Unknown button" + " ", x + ",", y + " ") + " coordinates")
@@ -648,16 +659,16 @@ class CommonMethods(object):
             try:
                 if web_element.text != "":
                     print("* Input text at element (%s, %s, %s)" % (
-                    web_element.text + " ", x + ",", y + " ") + " coordinates")
+                        web_element.text + " ", x + ",", y + " ") + " coordinates")
                 else:
                     try:
                         element_information = repr(element)
                         element_loc = web_element.location
                         DebugLog.log("* Input text at element (%s, %s, %s)" % (
-                        str(element_information) + str(element_loc) + " " + x + ",", y + " ") + " coordinates")
+                            str(element_information) + str(element_loc) + " " + x + ",", y + " ") + " coordinates")
                     except:
                         DebugLog.log("* Input text at element (%s, %s, %s)" % (
-                        "Unknown button" + " ", x + ",", y + " ") + " coordinates")
+                            "Unknown button" + " ", x + ",", y + " ") + " coordinates")
             except:
                 DebugLog.log(
                     "* Input at element (%s, %s, %s)" % ("Unknown button" + " ", x + ",", y + " ") + " coordinates")
@@ -680,10 +691,21 @@ class CommonMethods(object):
             | ``QAutoRobot.input_text((By.ID, u'contact_first_name'), "this is value")``
 
         """
+
+        start = time.time()
         self.wait_until_element_is_visible(element, get_config_value("default_timeout"), "", True)
+        end = time.time()
+        duration = end - start
+        input_timeout = get_config_value("default_timeout")
+        if duration > 20:
+            input_timeout = 3
+
         msg = "Failed to input text after %s seconds" % get_config_value("default_timeout")
-        CommonMethodsHelpers.webdriver_wait(lambda driver: self._input_text(element, value, to_print, encrypt),
-                                            self.driver_cache._get_current_driver(), msg)
+        try:
+            CommonMethodsHelpers.webdriver_wait(lambda driver: self._input_text(element, value, to_print, encrypt),
+                                                self.driver_cache._get_current_driver(), msg, input_timeout, False)
+        except:
+            self.fallback_element(element, "input", value)
 
     def _input_text(self, element, value, to_print=True, encrypt=False):
         try:
@@ -699,58 +721,33 @@ class CommonMethods(object):
         except Exception as e:
             DebugLog.log(e)
 
+        locator_by = element[0]
+        locator_value = element[1]
+        web_element = self.find_element_if_not_webelement(element)
+        valuelog = value
         try:
-            locator_by = element[0]
-            locator_value = element[1]
-            web_element = self.find_element_if_not_webelement(element)
-            valuelog = value
-            try:
-                elementtype = web_element.get_attribute("type")
-                if elementtype == "password":
-                    valuelog = "***********"
-            except Exception as e:
-                print(e)
-
-            if to_print:
-                try:
-                    element_loc = web_element.location
-                    DebugLog.log("* Clear and Typing text '%s' into element field '%s:%s' in %s" % (
-                        valuelog, locator_by, locator_value, element_loc))
-                except:
-                    try:
-                        DebugLog.log("* Clear and Typing text '%s' into element field 'Unknown element'" % valuelog)
-                    except:
-                        DebugLog.log(
-                            "* Clear and Typing text '%s' into element field 'Unknown element'" % valuelog.encode(
-                                'ascii',
-                                'ignore'))
-            web_element.clear()
-            value = CommonMethodsHelpers.contains_nonascii(value)
-            web_element.send_keys(value)
+            elementtype = web_element.get_attribute("type")
+            if elementtype == "password":
+                valuelog = "***********"
         except Exception as e:
+            print(e)
 
-            last_elem = self.last_element_details(True)
-
-            if last_elem == None:
-                msg = "Failed to input element '%s, %s' after %s seconds" % (
-                    locator_by.upper(), locator_value, get_config_value("default_timeout"))
-                self.fail(msg)
-                return False
-
-            if last_elem[0] == None and last_elem[1] == None:
-                msg = "Failed to input text to element '%s, %s' after %s seconds" % (
-                    locator_by.upper(), locator_value, get_config_value("default_timeout"))
-                self.fail(msg)
-                return False
-            elif last_elem[1] != None:
-                self.input_text_element_at_coordinates(last_elem[0], last_elem[1], last_elem[2], value)
-                return True
-            elif last_elem[0] != None:
-                msg = "UI layout changed. Failed to input text element '%s, %s' after %s seconds" % (
-                    locator_by.upper(), locator_value, get_config_value("default_timeout"))
-                self.fail(msg)
-                raise
-
+        if to_print:
+            try:
+                element_loc = web_element.location
+                DebugLog.log("* Clear and Typing text '%s' into element field '%s:%s' in %s" % (
+                    valuelog, locator_by, locator_value, element_loc))
+            except:
+                try:
+                    DebugLog.log("* Clear and Typing text '%s' into element field 'Unknown element'" % valuelog)
+                except:
+                    DebugLog.log(
+                        "* Clear and Typing text '%s' into element field 'Unknown element'" % valuelog.encode(
+                            'ascii',
+                            'ignore'))
+        web_element.clear()
+        value = CommonMethodsHelpers.contains_nonascii(value)
+        web_element.send_keys(value)
         return True
 
     def send_keys(self, element, value, to_print=True):
@@ -816,7 +813,6 @@ class CommonMethods(object):
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout, fallback)
 
-
     def wait_until_element_is_not_visible(self, element, timeout=None, msg=None):
         """
         **Wait until element specified is not visible**
@@ -846,7 +842,7 @@ class CommonMethods(object):
                 msg = "Element '%s' is visible for %s seconds" % (element.text, timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: not self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
-        print("Element ("+element[0]+":"+element[1]+") not visible in "+ str(timeout) + " seconds")
+        print("Element (" + element[0] + ":" + element[1] + ") not visible in " + str(timeout) + " seconds")
 
     def wait_until_element_is_disabled(self, element, timeout=None, msg=None):
         """
@@ -908,11 +904,10 @@ class CommonMethods(object):
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_enabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout, fallback)
 
-
     def get_download_time(self, downloads_folder="", max_download_time=120):
         """
                 **Return file download time in Chrome**
-                
+
                 :param downloads_folder: Chrome download folder
                 :param max_download_time: Max timeout to download
                 :return: time
@@ -934,24 +929,24 @@ class CommonMethods(object):
 
         search_start = datetime.now()
 
-        while(1):
+        while (1):
             # Searching .crdownload file
             time.sleep(0.1)
             currenttime = datetime.now() - search_start
-            if int(round(currenttime.total_seconds(),1)) > 8: # Search timeout 8 seconds
+            if int(round(currenttime.total_seconds(), 1)) > 8:  # Search timeout 8 seconds
                 print(".crdownload not found after: " + "8" + " seconds")
                 return None
 
-            # Go through files in path_to_downloads    
+            # Go through files in path_to_downloads
             for filename in os.listdir(path_to_downloads):
                 if filename.endswith('.crdownload'):
                     print("File found")
-                    # File found! start tracking download time        
+                    # File found! start tracking download time
                     DL_start_time = datetime.now()
                     print(path_to_downloads + os.sep + filename)
                     while (os.path.isfile(path_to_downloads + os.sep + filename) == True):
-                        currentdownloadtime = datetime.now() - DL_start_time #Tracking download time
-                        if int(round(currentdownloadtime.total_seconds(),1)) > int(max_download_time):
+                        currentdownloadtime = datetime.now() - DL_start_time  # Tracking download time
+                        if int(round(currentdownloadtime.total_seconds(), 1)) > int(max_download_time):
                             print("Download max timeout exceeded: " + str(max_download_time) + " seconds")
                             return None
                         time.sleep(0.05)
@@ -1100,7 +1095,7 @@ class CommonMethods(object):
                 total_duration = max_respond_end - min_start_time
                 timings_string += "{'%s': '%s', '%s': '%s'}],\n" % ("name", "All", "duration", total_duration)
                 jtl_timings_string += "\t<sample ts='%s' t='%s' lb='%s'/>\n" % (
-                ts, str(int(total_duration)), measurement_name)
+                    ts, str(int(total_duration)), measurement_name)
 
                 if (os.path.isfile(js_file)):
                     read_lines = get_file_lines(js_file)
@@ -1124,7 +1119,9 @@ class CommonMethods(object):
                 save_content_to_file(content_jtl, jtl_file)
                 print("Total loading time: " + str(round(total_duration)) + " ms")
                 self.execute_javascript("return window.performance.clearResourceTimings();", log=False)
-                BuiltIn().set_test_documentation("*Webpage loading times:*\n\n*" + measurement_name.capitalize() + "* total loading time: *" + str(round(total_duration)) + "* ms\n\n", append=True)
+                BuiltIn().set_test_documentation(
+                    "*Webpage loading times:*\n\n*" + measurement_name.capitalize() + "* total loading time: *" + str(
+                        round(total_duration)) + "* ms\n\n", append=True)
                 return resource_timings
             else:
                 print("%s: No resource timings to measure!!" % measurement_name)
@@ -2402,7 +2399,7 @@ class WebMethods(CommonMethods):
         msg = "Text equals '%s' did not appear in '%s' seconds from element" % (text, timeout)
         text = CommonMethodsHelpers.contains_nonascii(text)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_text(element) == text, msg, timeout)
-        print("Element locator "+element[0]+":"+element[1])
+        print("Element locator " + element[0] + ":" + element[1])
 
     def wait_until_element_attribute_contains(self, element, attr, expected_value, timeout=None):
         """
@@ -3610,7 +3607,7 @@ class Asserts(object):
             | ``QAutoRobot.element_text_should_be(self.element, text)``
         """
         CommonMethodsHelpers.assert_equal(text, self._wm.get_text(element))
-        print("Element locator "+element[0]+":"+element[1])
+        print("Element locator " + element[0] + ":" + element[1])
 
     def element_value_should_be(self, element, value):
         """
@@ -3623,7 +3620,7 @@ class Asserts(object):
             | ``QAutoRobot.element_text_should_be(self.element, value)``
         """
         CommonMethodsHelpers.assert_equal(value, self._wm.get_value(element))
-        print("Element locator "+element[0]+":"+element[1])
+        print("Element locator " + element[0] + ":" + element[1])
 
     def list_value_should_be(self, element, value):
         """
@@ -3637,7 +3634,7 @@ class Asserts(object):
 
         """
         CommonMethodsHelpers.assert_equal(value, self._wm.get_selected_list_value(element))
-        print("Element locator "+element[0]+":"+element[1])
+        print("Element locator " + element[0] + ":" + element[1])
 
     def list_label_should_be(self, element, text):
         """
@@ -3650,7 +3647,7 @@ class Asserts(object):
             | ``QAutoRobot.list_label_should_be(self.element, text)``
         """
         CommonMethodsHelpers.assert_equal(text, self._wm.get_selected_list_label(element))
-        print("Element locator "+element[0]+":"+element[1])
+        print("Element locator " + element[0] + ":" + element[1])
 
     def element_attribute_should_be(self, element, attribute, value):
         """
@@ -3664,7 +3661,7 @@ class Asserts(object):
             | ``QAutoRobot.wait_until_element_should_not_be(self.element, attribute, value)``
         """
         CommonMethodsHelpers.assert_equal(value, self._wm.get_attribute(element, attribute))
-        print("Element locator "+element[0]+":"+element[1])
+        print("Element locator " + element[0] + ":" + element[1])
 
     def element_attribute_should_contains(self, element, attr, expected_value):
         """
@@ -3678,7 +3675,7 @@ class Asserts(object):
             | ``QAutoRobot.element_attribute_should_contains(self.CONTACT_QAUTOMATE_FI, u'href', u'mailto')``
         """
         atr_text = self._wm.get_attribute(element, attr)
-        print("Element locator "+element[0]+":"+element[1])
+        print("Element locator " + element[0] + ":" + element[1])
         try:
             msg = "Element attribute '%s' doesn't contain text '%s'" % (attr, expected_value)
         except:
@@ -3700,7 +3697,7 @@ class Asserts(object):
             | ``QAutoRobot.elements_count_should_be(self.element, value_int)``
         """
         CommonMethodsHelpers.assert_equal(int(value_int), self._wm.get_elements_count(element))
-        print("Element locator "+element[0]+":"+element[1])
+        print("Element locator " + element[0] + ":" + element[1])
 
     def element_should_contain(self, element, text):
         """
@@ -3713,7 +3710,7 @@ class Asserts(object):
             | ``QAutoRobot.element_should_contain(self.CLASS_MAIN_HEADER, text)``
         """
         el_text = self._wm.get_text(element)
-        print("Element locator "+element[0]+":"+element[1])
+        print("Element locator " + element[0] + ":" + element[1])
         try:
             msg = "Element text '%s' doesn't contain text '%s'" % (el_text, text)
         except:
@@ -4621,8 +4618,8 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         scr_created = True
         try:
             ref_scr_name = ref_scr_name.split(".png")[0] + "_%s_%s_%s_%s.png" % (
-            str(x_coord).strip(), str(y_coord).strip(),
-            str(width).strip(), str(height).strip())
+                str(x_coord).strip(), str(y_coord).strip(),
+                str(width).strip(), str(height).strip())
 
             self.take_full_screenshot(GlobalUtils.COMPARE_SCREENSHOT)
 
@@ -4667,7 +4664,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             # found screenshot with different browser
             print("WARNING: Reference screenshot (%s) not found. Using screenshot (%s), " +
                   "which was created different browser (%s).") % (
-            ref_scr_file_name, new_file_name, xml_meta_data['browser'])
+                ref_scr_file_name, new_file_name, xml_meta_data['browser'])
             ref_scr_file_name = new_file_name
             ref_scr_file_name_path = os.path.join(current_dir, GlobalUtils.SCREENSHOTS_FOLDER_NAME, ref_scr_file_name)
 
@@ -4711,9 +4708,9 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
 
         unittest.TestCase("assertTrue").assertTrue(is_similar,
                                                    (
-                                                               "Screenshots do not match. Reference screenshot: %s. Similarity level " +
-                                                               "is '%s' percent") % (
-                                                   ref_scr_file_name, str(100 - difference)))
+                                                           "Screenshots do not match. Reference screenshot: %s. Similarity level " +
+                                                           "is '%s' percent") % (
+                                                       ref_scr_file_name, str(100 - difference)))
 
         print("Comparing screenshots... Screenshots match. Reference screenshot: %s. "
               "Similarity level is %s.") % (ref_scr_file_name, str(100 - difference) + "%")
