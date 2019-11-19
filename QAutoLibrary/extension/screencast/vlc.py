@@ -127,7 +127,7 @@ def find_lib():
                     if os.path.exists(p):
                         plugin_path = os.path.dirname(p)
                         break
-            if plugin_path is not None:  # try loading
+            if plugin_path != None:  # try loading
                 p = os.getcwd()
                 os.chdir(plugin_path)
                  # if chdir failed, this will raise an exception
@@ -192,7 +192,7 @@ def _Cfunction(name, flags, errcheck, *types):
     if hasattr(dll, name) and name in _Globals:
         p = ctypes.CFUNCTYPE(*types)
         f = p((name, dll), flags)
-        if errcheck is not None:
+        if errcheck != None:
             f.errcheck = errcheck
         # replace the Python function
         # in this module, but only when
@@ -1288,7 +1288,7 @@ class Instance(_Ctype):
             else:
                 raise VLCException('Instance %r' % (args,))
 
-        if not args and plugin_path is not None:
+        if not args and plugin_path != None:
              # no parameters passed, for win32 and MacOS,
              # specify the plugin_path if detected earlier
             args = ['vlc', '--plugin-path=' + plugin_path]

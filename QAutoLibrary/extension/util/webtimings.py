@@ -175,8 +175,8 @@ def __generate_files(timings, total_time, load_time, latency, ts, lb):
     try:
         if(os.path.isfile(JTL_FILE)):
             read_lines = get_file_lines(JTL_FILE)
-            str_to_insert = ("<sample" + (' t=\'' + str(t) + '\'' if t is not None else '') + "" +
-                            (' lt=\'' + str(latency) + '\'' if latency is not None else '') + " ts='" + str(ts) + "' s='"
+            str_to_insert = ("<sample" + (' t=\'' + str(t) + '\'' if t != None else '') + "" +
+                            (' lt=\'' + str(latency) + '\'' if latency != None else '') + " ts='" + str(ts) + "' s='"
                             + str('true' if 200 <= __RESPONSE.code < 300 else 'false') + "' lb='" + str(lb) + "' rc='"
                             + str(__RESPONSE.code) + "' rm='" + str(__RESPONSE.msg) + "'/>\n")
             new_lines = read_lines[:-1] + [str_to_insert] + [read_lines[-1]]
@@ -184,8 +184,8 @@ def __generate_files(timings, total_time, load_time, latency, ts, lb):
             save_content_to_file(content, JTL_FILE)
         else:
             heading = "<?xml version='1.0' encoding='UTF-8'?>\n<testResults version='1.2'>"
-            lines = ("\n<sample" + (' t=\'' + str(t) + '\'' if t is not None else '') + "" +
-                    (' lt=\'' + str(latency) + '\'' if latency is not None else '') + " ts='" + str(ts) + "' s='"
+            lines = ("\n<sample" + (' t=\'' + str(t) + '\'' if t != None else '') + "" +
+                    (' lt=\'' + str(latency) + '\'' if latency != None else '') + " ts='" + str(ts) + "' s='"
                     + str('true' if 200 <= __RESPONSE.code < 300 else 'false') + "' lb='" + str(lb) + "' rc='"
                     + str(__RESPONSE.code) + "' rm='" + str(__RESPONSE.msg) + "'/>")
             ending = "\n</testResults>"
@@ -199,9 +199,9 @@ def __generate_files(timings, total_time, load_time, latency, ts, lb):
     try:
         if(os.path.isfile(JS_FILE)):
             read_lines = get_file_lines(JS_FILE)
-            str_to_insert = ("{" + ("'load': '" + str(load_time) + "', " if load_time is not None else "") +
-                            ("'total': '" + str(total_time) + "', " if t is not None else "") +
-                            ("'latency': '" + str(latency) + "', " if latency is not None else "") + "'timestamp': '"
+            str_to_insert = ("{" + ("'load': '" + str(load_time) + "', " if load_time != None else "") +
+                            ("'total': '" + str(total_time) + "', " if t != None else "") +
+                            ("'latency': '" + str(latency) + "', " if latency != None else "") + "'timestamp': '"
                             + str(ts) + "', 'succes': " + str('true' if 200 <= __RESPONSE.code < 300 else 'false')
                             + ", 'label': '" + str(lb) + "', 'response_code': '" + str(__RESPONSE.code) + "', 'response_msg': '"
                             + str(__RESPONSE.msg) + "'},\n")
@@ -210,9 +210,9 @@ def __generate_files(timings, total_time, load_time, latency, ts, lb):
             save_content_to_file(content, JS_FILE)
         else:
             heading = "var timings_js_data = ["
-            lines = ("\n{" + ("'load': '" + str(load_time) + "', " if load_time is not None else "") +
-                    ("'total': '" + str(total_time) + "', " if t is not None else "") +
-                    ("'latency': '" + str(latency) + "', " if latency is not None else "") + "'timestamp': '"
+            lines = ("\n{" + ("'load': '" + str(load_time) + "', " if load_time != None else "") +
+                    ("'total': '" + str(total_time) + "', " if t != None else "") +
+                    ("'latency': '" + str(latency) + "', " if latency != None else "") + "'timestamp': '"
                     + str(ts) + "', 'succes': " + str('true' if 200 <= __RESPONSE.code < 300 else 'false')
                     + ", 'label': '" + str(lb) + "', 'response_code': '" + str(__RESPONSE.code) + "', 'response_msg': '"
                     + str(__RESPONSE.msg) + "'},")

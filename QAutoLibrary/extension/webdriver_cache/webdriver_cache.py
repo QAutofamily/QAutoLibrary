@@ -112,7 +112,7 @@ class DriverCache(object, metaclass=Singleton):
     # check that is there any drivers in the cache
     # returns True or False
     def is_drivers_in_cache(self):
-        return self.current_driver_id_alias is not None
+        return self.current_driver_id_alias != None
 
     # closes current driver and sets last opened driver as current driver
     def close(self):

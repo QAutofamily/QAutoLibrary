@@ -329,7 +329,7 @@ def reset_protected_mode():
     try:
         import winreg
         for i in range(1, 5):
-            if _protected_values[i - 1] is not None:
+            if _protected_values[i - 1] != None:
                 key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                                       "Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings\\Zones\\" + str(i),
                                       0, winreg.KEY_ALL_ACCESS | winreg.KEY_WOW64_32KEY)

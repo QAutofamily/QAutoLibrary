@@ -1385,6 +1385,7 @@ class CommonMethods(object):
             | ``value = QAutoRobot.get_text((By.LINK_TEXT, u'Trial'))``
 
         """
+
         self.wait_until_element_is_visible(element)
         element = self.find_element_if_not_webelement(element)
         return element.text
@@ -4824,7 +4825,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         doc_height = driver.execute_script(
             "return Math.max(document.body.scrollHeight, document.body.offsetHeight, document.body.clientHeight);")
 
-        if height_override is not None:
+        if height_override != None:
             doc_height = height_override
 
         if viewport_height >= doc_height:
@@ -4857,7 +4858,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         previous = None
         part = 0
         for rectangle in rectangles:
-            if previous is not None:
+            if previous != None:
                 driver.execute_script("window.scrollTo({0}, {1})".format(rectangle[0], rectangle[1]))
                 time.sleep(0.2)
 
