@@ -4427,6 +4427,25 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         driver = self.get_current_driver()
         return driver.page_source
 
+    def save_page_source(self, testname):
+        """
+        **Writes page source to file in test reports folder, used in teardown**
+
+        :return: page source
+        --------------------
+        :Example:
+            | ``QAutoRobot.go_to("http://www.maps.nokia.com")``
+            | ``html_source = QAutoRobot.save_page_source()``
+            | ``if "City and Country Maps" in html_source:``
+            |   ``do something``
+            | ``else:``
+            |   ``do something else``
+
+        """
+        driver = self.get_current_driver()
+        with open(os.path.join("test_reports", testname + "_source.html"), 'w') as file:
+            file.write(driver.page_source)
+
     def drag_and_drop(self, draggable, droppable):
         """
         **Drags draggable element onto droppable**
