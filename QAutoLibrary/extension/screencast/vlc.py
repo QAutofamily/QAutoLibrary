@@ -119,7 +119,7 @@ def find_lib():
                         pass
             except ImportError:  # no PyWin32
                 pass
-            if plugin_path is None:
+            if plugin_path == None:
                  # try some standard locations.
                 for p in ('Program Files\\VideoLan\\', 'VideoLan\\',
                           'Program Files\\',           ''):
@@ -129,11 +129,7 @@ def find_lib():
                         break
             if plugin_path != None:  # try loading
                 p = os.getcwd()
-                os.chdir(plugin_path)
-                 # if chdir failed, this will raise an exception
-                dll = ctypes.CDLL('libvlc.dll')
-                 # restore cwd after dll has been loaded
-                os.chdir(p)
+                dll = ctypes.CDLL(plugin_path + os.sep + 'libvlc.dll')
             else:  # may fail
                 dll = ctypes.CDLL('libvlc.dll')
         else:
