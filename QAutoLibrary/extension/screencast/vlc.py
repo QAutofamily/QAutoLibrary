@@ -129,7 +129,18 @@ def find_lib():
                         break
             if plugin_path != None:  # try loading
                 p = os.getcwd()
-                dll = ctypes.CDLL(plugin_path + os.sep + 'libvlc.dll')
+                os.chdir(plugin_path)
+                 # if chdir failed, this will raise an exception
+                try:
+                    # Python3.7
+                    dll = ctypes.CDLL('libvlc.dll')
+                except:
+                    os.chdir(p)
+                    # Python3.8
+                    dll = ctypes.CDLL(plugin_path + os.sep + 'libvlc.dll')
+                 # restore cwd after dll has been loaded
+                os.chdir(p)
+
             else:  # may fail
                 dll = ctypes.CDLL('libvlc.dll')
         else:
