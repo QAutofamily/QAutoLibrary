@@ -89,9 +89,8 @@ class RpaLogger():
         if self.mongodbc != None:
             mydb = self.mongodbc["robotData"]
             mycol = mydb["robotInfo"]
-            entry_message = {"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value),
-                             "Robot": self.robotname}
-            x = mycol.insert_one(entry_message)
+            entry_message_db = {"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value), "Title": sectionname, "Robot": self.robotname}
+            x = mycol.insert_one(entry_message_db)
             print(x)
 
         print("Appending to json...", entry_message)
