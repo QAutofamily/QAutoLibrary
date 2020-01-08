@@ -17,6 +17,8 @@ pip install Pillow
 pip install requests
 pip install lxml
 pip install simplejson
+pip install pymongo
+pip install pycryptodome
 ```
 
 ### Installing
