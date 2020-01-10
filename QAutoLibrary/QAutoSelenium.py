@@ -514,6 +514,7 @@ class CommonMethods(object):
         except WebDriverException as e:
             if "is not clickable at point" in e.msg:
                 DebugLog.log("Retry click after exception: " + e.msg)
+                self.execute_javascript('window.scrollBy(0,100)')
                 return False
             else:
                 DebugLog.log("Stopped running on WebDriverException: " + e.msg)
