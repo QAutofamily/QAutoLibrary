@@ -2442,6 +2442,9 @@ class WebMethods(CommonMethods):
 
         """
         self.wait_for_condition("return document.readyState", "complete")
+        sleep(1)
+        # Handle redirects
+        self.wait_for_condition("return document.readyState", "complete")
         DebugLog.log("* Browser loaded webpage")
 
     def wait_for_condition(self, js_script, value, msg=None):
