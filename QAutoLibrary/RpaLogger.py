@@ -22,7 +22,7 @@ class RpaLogger():
         self.robotname = ""
         self.filename = None
 
-    def rpa_logger_init(self, filename=None, robotname=None, mongodbIPPort="localhost:27017/", username="", password="",
+    def rpa_logger_init(self, filename=None, robotname=None, runid=1, mongodbIPPort="localhost:27017/", username="", password="",
                         ssl=False):
         """
         :param filename: Path to the .json file where the information will be saved. Mandatory
@@ -67,6 +67,7 @@ class RpaLogger():
             self.append_to_file(os.getcwd() + os.sep + "test_reports" + os.sep + filename, robot_list)
         self.filename = filename
         self.robotname = robotname
+        self.runid = runid
 
     def log_rpa(self, sectionname=None, message=None):
         """
@@ -89,7 +90,7 @@ class RpaLogger():
         if self.mongodbc != None:
             mydb = self.mongodbc["robotData"]
             mycol = mydb["robotInfo"]
-            entry_message_db = {"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value), "Title": sectionname, "Robot": self.robotname}
+            entry_message_db = {"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value), "Title": sectionname, "Robot": self.robotname, "Runid": self.runid}
             x = mycol.insert_one(entry_message_db)
             print(x)
 
