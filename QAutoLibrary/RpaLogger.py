@@ -22,8 +22,8 @@ class RpaLogger():
         self.robotname = ""
         self.filename = None
 
-    def rpa_logger_init(self, filename=None, robotname=None, runid=1, mongodbIPPort="localhost:27017/", username="", password="",
-                        ssl=False):
+    def rpa_logger_init(self, filename=None, robotname=None, runid=1, mongodbIPPort="localhost:27017/", username="",
+                        password="", ssl=False):
         """
         :param filename: Path to the .json file where the information will be saved. Mandatory
         :param robotname: Name of the robot that generated the message to be saved Mandatory
@@ -69,16 +69,35 @@ class RpaLogger():
         self.robotname = robotname
         self.runid = runid
 
-    def log_rpa(self, sectionname=None, message=None):
+    def log_rpa(self, **kwargs):
         """
-        :param sectionname: Current section title
-        :param message: Message to be saved to the filename
+        :param \**kwargs:
+        **state (string): Current robot state (optional)
+        **title (string): Current message title (optional)
+        **msg (string): Message to be saved to logs (optional)
         -------------
+        Examples:
+        | Log rpa      | state=ReadyReading | title=excelRead  | msg=All reading completed
+        | Log rpa      | state=ReadyOngoing |
+        | Log rpa      | title=excelRead | msg=All reading ongoing
 
         """
         if self.filename == None:
             print("RPA logger file missing. Call rpa_logger_init first.")
             self.fail("RPA logger file missing. Call rpa_logger_init first.")
+
+        message = ""
+        sectionname = ""
+        state = ""
+        if len(kwargs.keys()) == 0:
+            self.fail("Log rpa Keyword arguments missing state or title or msg.")
+        for kwarg in kwargs.keys():
+            if kwarg == "title":
+                sectionname = kwargs["title"]
+            if kwarg == "msg":
+                message = kwargs["msg"]
+            if kwarg == "state":
+                state = kwargs["state"]
 
         timestamp = datetime.datetime.now().isoformat().split(".")[0]
         entry = None
@@ -90,7 +109,8 @@ class RpaLogger():
         if self.mongodbc != None:
             mydb = self.mongodbc["robotData"]
             mycol = mydb["robotInfo"]
-            entry_message_db = {"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value), "Title": sectionname, "Robot": self.robotname, "Runid": self.runid}
+            entry_message_db = {"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value),
+                                "Title": sectionname, "Robot": self.robotname, "Runid": self.runid, "State": state}
             x = mycol.insert_one(entry_message_db)
             print(x)
 
