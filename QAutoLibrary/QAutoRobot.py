@@ -8,6 +8,7 @@ from robot.libraries.BuiltIn import BuiltIn
 from QAutoLibrary.QAutoSelenium import CommonUtils
 from QAutoLibrary.JsonLogger import JsonLogger
 from QAutoLibrary.RpaLogger import RpaLogger
+from QAutoLibrary.TikaParser import TikaParser
 
 from QAutoLibrary.extension.screencast.vlc_recorder import VlcRecorder
 from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils
@@ -21,7 +22,7 @@ LibraryScope = 'TEST SUITE'
 LibraryAttributeName = "QAutoRobot"
 
 
-class QAutoRobot(CommonUtils, JsonLogger, RpaLogger):
+class QAutoRobot(CommonUtils, JsonLogger, RpaLogger, TikaParser):
     """
     Robot library for dynamically adding all qautorobot methods to robot runnable state or in robot project libraries
     """
