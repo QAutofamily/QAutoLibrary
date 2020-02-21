@@ -79,7 +79,8 @@ class RpaLogger():
         Examples:
         | Log rpa      | state=ReadyReading | title=excelRead  | msg=All reading completed
         | Log rpa      | state=ReadyOngoing |
-        | Log rpa      | title=excelRead | msg=All reading ongoing
+        | Log rpa      | title=excelRead | msg=All reading failed | type=Warning
+        | Log rpa      | title=excelRead | msg=Generic error | type=Error
 
         """
         if self.filename == None:
@@ -89,6 +90,7 @@ class RpaLogger():
         message = ""
         sectionname = ""
         state = ""
+        type = "Normal"
         if len(kwargs.keys()) == 0:
             self.fail("Log rpa Keyword arguments missing state or title or msg.")
         for kwarg in kwargs.keys():
@@ -98,18 +100,20 @@ class RpaLogger():
                 message = kwargs["msg"]
             if kwarg == "state":
                 state = kwargs["state"]
+            if kwarg == "type":
+                type = kwargs["type"]
 
         timestamp = datetime.datetime.now().isoformat().split(".")[0]
         entry = None
         messages = None
         value = re.sub("[^0-9.,-]", "", message).strip()
-        entry_message = {"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value)}
-        entry_section = {"Messages": [{"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value)}],
+        entry_message = {"Timestamp": timestamp, "Type": type, "Text": message, "Value": str(value)}
+        entry_section = {"Messages": [{"Timestamp": timestamp, "Type": type, "Text": message, "Value": str(value)}],
                          "Title": sectionname}
         if self.mongodbc != None:
             mydb = self.mongodbc["robotData"]
             mycol = mydb["robotInfo"]
-            entry_message_db = {"Timestamp": timestamp, "Type": "Normal", "Text": message, "Value": str(value),
+            entry_message_db = {"Timestamp": timestamp, "Type": type, "Text": message, "Value": str(value),
                                 "Title": sectionname, "Robot": self.robotname, "Runid": self.runid, "State": state}
             x = mycol.insert_one(entry_message_db)
             print(x)
