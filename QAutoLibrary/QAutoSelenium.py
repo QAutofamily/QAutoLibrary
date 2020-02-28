@@ -1728,7 +1728,7 @@ class CommonMethods(object):
 
         # Send the message
         # NOTE: Email addresses must be verified in AWS -> Identity Management
-        server.sendmail(sender,receiver, msg)
+        server.sendmail(sender,receiver, msg.encode('utf-8'))
         server.quit()
 
 
