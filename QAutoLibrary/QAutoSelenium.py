@@ -7,6 +7,7 @@ import time
 import traceback
 import unittest
 import requests
+import smtplib
 from PIL import Image  # @UnresolvedImport
 from collections import OrderedDict
 from datetime import datetime
@@ -1696,6 +1697,39 @@ class CommonMethods(object):
         except Exception as e:
             print("Failed to generate zap test report" + str(e))
         time.sleep(1)
+
+    def send_email(self, smtp_username, smtp_password, receiver, mail_subject, mail_content):
+        """
+        **Send mail from qautomate support to receiver**
+
+        :param smtp_username: Email server user
+        :param smtp_password: Email server user password
+        :param receiver: Email address of the receiver
+        :param mail_subject: Subject of the email
+        :param mail_content: Content part of the email
+        -------------
+        :Example:
+            *Page model level example*
+            ``QAutoRobot.send_email(email_client, email_secret, "employee@company.com", "Test_Subject", "This is a test message")``
+
+        """
+        sender = "support@qautomate.fi"
+
+        # Setting up server settings and establishing connection
+        server = smtplib.SMTP('email-smtp.eu-west-1.amazonaws.com', 587)
+        server.ehlo()
+        server.starttls()
+
+        # Log in to the server with SMTP credentials
+        server.login(smtp_username, smtp_password)
+
+        # Construct the message
+        msg = 'Subject: {}\n\n{}'.format(mail_subject, mail_content)
+
+        # Send the message
+        # NOTE: Email addresses must be verified in AWS -> Identity Management
+        server.sendmail(sender,receiver, msg)
+        server.quit()
 
 
 class WebMethods(CommonMethods):
