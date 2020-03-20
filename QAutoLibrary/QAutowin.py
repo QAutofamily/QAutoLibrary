@@ -144,7 +144,7 @@ class QAutowin(object):
 
     @keyword(name='Right click element')
     def Right_click_element(self, **kwargs):
-                """
+        """
         **Right-clicks at element**
 
         :kwargs: auto_id, class_name, class_name_re, title, title_re, control_type
