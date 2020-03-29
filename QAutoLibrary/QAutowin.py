@@ -239,16 +239,26 @@ class QAutowin(object):
         image.save(error_image_folder)
         logger.error('Something went wrong. Screenshot taken')
 
-    @keyword(name='Close all cmds')
-    def Close_all_cmds(self):
+    def Close_cmd_process(self, cmd_process):
         """
-        **Close all cmds**
+        **Close cmd process**
 
         --------------
         :Example:
-            | Close all cmds
+            | Close cmd process  cmd_process_title
         """
-        os.system("TASKKILL /F /IM cmd.exe")
+        result = subprocess.run(['tasklist', '/fi', 'imagename eq cmd.exe', '/v', '/fo:csv', '/nh'], stdout=subprocess.PIPE)
+        results = str(result).split('cmd.exe",')
+        pid = ""
+        for proc in results:
+            if cmd_process in proc:
+                print(proc)
+                pid = proc.split(",")[0].replace('"', '')
+                result_kill = subprocess.run(['taskkill', '/PID', pid], stdout=subprocess.PIPE)
+                print(result_kill)
+
+        if pid == "":
+            print("No process found: ", cmd_process)
 
     @keyword(name='Launch bat')
     def Launch_bat(self, directory, bat_name):
@@ -259,8 +269,17 @@ class QAutowin(object):
         :Example:
             | Launch bat  directory  file_name
         """
+        dir = os.getcwd()
         os.chdir(directory)
-        subprocess.call('start"' + bat_name + '"', shell=True)
+        try:
+            subprocess.call('start ' + bat_name, shell=True)
+            os.chdir(dir)
+        except Exception as e:
+            os.chdir(dir)
+            print(e)
         time.sleep(3)
+
+
+
 
 
