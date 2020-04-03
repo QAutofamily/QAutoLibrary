@@ -71,6 +71,36 @@ class RpaLogger():
         self.runid = runid
         self.vmname = vmname
 
+    def save_rpa_data (self, **kwargs):
+        """
+        **Saves robot data to database**
+
+        :param \**kwargs: 1..n named arguments 
+        -------------
+        Examples:
+        | Save rpa data      | MyDataName=MyDataValue | SecondDataName=SecondDataValue
+
+        """
+
+        if len(kwargs.keys()) == 0:
+            self.warning("RPA data missing! Nothing to add database!")
+            return
+        if self.mongodbc == None:
+            self.warning("Mongodb Server not available, cannot save data!")
+            return
+
+        # Filter to find existing document
+        filter = {"Runid":self.runid, "Robot": self.robotname}
+        # Data to add or modify document
+        rpa_data={}
+        for key, value in kwargs.items():
+            rpa_data.update({key: value})
+        update = [{ "$addFields": {"rpaData": rpa_data}}]
+        
+        # Add to database. If 'filter' do not find any documents new will added
+        # otherwise existing rpaData will be updated
+        self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True) 
+
     def log_rpa(self, **kwargs):
         """
         :param \**kwargs:
