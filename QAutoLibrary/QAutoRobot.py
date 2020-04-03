@@ -54,6 +54,12 @@ class QAutoRobot(CommonUtils, JsonLogger, RpaLogger, TikaParser):
         with open(os.path.join(GlobalUtils.TOOL_CACHE, "test_status"), 'w+') as file:
             file.write(attrs['status'])
 
+    def _end_suite(self, name, attrs):
+        # Save suite execution time to mongodb if RpaLogger is initialized
+        if hasattr(self, 'mongodbc') and self.mongodbc:
+            elapsed_time = attrs["elapsedtime"]/1000
+            self.save_rpa_data(duration=elapsed_time)
+
     def print_keywords(self):
         for i in reversed(self.keywords):
             try:
