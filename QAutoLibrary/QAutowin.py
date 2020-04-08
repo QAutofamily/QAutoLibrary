@@ -9,6 +9,7 @@ import subprocess
 import pygetwindow as gw
 import win32api
 
+
 # http://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#testing-libraries
 # https://github.com/robotframework/robotframework/blob/master/doc/userguide/src/ExtendingRobotFramework/CreatingTestLibraries.rst
 
@@ -53,22 +54,41 @@ class QAutowin(object):
 
             windows_list = gw.getWindowsWithTitle(self.app.application_title)
 
-            hwnd = str(windows_list).split("hWnd=")[1].split(")")[0]
+            self.hwnd = str(windows_list).split("hWnd=")[1].split(")")[0]
             app = pywinauto.application.Application(backend="uia")
-            pyapp = app.connect(handle=int(hwnd.split("hwnd=")[-1]))
+            pyapp = app.connect(handle=int(self.hwnd.split("hwnd=")[-1]))
             window_count = len(pyapp.windows())
             self.window = pyapp.window(found_index=(window_count - 1))
 
             return self.app.process
 
+    @keyword(name='Print identifiers')
+    def print_identifiers(self):
+        """
+        **Returns print control identifiers**
+
+        --------------
+        :Example:
+            | Print identifiers
+        """
+
+        window = self.find_connected_app_window()
+        print(window.print_control_identifiers())
+
+
     def find_connected_app_window(self):
         """
-        **Returns window of connected app**
+        **Returns window of connected app with using hwnd**
 
         --------------
         :Example:
             | ${window}=  Find app window
         """
+        app = pywinauto.application.Application(backend="uia")
+        pyapp = app.connect(handle=int(self.hwnd.split("hwnd=")[-1]))
+        window_count = len(pyapp.windows())
+        self.window = pyapp.window(found_index=(window_count - 1))
+
         return self.window
 
     @keyword(name='Click Element')
@@ -97,6 +117,7 @@ class QAutowin(object):
             window.child_window(**kwargs).wait('visible', timeout=10)
             window.child_window(**kwargs).click_input()
 
+
     @keyword(name='Send Keywords')  # Send input data. Useful for text fields, that "Input text" does not recognize. Also, you can send keyboard actions, for example like ~ for Enter
     # https://pywinauto.readthedocs.io/en/latest/code/pywinauto.keyboard.html
     def Send_Keywords(self, user_input):
@@ -109,6 +130,7 @@ class QAutowin(object):
         """
         logger.info('Send keywords %s.' % user_input)
         send_keys(user_input)
+
 
     @keyword(name='Input Text')
     def Input_Text(self, user_input, **kwargs):
@@ -135,6 +157,7 @@ class QAutowin(object):
             window.child_window(**kwargs).set_text("")
             window.child_window(**kwargs).type_keys(user_input, with_spaces=True, with_tabs=True)
 
+
     @keyword(name='Click Coordinates')
     def Click_Coordinates(self, **kwargs):
         """
@@ -145,7 +168,7 @@ class QAutowin(object):
         """
         window = self.find_connected_app_window()
         for kwarg in kwargs.keys():
-            #application_title = (apptitle)
+            # application_title = (apptitle)
             # "File"
             if kwarg == "x":
                 x = kwargs["x"]
@@ -155,6 +178,7 @@ class QAutowin(object):
         window.maximize()
         time.sleep(1)
         window.click_input(coords=((int(x)), (int(y))))
+
 
     @keyword(name="Verify Text")
     def Verify_text(self, user_input, **kwargs):
@@ -172,6 +196,7 @@ class QAutowin(object):
             pass
         else:
             self.fail("%s is not equal to %s" % (text, user_input))
+
 
     @keyword(name="Get Text")
     def Get_text(self, **kwargs):
@@ -192,6 +217,7 @@ class QAutowin(object):
         else:
             text = window.child_window(**kwargs).iface_value.CurrentValue
             return text
+
 
     @keyword(name='Right click element')
     def Right_click_element(self, **kwargs):
@@ -216,6 +242,7 @@ class QAutowin(object):
             window.window(**kwargs).wait('visible', timeout=10)
             window.window(**kwargs).right_click_input()
 
+
     @keyword(name='Close application')
     def Close_application(self):
         """
@@ -225,6 +252,7 @@ class QAutowin(object):
             | Close application
         """
         self.app.kill()
+
 
     @keyword(name='Take screenshot')
     def Take_screenshot(self, error_image_folder):
@@ -238,6 +266,7 @@ class QAutowin(object):
         image = ImageGrab.grab()
         image.save(error_image_folder)
         logger.error('Something went wrong. Screenshot taken')
+
 
     def Close_cmd_process(self, cmd_process):
         """
@@ -259,6 +288,7 @@ class QAutowin(object):
 
         if pid == "":
             print("No process found: ", cmd_process)
+
 
     @keyword(name='Launch bat')
     def Launch_bat(self, directory, bat_name):
