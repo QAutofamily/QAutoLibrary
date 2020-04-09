@@ -9,7 +9,7 @@ import re
 import platform
 import pymongo
 from pymongo.errors import ConnectionFailure, OperationFailure
-
+from robot.libraries.BuiltIn import BuiltIn
 
 class RpaLogger():
 
@@ -68,14 +68,14 @@ class RpaLogger():
             self.append_to_file(os.getcwd() + os.sep + "test_reports" + os.sep + filename, robot_list)
         self.filename = filename
         self.robotname = robotname
-        self.runid = runid
+        self.runid = int(runid)
         self.vmname = vmname
 
     def save_rpa_data (self, **kwargs):
         """
         **Saves robot data to database**
 
-        :param \**kwargs: 1..n named arguments 
+        :param \**kwargs: 1..n named arguments
         -------------
         Examples:
         | Save rpa data      | MyDataName=MyDataValue | SecondDataName=SecondDataValue
@@ -96,10 +96,42 @@ class RpaLogger():
         for key, value in kwargs.items():
             rpa_data.update({key: value})
         update = [{ "$addFields": {"rpaData": rpa_data}}]
-        
+
         # Add to database. If 'filter' do not find any documents new will added
         # otherwise existing rpaData will be updated
-        self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True) 
+        self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True)
+
+    def setup_rpa_data(self, runid=None, robotname=None):
+        """
+        **Setup robot data from database**
+
+        :param runid:  Integer id of robot run
+        :param robotname: String name of the robot that is running
+        -------------
+        Examples:
+        | Setup rpa data      | runid=${RUNID} | robotname=${ROBOTNAME}
+        | Setup rpa data      | ${RUNID} | ${ROBOTNAME}
+
+        """
+
+        # Set query parameters
+        runid = runid and int(runid) or self.runid
+        robotname = robotname and robotname or self.robotname
+        query = {"Runid": runid, "Robot": robotname}
+        print("Query parameters: %s" % query)
+
+        # Find robot data
+        result = self.mongodbc.robotData.robotSavedData.find_one(query)
+        # Add data to robot variables
+        if result and "rpaData" in result:
+            for key, value in result["rpaData"].items():
+                if isinstance(value, dict):
+                    string_list = ["%s=%s" % (k, v) for k, v in value.items()]
+                    value = BuiltIn().create_dictionary(*string_list)
+                elif isinstance(value, list):
+                    value = BuiltIn().create_list(*value)
+
+                BuiltIn().set_suite_variable("${%s}" % key, value)
 
     def log_rpa(self, **kwargs):
         """
