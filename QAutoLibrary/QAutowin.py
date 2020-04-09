@@ -10,9 +10,6 @@ import pygetwindow as gw
 import win32api
 
 
-# http://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#testing-libraries
-# https://github.com/robotframework/robotframework/blob/master/doc/userguide/src/ExtendingRobotFramework/CreatingTestLibraries.rst
-
 class QAutowin(object):
     ROBOT_LIBRARY_SCOPE = "TEST CASE"
 
@@ -46,7 +43,16 @@ class QAutowin(object):
         for kwarg in kwargs.keys():
             if kwarg == "process":
                 self.app.application_process = kwargs["process"]
-                self.app.connect(process=int(self.app.application_process))
+                for i in range(3):
+                    try:
+                        self.app.connect(process=int(self.app.application_process))
+                        break
+                    except:
+                        if i == 2:
+                            logger.error("Failed to connect to application: %s " % self.app.application_process)
+                        else:
+                            logger.warn("App connection failed. Attempt: %d" % i)
+                            time.sleep(5)
             else:
                 self.app.application_title = kwargs[list(kwargs.keys())[-1]]
                 self.app.connect(**kwargs)
@@ -183,12 +189,13 @@ class QAutowin(object):
     @keyword(name="Verify Text")
     def Verify_text(self, user_input, **kwargs):
         """
-        **Verify text of element**
+        **Verify element text**
 
+        :param:  text
         :kwargs: auto_id, class_name, class_name_re, title, title_re, control_type
         --------------
         :Example:
-            | Verify text  text  title=File
+            | Verify text  asserted_text  title=File
         """
         text = self.Get_text(**kwargs)
         if text == user_input:
@@ -196,6 +203,26 @@ class QAutowin(object):
             pass
         else:
             self.fail("%s is not equal to %s" % (text, user_input))
+
+
+    @keyword(name="Verify Text Contains")
+    def Verify_text_contains(self, user_input, **kwargs):
+        """
+        **Verify element containing text **
+
+        :param:  text
+        :kwargs: auto_id, class_name, class_name_re, title, title_re, control_type
+        --------------
+        :Example:
+            | Verify text contains  asserted_text  title=File
+        """
+        text = self.Get_text(**kwargs)
+        print("Get_text:", text)
+        if user_input in text:
+            logger.info("%s contains %s" % (text, user_input))
+            pass
+        else:
+            self.fail("%s does not contain %s" % (text, user_input))
 
 
     @keyword(name="Get Text")
