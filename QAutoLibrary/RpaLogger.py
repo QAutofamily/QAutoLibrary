@@ -58,14 +58,14 @@ class RpaLogger():
                 self.mongodbc = None
                 print("Mongodb Server not available or authentication failed")
                 self.warning(
-                    "RPA Mongodb Server not available  or authentication failed. Please check connection parameters.")
-
-        if os.path.isfile(os.getcwd() + os.sep + "test_reports" + os.sep + filename):
-            print("RPA logger file exists")
-        else:
-            print("RPA logger file will be created")
-            robot_list = [{"Robot": robotname, "Sections": []}]
-            self.append_to_file(os.getcwd() + os.sep + "test_reports" + os.sep + filename, robot_list)
+                    "RPA Mongodb Server not available or authentication failed. Please check connection parameters.")
+        if filename:
+            if os.path.isfile(os.getcwd() + os.sep + "test_reports" + os.sep + filename):
+                print("RPA logger file exists")
+            else:
+                print("RPA logger file will be created")
+                robot_list = [{"Robot": robotname, "Sections": []}]
+                self.append_to_file(os.getcwd() + os.sep + "test_reports" + os.sep + filename, robot_list)
         self.filename = filename
         self.robotname = robotname
         self.runid = int(runid)
@@ -132,6 +132,34 @@ class RpaLogger():
                     value = BuiltIn().create_list(*value)
 
                 BuiltIn().set_suite_variable("${%s}" % key, value)
+
+    def get_rpa_executed_tasks(self, runid=None, robotname=None):
+        """
+        **Get all tasks (tags) that robot has executed/saved**
+
+        :param runid: Integer id of robot run that was executed
+        :param robotname: String name of the robot that was executed
+        :return:    List of states (tags) that robot has executed/saved
+        -------------
+        Examples:
+        | Get rpa executed tasks      | runid=${RUNID} | robotname=${ROBOTNAME}
+        | Get rpa executed tasks      | ${RUNID} | ${ROBOTNAME}
+
+        """
+
+        # Set query parameters
+        runid = runid and int(runid) or self.runid
+        robotname = robotname and robotname or self.robotname
+        query = {"Runid": runid, "Robot": robotname}
+
+        # Find all states (tags) that robot has executed with this Runid
+        tags = []
+        result = self.mongodbc.robotData.robotInfo.find(query)
+        for doc in result:
+            tags.append(doc["State"])
+
+        return tags
+
 
     def log_rpa(self, **kwargs):
         """
