@@ -146,7 +146,9 @@ class RpaLogger():
         | Get rpa executed tasks      | ${RUNID} | ${ROBOTNAME}
 
         """
-
+        if self.mongodbc == None:
+            self.warning("Mongodb Server not available, cannot get rerun tasks")
+            return  None
         # Set query parameters
         runid = runid and int(runid) or self.runid
         robotname = robotname and robotname or self.robotname
