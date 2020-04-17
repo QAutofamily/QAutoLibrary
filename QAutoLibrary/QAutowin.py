@@ -40,33 +40,28 @@ class QAutowin(object):
         :Example:
             | Connect application  best_match=Untitled - Notepad
         """
-        for kwarg in kwargs.keys():
-            if kwarg == "process":
-                self.app.application_process = kwargs["process"]
-                for i in range(3):
-                    try:
-                        self.app.connect(process=int(self.app.application_process))
-                        break
-                    except:
-                        if i == 2:
-                            logger.error("Failed to connect to application: %s " % self.app.application_process)
-                        else:
-                            logger.warn("App connection failed. Attempt: %d" % i)
-                            time.sleep(5)
-            else:
-                self.app.application_title = kwargs[list(kwargs.keys())[-1]]
-                self.app.connect(**kwargs)
-            logger.info(self.app.process)
+        if "process" in kwargs.keys():
+            self.app.application_process = kwargs["process"]
+            for i in range(3):
+                try:
+                    self.app.connect(process=int(self.app.application_process))
+                    break
+                except:
+                    if i == 2:
+                        logger.error("Failed to connect to application: %s " % self.app.application_process)
+                    else:
+                        logger.warn("App connection failed. Attempt: %d" % i)
+                        time.sleep(5)
+        else:
+            self.app.connect(**kwargs)
+        window_count = len(self.app.windows())
+        self.window = self.app.window(found_index=(window_count - 1))
+        title = self.window.title.iface_value.CurrentValue
 
-            windows_list = gw.getWindowsWithTitle(self.app.application_title)
+        windows_list = gw.getWindowsWithTitle(title)
+        self.hwnd = str(windows_list).split("hWnd=")[1].split(")")[0]
 
-            self.hwnd = str(windows_list).split("hWnd=")[1].split(")")[0]
-            app = pywinauto.application.Application(backend="uia")
-            pyapp = app.connect(handle=int(self.hwnd.split("hwnd=")[-1]))
-            window_count = len(pyapp.windows())
-            self.window = pyapp.window(found_index=(window_count - 1))
-
-            return self.app.process
+        return self.app.process
 
     @keyword(name='Print identifiers')
     def print_identifiers(self):
@@ -335,8 +330,4 @@ class QAutowin(object):
             os.chdir(dir)
             print(e)
         time.sleep(3)
-
-
-
-
 
