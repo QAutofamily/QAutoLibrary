@@ -73,6 +73,12 @@ class RpaLogger():
 
     def save_rpa_data (self, **kwargs):
         """
+        *DEPRECATED* Use keyword `Save data` instead.
+        """
+        self.save_data(**kwargs)
+
+    def save_data (self, **kwargs):
+        """
         **Saves robot data to database**
 
         :param \**kwargs: 1..n named arguments
@@ -101,7 +107,13 @@ class RpaLogger():
         # otherwise existing rpaData will be updated
         self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True)
 
-    def setup_rpa_data(self, runid=None, robotname=None):
+    def setup_rpa_data (self, runid=None, robotname=None):
+        """
+        *DEPRECATED* Use keyword `Setup data` instead.
+        """
+        self.setup_data(runid, robotname)
+
+    def setup_data(self, runid=None, robotname=None):
         """
         **Setup robot data from database**
 
@@ -162,8 +174,13 @@ class RpaLogger():
 
         return tags
 
-
     def log_rpa(self, **kwargs):
+        """
+        *DEPRECATED* Use keyword `Log data` instead.
+        """
+        self.log_data(**kwargs)
+
+    def log_data(self, **kwargs):
         """
         :param \**kwargs:
         **state (string): Current robot state (optional)

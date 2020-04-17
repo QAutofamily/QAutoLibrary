@@ -34,6 +34,6 @@ class RemoveTasksByTags(SuiteVisitor):
             suite.tests = filtered_tests
             # Add task to setup robot data in begin of suite
             rpa_suite = TestSuite(name='Rpa data')
-            tc_rpa_data = rpa_suite.tests.create("Add rpa data")
-            tc_rpa_data.keywords.create('Setup rpa data', args=[self.runid, self.robotname])
+            tc_rpa_data = rpa_suite.tests.create("Get data from database")
+            tc_rpa_data.keywords.create('Setup data', args=[self.runid, self.robotname])
             suite.tests.insert(0, tc_rpa_data)
