@@ -4,13 +4,41 @@ from QAutoLibrary.QAutoRobot import QAutoRobot
 
 class RemoveTasksByTags(SuiteVisitor):
 
-    def __init__(self, runid, robotname, mongodb="localhost", mongoport="27017", username="", password=""):
+    def __init__(self, runid, robotname, *args):
         self.runid=runid
         self.robotname=robotname
-        # Get tags based on RPA status (executed in other robot run)
-        qr = QAutoRobot("")
-        qr.rpa_logger_init(robotname=robotname, runid=runid, mongodbIPPort=mongodb+":"+mongoport, username=username, password=password)
-        self.state_tags = qr.get_rpa_executed_tasks(runid, robotname)
+        self.state_tags = None
+        mongodb = "localhost"
+        mongoport = "27017"
+        username = ""
+        password = ""
+        # Get passed arguments
+        for arg in args:
+            try:
+                key, value = arg.split("=")
+            except ValueError as e:
+                print ("WARNING: Invalid argument: %s" % arg)
+                continue
+            if key == "mongodb":
+                mongodb = value
+            elif key == "mongoport":
+                mongoport = value
+            elif key == "username":
+                username = value
+            elif key == "password":
+                password = value
+            elif key == "states":
+                # User defined states (tags)
+                self.state_tags = [state.strip() for state in value.split(",")]
+            else:
+                print ("WARNING: Unknown key argument: %s" % key)
+                print ("WARNING: Valid key arguments are: [mongodb, mongoport, username, password, states]")
+
+        if not self.state_tags:
+            # Get tags based on RPA status from database (executed in other robot run)
+            self.qr = QAutoRobot("")
+            self.qr.rpa_logger_init(robotname=robotname, runid=runid, mongodbIPPort=mongodb+":"+mongoport, username=username, password=password)
+            self.state_tags = self.qr.get_rpa_executed_tasks(runid, robotname)
         print("State tags: ", self.state_tags)
 
     def start_suite(self, suite):
