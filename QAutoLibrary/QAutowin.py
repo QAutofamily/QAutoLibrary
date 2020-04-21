@@ -16,7 +16,6 @@ class QAutowin(object):
     def __init__(self, backend="uia"):
         self.app = pywinauto.application.Application(backend=backend)
         self.backend = backend
-        self.window = None
 
     @keyword(name='Open Application')
     def Open_Application(self, appname, **kwargs):  # arg=application, arg2=backend Win32 API or MS UI Automation
@@ -54,12 +53,6 @@ class QAutowin(object):
                         time.sleep(5)
         else:
             self.app.connect(**kwargs)
-        window_count = len(self.app.windows())
-        self.window = self.app.window(found_index=(window_count - 1))
-        title = self.window.title.iface_value.CurrentValue
-
-        windows_list = gw.getWindowsWithTitle(title)
-        self.hwnd = str(windows_list).split("hWnd=")[1].split(")")[0]
 
         return self.app.process
 
@@ -76,7 +69,6 @@ class QAutowin(object):
         window = self.find_connected_app_window()
         print(window.print_control_identifiers())
 
-
     def find_connected_app_window(self):
         """
         **Returns window of connected app with using hwnd**
@@ -85,12 +77,10 @@ class QAutowin(object):
         :Example:
             | ${window}=  Find app window
         """
-        app = pywinauto.application.Application(backend="uia")
-        pyapp = app.connect(handle=int(self.hwnd.split("hwnd=")[-1]))
-        window_count = len(pyapp.windows())
-        self.window = pyapp.window(found_index=(window_count - 1))
+        window_count = len(self.app.windows())
+        window = self.app.window(found_index=(window_count - 1))
 
-        return self.window
+        return window
 
     @keyword(name='Click Element')
     def Click_Element(self, **kwargs):
