@@ -76,7 +76,7 @@ class GlobalUtils(object):
     RESOURCES_LINUX_GECKO64_PATH = os.path.join(WEBDRIVERS_PATH, "geckodriver_linux64")
     RESOURCES_LINUX_CHROME64_PATH = os.path.join(WEBDRIVERS_PATH, "chromedriver_linux64")
     RESOURCES_CHROME32_PATH = os.path.join(WEBDRIVERS_PATH, "chromedriver_win32")
-    RESOURCES_EDGE_PATH = os.path.join(WEBDRIVERS_PATH, "edge_win")
+    RESOURCES_EDGE_PATH = os.path.join(WEBDRIVERS_PATH, "msedgedriver")
     RESOURCES_IE_PATH = os.path.join(WEBDRIVERS_PATH, "ie_win")
 
     BROWSER_CONFIG_FILE_FRAMEWORK = os.path.join(CONFIG_PATH, "browser_config.xml")
@@ -137,7 +137,7 @@ class GlobalUtils(object):
 
     # Browser names for selenium
     BROWSER_NAME = "browser_name"
-    BROWSER_NAMES = ["ie", "ff", "gc", "op", "ac", "aa", "me", "sf"]
+    BROWSER_NAMES = ["ie", "ff", "gc", "me", "sf", "aa"]
     BROWSER_FULL_NAMES = {
         "ie": "Internet Explorer",
         "ff": "Firefox",

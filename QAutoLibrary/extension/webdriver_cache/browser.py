@@ -298,14 +298,14 @@ def create_driver(browser_name):
 
         # Adding driver to path
         if not GlobalUtils.is_linux():
-            print("Using MicrosoftWebDriver")
+            print("Using EdgeWebDriver")
             if not os.path.join(GlobalUtils.RESOURCES_EDGE_PATH) in os.environ["PATH"]:
                 print("Adding MicrosoftWebDriver to path")
                 os.environ["PATH"] += os.pathsep + os.path.join(GlobalUtils.RESOURCES_EDGE_PATH)
         else:
-            raise Exception("Linux can't use MicrosoftWebDriver")
+            raise Exception("Linux can't use EdqeWebDriver")
 
-        _driver = webdriver.Edge(capabilities=edge_capabilities)
+        _driver = webdriver.Edge(capabilities=edge_capabilities, executable_path='msedgedriver.exe')
         return _driver
 
     elif browser_name == GlobalUtils.BROWSER_NAMES[Browsers.SAFARI]:
@@ -387,9 +387,9 @@ def __get_desired_capabilities(name):
         return DesiredCapabilities.FIREFOX
     elif name == GlobalUtils.BROWSER_NAMES[2]:
         return DesiredCapabilities.CHROME
-    elif name == GlobalUtils.BROWSER_NAMES[6]:
+    elif name == GlobalUtils.BROWSER_NAMES[3]:
         return DesiredCapabilities.EDGE
-    elif name == GlobalUtils.BROWSER_NAMES[7]:
+    elif name == GlobalUtils.BROWSER_NAMES[4]:
         return DesiredCapabilities.SAFARI
     else:
         raise Exception("Desired capabilities wasn't found for '%s'" % name)
