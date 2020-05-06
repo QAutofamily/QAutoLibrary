@@ -77,10 +77,16 @@ class QAutowin(object):
         :Example:
             | ${window}=  Find app window
         """
+        windows = []
         window_count = len(self.app.windows())
-        window = self.app.window(found_index=(window_count - 1))
+        for x in range(window_count):
+            window = self.app.window(found_index=(window_count - x+1))
+            windows.append(window)
 
-        return window
+        windows.append(self.app.top_window())
+        windows.reverse()
+
+        return windows
 
     @keyword(name='Click Element')
     def Click_Element(self, **kwargs):
@@ -92,22 +98,29 @@ class QAutowin(object):
         :Example:
             | Click element  title=File
         """
-        window = self.find_connected_app_window()
-        if "text" in kwargs:
-            logger.info('Clicking element %s.' % kwargs)
-            for kwarg in kwargs.keys():
-                if kwarg == "text":
-                    window[(kwargs["text"])].wait('visible', timeout=10)
-                    window[(kwargs["text"])].click_input()
-                    break
-        elif 'x' in kwargs and 'y' in kwargs:
-            logger.info('Clicking at coordinates %s.' % kwargs)
-            self.Click_Coordinates(**kwargs)
-        else:
-            logger.info('Clicking element %s.' % kwargs)
-            window.child_window(**kwargs).wait('visible', timeout=10)
-            window.child_window(**kwargs).click_input()
-
+        windows = self.find_connected_app_window()
+        error = None
+        for window in windows:
+            try:
+                if "text" in kwargs:
+                    logger.info('Clicking element %s.' % kwargs)
+                    for kwarg in kwargs.keys():
+                        if kwarg == "text":
+                            window[(kwargs["text"])].wait('visible', timeout=10)
+                            window[(kwargs["text"])].click_input()
+                            break
+                elif 'x' in kwargs and 'y' in kwargs:
+                    logger.info('Clicking at coordinates %s.' % kwargs)
+                    self.Click_Coordinates(**kwargs)
+                else:
+                    logger.info('Clicking element %s.' % kwargs)
+                    window.child_window(**kwargs).wait('visible', timeout=10)
+                    window.child_window(**kwargs).click_input()
+                return True
+            except Exception as e:
+                error = e
+                logger.info(str(e))
+        raise error
 
     @keyword(name='Send Keywords')  # Send input data. Useful for text fields, that "Input text" does not recognize. Also, you can send keyboard actions, for example like ~ for Enter
     # https://pywinauto.readthedocs.io/en/latest/code/pywinauto.keyboard.html
@@ -121,7 +134,6 @@ class QAutowin(object):
         """
         logger.info('Send keywords %s.' % user_input)
         send_keys(user_input)
-
 
     @keyword(name='Input Text')
     def Input_Text(self, user_input, **kwargs):
@@ -147,7 +159,6 @@ class QAutowin(object):
             window.child_window(**kwargs).wait('visible', timeout=10)
             window.child_window(**kwargs).set_text("")
             window.child_window(**kwargs).type_keys(user_input, with_spaces=True, with_tabs=True)
-
 
     @keyword(name='Click Coordinates')
     def Click_Coordinates(self, **kwargs):
