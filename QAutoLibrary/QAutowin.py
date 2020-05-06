@@ -77,6 +77,18 @@ class QAutowin(object):
         :Example:
             | ${window}=  Find app window
         """
+        window_count = len(self.app.windows())
+        window = self.app.window(found_index=(window_count - 1))
+        return window
+
+    def find_connected_app_windows(self):
+        """
+        **Returns window of connected app with using hwnd**
+
+        --------------
+        :Example:
+            | ${window}=  Find app window
+        """
         windows = []
         window_count = len(self.app.windows())
         for x in range(window_count):
@@ -98,7 +110,7 @@ class QAutowin(object):
         :Example:
             | Click element  title=File
         """
-        windows = self.find_connected_app_window()
+        windows = self.find_connected_app_windows()
         error = None
         for window in windows:
             try:
