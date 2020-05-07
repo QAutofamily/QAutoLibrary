@@ -164,7 +164,7 @@ class RpaLogger():
         # Set query parameters
         runid = runid and int(runid) or self.runid
         robotname = robotname and robotname or self.robotname
-        query = {"Runid": runid, "Robot": robotname}
+        query = {"Runid": runid, "Robot": robotname, "State" : {"$exists" : True, "$ne" : ""}}
 
         # Find all states (tags) that robot has executed with this Runid
         tags = []
