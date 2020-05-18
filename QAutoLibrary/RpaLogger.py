@@ -67,7 +67,7 @@ class RpaLogger():
                 robot_list = [{"Robot": robotname, "Sections": []}]
                 self.append_to_file(os.getcwd() + os.sep + "test_reports" + os.sep + filename, robot_list)
         self.filename = filename
-        self.robotname = robotname
+        self.robotname = robotname.replace(" ", "_")
         self.runid = int(runid)
         self.vmname = vmname
 
