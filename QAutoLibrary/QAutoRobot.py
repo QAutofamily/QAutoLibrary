@@ -123,7 +123,8 @@ class QAutoRobot(CommonUtils, JsonLogger, RpaLogger, TikaParser):
                 # Find library name from module
                 library_name = self.find_library_class_name_from_module(_module, library)
                 if not library_name:
-                    break
+                    self.warning(library + ":" + library_name)
+                    continue
                 # Get keyword library from module
                 _class = getattr(_module, library_name)
                 self.set_library_module_methods(library, _class, full_path)
