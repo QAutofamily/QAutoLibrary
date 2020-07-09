@@ -59,5 +59,9 @@
             <desired_capabilities option="platform">"MAC"</desired_capabilities>
             <desired_capabilities option="javascriptEnabled">True</desired_capabilities>
         </browser>
+        <browser name="Opera">
+            <desired_capabilities option="browserName">"Opera"</desired_capabilities>
+        </browser>
+
     </default>
 </browser_settings>

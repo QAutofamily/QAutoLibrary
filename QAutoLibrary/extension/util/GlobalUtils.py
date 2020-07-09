@@ -137,13 +137,14 @@ class GlobalUtils(object):
 
     # Browser names for selenium
     BROWSER_NAME = "browser_name"
-    BROWSER_NAMES = ["ie", "ff", "gc", "me", "sf", "aa"]
+    BROWSER_NAMES = ["ie", "ff", "gc", "me", "sf", "op", "aa"]
     BROWSER_FULL_NAMES = {
         "ie": "Internet Explorer",
         "ff": "Firefox",
         "gc": "Chrome",
         "me": "MicrosoftEdge",
-        "sf": "Safari"
+        "sf": "Safari",
+        "op": "Opera"
     }
 
     IE = "ie"

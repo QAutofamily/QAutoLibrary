@@ -30,7 +30,7 @@ class Browsers:
     CHROME = 2
     EDGE = 3
     SAFARI = 4
-
+    OPERA = 5
 
 def get_country_key(my_lang):
     """
@@ -319,6 +319,18 @@ def create_driver(browser_name):
 
         _driver = webdriver.Safari(desired_capabilities=safari_capabilities)
         return _driver
+    elif browser_name == GlobalUtils.BROWSER_NAMES[Browsers.OPERA]:
+        desired_capabilities = _get_browser_options_from_project_xml("default",
+                                                                     GlobalUtils.BROWSER_FULL_NAMES[GlobalUtils.BROWSER_NAMES[Browsers.OPERA]],
+                                                                     "desired_capabilities")
+
+        opera_capabilities = DesiredCapabilities.OPERA
+        for arg in desired_capabilities:
+            opera_capabilities[arg["option"]] = eval(arg["text"])
+
+        _driver = webdriver.Opera(desired_capabilities=opera_capabilities)
+        return _driver
+
 
     else:
         return None
@@ -391,5 +403,7 @@ def __get_desired_capabilities(name):
         return DesiredCapabilities.EDGE
     elif name == GlobalUtils.BROWSER_NAMES[4]:
         return DesiredCapabilities.SAFARI
+    elif name == GlobalUtils.BROWSER_NAMES[5]:
+        return DesiredCapabilities.OPERA
     else:
         raise Exception("Desired capabilities wasn't found for '%s'" % name)
