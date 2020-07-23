@@ -19,4 +19,5 @@ setuptools.setup(
         "License :: OSI Approved :: Apache License 2.0",
         "Operating System :: OS Independent",
     ),
+    entry_points = {'console_scripts': ['WebDriverUpdater = QAutoLibrary.WebDriverUpdater.check_and_update_drivers:main']}
 )
