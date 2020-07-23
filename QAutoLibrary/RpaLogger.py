@@ -8,6 +8,7 @@ import io
 import re
 import platform
 import pymongo
+import ssl
 from pymongo.errors import ConnectionFailure, OperationFailure
 from robot.libraries.BuiltIn import BuiltIn
 
@@ -24,7 +25,7 @@ class RpaLogger():
         self.vmname = ""
 
     def rpa_logger_init(self, filename=None, robotname=None, runid=1, mongodbIPPort="localhost:27017/", vmname="", username="",
-                        password="", ssl=False):
+                        password="", sslbool=True):
         """
         :param filename: Path to the .json file where the information will be saved. Mandatory
         :param robotname: Name of the robot that generated the message to be saved Mandatory
@@ -48,8 +49,7 @@ class RpaLogger():
                     except:
                         pass
                 if username != "":
-                    self.mongodbc = pymongo.MongoClient("mongodb://" + mongodbIPPort, username=username,
-                                                        password=password)
+                    self.mongodbc = pymongo.MongoClient("mongodb://" + mongodbIPPort, username=username, password=password, ssl=sslbool, ssl_cert_reqs=ssl.CERT_NONE)
                 else:
                     self.mongodbc = pymongo.MongoClient("mongodb://" + mongodbIPPort)
                 print(self.mongodbc.admin.command('ismaster'))
