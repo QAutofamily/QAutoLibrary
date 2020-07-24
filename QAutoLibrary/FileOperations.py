@@ -1,5 +1,5 @@
 """
-#    QAutomate Ltd 2018. All rights reserved.
+#    QAutomate Ltd 2020. All rights reserved.
 #
 #    Copyright and all other rights including without limitation all intellectual property rights and title in or
 #    pertaining to this material, all information contained herein, related documentation and their modifications and

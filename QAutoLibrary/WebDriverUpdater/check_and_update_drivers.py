@@ -1,3 +1,16 @@
+"""
+#    QAutomate Ltd 2020. All rights reserved.
+#
+#    Copyright and all other rights including without limitation all intellectual property rights and title in or
+#    pertaining to this material, all information contained herein, related documentation and their modifications and
+#    new versions and other amendments (QAutomate Material) vest in QAutomate Ltd or its licensor's.
+#    Any reproduction, transfer, distribution or storage or any other use or disclosure of QAutomate Material or part
+#    thereof without the express prior written consent of QAutomate Ltd is strictly prohibited.
+#
+#    Distributed with QAutomate license.
+#    All rights reserved, see LICENSE for details.
+"""
+
 from sys import platform as _platform
 import argparse
 import webbrowser
@@ -8,20 +21,13 @@ import sys
 import urllib
 import zipfile
 
-# argparse argumenttien antamiseen komentoriviltä
+# argparse arguments
 parser = argparse.ArgumentParser()
-
-# Vaihtoehto polku
-parser.add_argument('--path', type=str, help='Path to webdrive dir.')
-
-# Vaihtoehto polku
-parser.add_argument('--browser', type=str, help='Which browser to update?.')
-
+# Add path variable from cmd
+parser.add_argument('--path', type=str, help='Path to webdrivers dir. Usage example Linux: WebDriverUpdater --path=/home/user/webdrivers Windows: WebDriverUpdater --path=C:\webdrivers')
+# Browser name to update
+parser.add_argument('--browser', type=str, help='Which browser to update?. ')
 args = parser.parse_args()
-
-# En tiedä toimiiko tälleen suoraan.
-# if not args.browser == "":
-#     self.chromeDriver_path = args.browser
 
 class BrowserDriverControl():
 
@@ -53,22 +59,21 @@ class BrowserDriverControl():
                 break
 
     def print_information(self):
-        print("Tiedot alla.")
-        print("ChromeDriver polku: " + self.chromeDriver_path)
-        print("ChromeDriver versio: " + self.chromeDriver_full_version)
-        print("ChromeDriver versio suurin: " + self.chromeDriver_major_version)
-        print("Chrome versio: " + self.chrome_full_version)
-        print("Chrome versio suurin: " + self.chrome_major_version)
+        print("Update details.")
+        print("ChromeDriver path: " + self.chromeDriver_path)
+        print("Chrome browser version: " + self.chrome_full_version)
+        print("ChromeDriver version: " + self.chromeDriver_full_version)
+        print("ChromeDriver major version: " + self.chromeDriver_major_version + " Chrome browser major version: " + self.chrome_major_version)
 
     def check_latest_chromeDriver_release(self):
         link = "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_" + self.chrome_major_version
         f = requests.get(link)
         latest_chromeDriver_version = f.text
-        print("Uusin versio: " + latest_chromeDriver_version)
+        print("Download ChromeDriver " + self.chrome_major_version + " version: " + latest_chromeDriver_version)
         return latest_chromeDriver_version
 
     def download_ChromeDriver(self):
-        # Nimeä vanha tiedosto uusiksi
+        # Rename old version
         if "linux" in _platform or "darwin" in _platform:
             try:
                 os.rename(os.path.join(self.chromeDriver_path, "chromedriver"),
@@ -88,7 +93,7 @@ class BrowserDriverControl():
                 print('Renaming old "chromedriver.exe" file failed.')
                 print(str(e))
 
-        # Tarkista uusin versio
+        # Check latest version
         if "linux" in _platform or "darwin" in _platform:
             latest_ChromeDriver_release = self.check_latest_chromeDriver_release()
             link = "https://chromedriver.storage.googleapis.com/" + latest_ChromeDriver_release + "/chromedriver_linux64.zip"
@@ -96,7 +101,7 @@ class BrowserDriverControl():
             latest_ChromeDriver_release = self.check_latest_chromeDriver_release()
             link = "https://chromedriver.storage.googleapis.com/" + latest_ChromeDriver_release + "/chromedriver_win32.zip"
 
-        # Ladataan uusin versio
+        # Download latest version
         if "linux" in _platform or "darwin" in _platform:
             with open(self.chromeDriver_path + os.sep + "chromedriver_linux64.zip", "wb") as file:
                 r = requests.get(link)
@@ -106,16 +111,16 @@ class BrowserDriverControl():
                 r = requests.get(link)
                 file.write(r.content)
 
-        # Puretaan zippi
+        # Unzip
         if "linux" in _platform or "darwin" in _platform:
             with zipfile.ZipFile(self.chromeDriver_path + os.sep + "chromedriver_linux64.zip",
                                  'r') as zip_ref:
-                # Puretaan tiedosto webdrivers hakemiston alle.
+                # Unzip under webdrivers path
                 zip_ref.extractall(self.chromeDriver_path)
         else:
             with zipfile.ZipFile(self.chromeDriver_path + os.sep + "chromedriver_win32.zip",
                                  'r') as zip_ref:
-                # Puretaan tiedosto webdrivers hakemiston alle.
+                # Unzip under webdrivers path
                 zip_ref.extractall(self.chromeDriver_path)
 
         print("Latest ChromeDriver version downloaded successfully. New version: " + latest_ChromeDriver_release)
@@ -142,7 +147,7 @@ class BrowserDriverControl():
                     print(str(e))
 
         else:
-            print("Annettu polku: " + str(path))
+            print("Given path: " + str(path))
             if os.path.isdir(os.path.join(path)):
                 os.environ["PATH"] += os.pathsep + os.path.join(path)
                 self.chromeDriver_path = path
@@ -151,7 +156,7 @@ class BrowserDriverControl():
 
         if "linux" in _platform or "darwin" in _platform:
             try:
-                # Antaa chromedriver tiedostolle 755 oikeudet
+                # Try give 755 access to driver
                 file = self.chromeDriver_path + os.sep + 'chromedriver'
                 subprocess.run(['chmod', '755', file])
                 p = subprocess.check_output(['chromedriver', ' --version'], shell=False).decode("utf-8")
@@ -170,7 +175,7 @@ class BrowserDriverControl():
                 print("Error! Could not get ChromeDriver version.")
                 print(str(e))
 
-        # Chrome versio
+        # Chrome version
         if "linux" in _platform or "darwin" in _platform:
             try:
                 p = subprocess.check_output(["google-chrome", " --product-version"], shell=False).decode("utf-8")
@@ -193,7 +198,7 @@ class BrowserDriverControl():
                 print("Error! Could not get chrome version.")
                 print(str(e))
 
-        # Tähän tietojen tulostus
+        # Print information
         self.print_information()
 
         if self.chrome_major_version == self.chromeDriver_major_version:

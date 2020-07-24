@@ -1,4 +1,16 @@
 # encoding: utf-8+
+"""
+#    QAutomate Ltd 2020. All rights reserved.
+#
+#    Copyright and all other rights including without limitation all intellectual property rights and title in or
+#    pertaining to this material, all information contained herein, related documentation and their modifications and
+#    new versions and other amendments (QAutomate Material) vest in QAutomate Ltd or its licensor's.
+#    Any reproduction, transfer, distribution or storage or any other use or disclosure of QAutomate Material or part
+#    thereof without the express prior written consent of QAutomate Ltd is strictly prohibited.
+#
+#    Distributed with QAutomate license.
+#    All rights reserved, see LICENSE for details.
+"""
 from QAutoLibrary.QAutoElement import QAutoElement
 from time import sleep
 import datetime
