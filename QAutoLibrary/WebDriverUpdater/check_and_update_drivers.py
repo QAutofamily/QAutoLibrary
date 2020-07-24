@@ -61,15 +61,15 @@ class BrowserDriverControl():
     def print_information(self):
         print("Update details.")
         print("ChromeDriver path: " + self.chromeDriver_path)
-        print("Chrome browser version: " + self.chrome_full_version)
         print("ChromeDriver version: " + self.chromeDriver_full_version)
+        print("Chrome browser version: " + self.chrome_full_version)
         print("ChromeDriver major version: " + self.chromeDriver_major_version + " Chrome browser major version: " + self.chrome_major_version)
 
     def check_latest_chromeDriver_release(self):
         link = "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_" + self.chrome_major_version
         f = requests.get(link)
         latest_chromeDriver_version = f.text
-        print("Download ChromeDriver " + self.chrome_major_version + " version: " + latest_chromeDriver_version)
+        print("Latest major ChromeDriver " + self.chrome_major_version + " version: " + latest_chromeDriver_version)
         return latest_chromeDriver_version
 
     def download_ChromeDriver(self):
