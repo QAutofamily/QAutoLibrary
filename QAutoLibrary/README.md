@@ -74,6 +74,8 @@ More information at: https://pypi.org/project/pytesseract/
 
 ### Usage
 
+Detailed examples of how to use functions can be found at: https://github.com/pekkaan/pythonOCR in **Functions** section
+
 Import PythonOCR module from QAutoLibrary to your code:
 
 ```
@@ -90,4 +92,25 @@ PythonOCR.find_words(<word>, <file path>)
 PythonOCR.find_coordinates(<word>, <file path>)
 
 PythonOCR.verify_word(<word>, <file path>)
+```
+
+#### Usage in QAutoRobot
+
+Import PythonOCR module from QAutoLibrary to the robot:
+
+```
+*** Settings ***
+Library  |  QAutoLibrary.PythonOCR
+```
+
+PythonOCR functions can then be used as follows:
+
+```
+Click Word  |  ${word}
+
+Find Words  |  ${word}  |  ${file_path}
+
+Find Coordinates  |  ${word}  |  ${file_path}
+
+Verify Word  |  ${word}  |  ${file_path}
 ```
