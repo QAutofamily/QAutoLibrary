@@ -26,7 +26,7 @@ from pytesseract import Output
 #  PythonOCR contains functions for finding and locating words on screen, in image files or PDF files using OCR (Optical
 #  Character Recognition).
 #
-# PythonOCR documentation is contained in this file, README.md and in QAutoLibrary.
+#  PythonOCR documentation is contained in this file, README.md and in QAutoLibrary.
 #
 #  CONTENTS
 #  Internal functions:
@@ -169,13 +169,22 @@ def click_word(word, save_screenshot_as="", index=-1):
 
     -------------
     :Example:
-        | *Search and click the word ('Python') on screen.*
+        | *Searches and clicks the word ('Python') on screen.*
         | ``click_word("Python")``
-        | *Search and click the word on screen. Save screenshot as a file ('screenshot.png') to folder ('screenshots')
-          in the project directory.*
+        | *Searches and clicks the word on screen. Saves screenshot as a file ('screenshot.png') to folder
+          ('screenshots') in the current project directory.*
         | ``click_word("Python", "./screenshots/screenshot.png")``
         | *Searches and clicks the instance (0; zero) of the word on screen.*
         | ``click_word("Python", index=0)``
+        | *In QAutoRobot:*
+        | ``Click Word  |  ${word}  |  ${screenshot_file}  |  ${index}``
+        | *Searches and clicks the word ('Python') on screen.*
+        | ``Click Word  |  Python``
+        | *Searches and clicks the word on screen. Saves screenshot as a file ('screenshot.png') to folder ('images')
+          in the current robot directory.*
+        | ``Click Word  |  Python  |  ./images/screenshot.png``
+        | *Searches and clicks the instance (0; zero) of the word on screen.*
+        | ``Click Word  |  Python  |  index=0``
     """
     screenshot = pyautogui.screenshot()
     if save_screenshot_as:
@@ -227,6 +236,14 @@ def find_words(word, file_path, output_path="./"):
         | *Returns the found instances of the word from file, located in folder ('project_files') in the project
           directory. Converted images are saved to folder ('output_folder') in the project directory.*
         | ``find_words("Python", "./project_files/pdf_file.pdf", "./output_folder")``
+        | *In QAutoRobot:*
+        | ``Find Words  |  ${word}  |  ${file_path}  |  ${output_path}``
+        | *Found instances of the word ('Python') in file are assigned to list ('result_list'). The file
+          ('screenshot.png') is located in folder ('images') in the current robot directory.*
+        | ``@{results_list} =  |  Find Words  |  Python  |  ./images/screenshot.png``
+        | *Found instances of the word in file are assigned to the list variable. The image files converted from
+          file ('pdf_file.pdf') are saved to folder ('images') in the current robot directory.*
+        | ``@{results_list} =  |  Find Words  |  Python  |  ./resource_files/pdf_file.pdf  |  ./images/``
     """
     image_list = _validate_file(file_path, output_path)
     results = []
@@ -277,6 +294,14 @@ def find_coordinates(word, file_path, output_path="./"):
           ('project_files') in the project directory. Converted images are saved to folder ('output_folder') in the
           project directory.*
         | ``find_coordinates("Python", "./project_files/pdf_file.pdf", "./output_folder")``
+        | *In QAutoRobot:*
+        | ``Find Coordinates  |  ${word}  |  ${file_path}  |  ${output_path}``
+        | *Found instances of the word ('Python') and their coordinates in file are assigned to list ('result_list').
+          The file ('screenshot.png') is located in folder ('images') in the current robot directory.*
+        | ``@{results_list} =  |  Find Coordinates  |  Python  |  ./images/screenshot.png``
+        | *Found instances of the word and their coordinates in file are assigned to the list variable. The image
+          files converted from file ('pdf_file.pdf') are saved to folder ('images') in the current robot directory.*
+        | ``@{results_list} =  |  Find Coordinates  |  Python  |  ./resource_files/pdf_file.pdf  |  ./images/``
     """
     image_list = _validate_file(file_path, output_path)
     results = []
@@ -310,6 +335,11 @@ def verify_word(word, image_path):
         | *Returns True or False if the word was found from file located in folder ('project_files') in the
           project directory.*
         | ``verify_word("Python", "./project_files/image_file.png")``
+        | *In QAutoRobot:*
+        | ``Verify Word  |  ${word}  |  ${file_path}``
+        | Assigns True or False to variable ('found_word') if the word was found from file ('screenshot.png') located
+          in folder ('images') in the current robot directory.
+        | ``${found_word} =  |  Verify Word  |  Python  |  ./images/screenshot.png``
     """
     if not _is_valid_image(image_path):
         raise InvalidImageTypeError("Could not recognize '{file}' as a .jpg, .jpeg nor .png image file!"
