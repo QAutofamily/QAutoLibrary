@@ -18,12 +18,6 @@ PythonOCR utilizes the following modules:
 
 **pytesseract** to recognize text in image files. pytesseract requires **Google Tesseract OCR** in order to function.
 
-#### Python
-
-Install Python (3.7+) and include pip with the installation. **Add Python to PATH.**
-
-Download Python: https://www.python.org/downloads/
-
 #### pyautogui
 
 Install pyautogui using pip:
@@ -77,12 +71,6 @@ pip install pytesseract
 ```
 
 More information at: https://pypi.org/project/pytesseract/
-
-### Installing
-
-Install QAutoLibrary containing PythonOCR.py module.
-
-QAutoLibrary download and installation instructions: https://github.com/QAutofamily/QAutoLibrary
 
 ### Usage
 
