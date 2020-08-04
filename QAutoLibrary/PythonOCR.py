@@ -1,65 +1,49 @@
 """
-PythonOCR contains functions for finding and locating words on screen, in image files or PDF files.
-
-Main functions:
-
-    click_word(): Searches for a word on screen and clicks its location.
-
-    find_words(): Searches for all instances of a word in image or PDF file, and returns the results.
-
-    find_coordinates(): Searches for all instances of a word and their coordinates in image or PDF file, and returns
-    the results.
-
-    verify_word(): Verifies, if image file contains any instance of a word.
-
+#    QAutomate Ltd 2020. All rights reserved.
+#
+#    Copyright and all other rights including without limitation all intellectual property rights and title in or
+#    pertaining to this material, all information contained herein, related documentation and their modifications and
+#    new versions and other amendments (QAutomate Material) vest in QAutomate Ltd or its licensor's.
+#    Any reproduction, transfer, distribution or storage or any other use or disclosure of QAutomate Material or part
+#    thereof without the express prior written consent of QAutomate Ltd is strictly prohibited.
+#
+#    Distributed with QAutomate license.
+#    All rights reserved, see LICENSE for details.
 """
 
 import warnings
-
 import pyautogui
-
-import pytesseract
-from pytesseract import Output
-
 import pdf2image
 from pdf2image.exceptions import (
     PDFInfoNotInstalledError,
     PDFPageCountError,
     PDFSyntaxError
 )
+import pytesseract
+from pytesseract import Output
 
 """
-FOR DEVELOPERS:
-
-PythonOCR internal functions are located at the beginning of this file (below), and main functions are located
-after them. Exceptions specific to PythonOCR are located at the end of this file.
-
-When applying changes to this file, remember to update the documentation accordingly! Update function descriptions
-in this file (file description and function descriptions), and update the README file in git (pythonOCR and
-QAutoLibrary).
-
-Internal functions:
-
-    _get_word_coordinate_from_data(): Retrieves the data of found instances of a word and their coordinates
-                                      from image data.
-
-    _is_valid_image(): Checks if given file is a valid image file.
-
-    _is_valid_pdf(): Checks if given file is a PDF file.
-
-    _validate_file(): Verifies that a given file is image or PDF file, converts PDF file to image(s)
-                      and returns image files.
-
-    _click_coordinates(): Moves mouse cursor on screen to the provided coordinates, and clicks the location.
-
-Exceptions:
-
-    PythonOCRError: Base error class for PythonOCR errors.
-
-    InvalidFileTypeError: Error raised when given file is not a valid image nor PDF file.
-
-    InvalidImageTypeError: Error raised when given file is not a valid image file.
-
+#  PythonOCR contains functions for finding and locating words on screen, in image files or PDF files using OCR (Optical
+#  Character Recognition).
+#
+# PythonOCR documentation is contained in this file, README.md and in QAutoLibrary.
+#
+#  CONTENTS
+#  Internal functions:
+#      _get_word_coordinate_from_data()
+#      _is_valid_image()
+#      _is_valid_pdf()
+#      _validate_file()
+#      _click_coordinates()
+#  Main functions:
+#      click_word()
+#      find_words()
+#      find_coordinates()
+#      verify_word()
+#  Exceptions:
+#      PythonOCRError
+#      InvalidFileTypeError
+#      InvalidImageTypeError
 """
 
 
@@ -73,6 +57,7 @@ def _get_word_coordinates_from_data(word, image_data, page_number=1):
     :param image_data: Required. Given image data, such as data retrieved by pytesseract.
                        Must be a dictionary of lists.
     :param page_number: Optional. Page number to be included with the returned data. By default, 1.
+
     :return: Found instances of the word and their coordinates in image.
              A list of dictionaries, each dictionary consisting of: {"text": found text, "left": left coordinates (X),
              "top": top coordinates (Y), "width": text width, "height": text height, "page": page number}.
@@ -123,6 +108,10 @@ def _validate_file(file_path, output_path):
     """
     **Verifies that a given file is a valid image file or PDF file.** Converts a PDF file to images:
     each page into its own image file. Returns image(s). Internal function.
+
+    :param file_path: Required. Image or PDF file path.
+    :param output_path: Output directory for image files converted from the PDF file. Not required if processing
+                        image files. By default, current project directory.
 
     :return: A list of image files.
     """
@@ -226,6 +215,7 @@ def find_words(word, file_path, output_path="./"):
     :param output_path: Output directory for image files converted from the PDF file. Not required if processing
                         image files. By default, current project directory.
     :type output_path: str
+
     :return: A list of found instances of the specified word as a list of dictionaries. Each dictionary consisting of:
              {"text": found text, "page": page number}.
     :rtype: list
@@ -273,6 +263,7 @@ def find_coordinates(word, file_path, output_path="./"):
     :param output_path: Optional. Output directory for image files converted from the PDF file.
                         By default, current project directory.
     :type output_path: str
+
     :return: Found instances of the word and their coordinates in image as a list of dictionaries. Each dictionary
              consisting of: {"text": found text, "left": left coordinates (X), "top": top coordinates (Y),
              "width": text width, "height": text height, "page": page number}.
@@ -308,6 +299,7 @@ def verify_word(word, image_path):
     :type word: str
     :param image_path: Required. Image file path. Can be absolute or relative to the current project directory.
     :type image_path: str
+
     :return: Returns True if found at least one instance of the specified word in image, False if none.
     :rtype: bool
 
