@@ -50,13 +50,13 @@ class BrowserDriverControl():
     def choose_driver_based_on_browser(self, path=None, browser=None,):
         if browser == None:
             self.check_chromeDriver(path)
-        elif browser == "chrome":
+        elif browser == "chrome" or browser == "gc":
             self.check_chromeDriver(path)
-        elif browser == "firefox":
+        elif browser == "firefox" or browser == "ff":
             self.check_geckoDriver(path)
-        elif browser == "edge":
+        elif browser == "edge" or browser == "me":
             self.check_edgeDriver(path)
-        elif browser == "opera":
+        elif browser == "opera" or browser == "op":
             self.check_operaDriver(path)
         else:
             print('Browser "' + str(browser) + '" not recognized.')
