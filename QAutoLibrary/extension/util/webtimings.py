@@ -26,8 +26,7 @@ __RESPONSE = None
 
 def __get_timing_whole_process(driver):
     CommonMethodsHelpers.webdriver_wait(
-        lambda driver: CommonMethodsHelpers.contains_nonascii(driver.execute_script("return document.readyState")) ==
-        CommonMethodsHelpers.contains_nonascii("complete"), driver, "")
+        lambda driver: driver.execute_script("return document.readyState") == "complete", driver, "")
 
     total_time = driver.execute_script("var start = window.performance.timing.navigationStart; " +
                                        "var end = window.performance.timing.loadEventEnd; return end-start;")
@@ -36,8 +35,7 @@ def __get_timing_whole_process(driver):
 
 def __get_latency(driver):
     CommonMethodsHelpers.webdriver_wait(
-        lambda driver: CommonMethodsHelpers.contains_nonascii(driver.execute_script("return document.readyState")) ==
-        CommonMethodsHelpers.contains_nonascii("complete"), driver, "")
+        lambda driver: driver.execute_script("return document.readyState") == "complete", driver, "")
     latency = driver.execute_script("var start = window.performance.timing.fetchStart; var end = " +
                                     "window.performance.timing.responseEnd; return end-start;")
     return int(latency)
@@ -45,8 +43,7 @@ def __get_latency(driver):
 
 def __get_timing_page_load(driver):
     CommonMethodsHelpers.webdriver_wait(
-        lambda driver: CommonMethodsHelpers.contains_nonascii(driver.execute_script("return document.readyState")) ==
-        CommonMethodsHelpers.contains_nonascii("complete"), driver, "")
+        lambda driver: driver.execute_script("return document.readyState") == "complete", driver, "")
     load_time = driver.execute_script("var start = window.performance.timing.responseEnd; var end = " +
                                       "window.performance.timing.loadEventEnd; return end-start;")
     return int(load_time)

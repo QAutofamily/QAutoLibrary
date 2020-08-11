@@ -40,6 +40,9 @@ class QAutoElement(object):
         for i in self.metadata:
             yield i
 
+    def __str__(self):
+        return f"{self.by}:{self.value}"
+
     def __getitem__(self, index):
         """
         Provides a way to access attributes by indexing
