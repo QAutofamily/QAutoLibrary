@@ -2357,7 +2357,7 @@ class WebMethods(CommonMethods):
             | ``QAutoRobot.wait_until_element_should_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this')``
             | using timeout
             | ``QAutoRobot.wait_until_element_should_be(self.TEST, u'Cell text is this', 10)``
-            | ``QAutoRobot.wait_until_element_should_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this'1', 10)``
+            | ``QAutoRobot.wait_until_element_should_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this', 10)``
 
         """
         if not timeout:
@@ -2366,6 +2366,58 @@ class WebMethods(CommonMethods):
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_text(element) == text,
                                             self.driver_cache._get_current_driver(), msg, timeout)
         DebugLog.log(f"* Element '{element}' text was '{text}'")
+
+    def wait_until_element_value_should_be(self, element, value, timeout=None):
+        """
+        **Wait until element's value is equal**
+
+        :param element: Element representation (By, value) or WebElement.
+        :param value: Element's value which should be
+        :param timeout: Uses default timeout, unless custom value provided.
+        ------------
+        :Example:
+            | *Page model level example*
+            | using web element
+            | ``QAutoRobot.wait_until_element_value_should_be(self.TEST, u'Element value is this')``
+            | using representation
+            | ``QAutoRobot.wait_until_element_value_should_be((By.CSS_SELECTOR, u'#valueTest input'), u'Element value is this')``
+            | using timeout
+            | ``QAutoRobot.wait_until_element_value_should_be(self.TEST, u'Element value is this', 10)``
+            | ``QAutoRobot.wait_until_element_value_should_be((By.CSS_SELECTOR, u'#valueTest input'), u'Element value is this', 10)``
+        """
+        if not timeout:
+            timeout = get_config_value(("default_timeout"))
+        msg = f"Element '{element}' value is not '{value}' in '{timeout}' seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_value(element) == value,
+                                            self.driver_cache._get_current_driver(), msg, timeout)
+        DebugLog.log(f"* Element '{element}' value was '{value}'")
+
+    def wait_until_element_value_contains(self, element, value, timeout=None):
+        """
+        **Wait until element's value contains as expected**
+
+        :param element: Element representation (By, value) or WebElement.
+        :param value: Element's value which expected
+        :param timeout: Uses default timeout, unless custom value provided.
+        -----------------
+        :Example:
+            | *Page model level example*
+            | using web element
+            | ``QAutoRobot.wait_until_element_value_contains(self.TEST, u'Part of element value')``
+            | using representation
+            | ``QAutoRobot.wait_until_element_value_contains((By.CSS_SELECTOR, u'#valueTest input'), u'Part of element value')``
+            | using timeout
+            | ``QAutoRobot.wait_until_element_value_contains(self.TEST, u'Part of element value', 10)``
+            | ``QAutoRobot.wait_until_element_value_contains((By.CSS_SELECTOR, u'#valueTest input'), u'Part of element value', 10)``
+
+        """
+        if not timeout:
+            timeout = get_config_value(("default_timeout"))
+        msg = f"Element '{element}' value did not contain '{value}' in '{timeout}' seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: value in self.get_value(element),
+                                            self.driver_cache._get_current_driver(), msg, timeout)
+
+        DebugLog.log(f"* Element '{element}' value contains '{value}'")
 
     def wait_until_element_attribute_contains(self, element, attr, expected_value, timeout=None):
         """
@@ -2393,6 +2445,33 @@ class WebMethods(CommonMethods):
         CommonMethodsHelpers.webdriver_wait(lambda driver: expected_value in self.get_attribute(element, attr),
                                             self.driver_cache._get_current_driver(), msg, timeout)
         DebugLog.log(f"* Element '{element}' attribute '{attr}' contains '{expected_value}'")
+
+    def wait_until_element_attribute_should_be(self, element, attr, expected_value, timeout=None):
+        """
+        **Wait until element's attribute is equal**
+
+        :param element: Element representation (By, value) or WebElement.
+        :param attr: Element's attribute
+        :param expected_value: Element's attribute value which should be
+        :param timeout: Uses default timeout, unless custom value provided.
+        ----------------
+         :Example:
+            | *Page model level example*
+            | using web element
+            | ``QAutoRobot.wait_until_element_attribute_should_be(self.ID_DROPDOWN, "class", "partialtext")``
+            | using representation
+            | ``QAutoRobot.wait_until_element_attribute_should_be((By.ID, u'dropdown'), "class", "partialtext")``
+            | using timeout
+            | ``QAutoRobot.wait_until_element_attribute_should_be(self.ID_DROPDOWN, "class", "partialtext", 10)``
+            | ``QAutoRobot.wait_until_element_attribute_should_be((By.ID, u'dropdown'), "class", "partialtext", 10)``
+
+        """
+        if not timeout:
+            timeout = get_config_value(("default_timeout"))
+        msg = f"Element '{element}' attribute '{attr}' is not '{expected_value}' in '{timeout}' seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_attribute(element, attr) == expected_value,
+                                            self.driver_cache._get_current_driver(), msg, timeout)
+        DebugLog.log(f"* Element '{element}' attribute '{attr}' was '{expected_value}'")
 
     def wait_until_document_ready(self):
         """
