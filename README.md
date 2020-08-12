@@ -38,7 +38,7 @@ QAutoRobot modules require the following library installations:
 
 #### PythonOCR Prerequisites
 
-**NOTE:** See [/QAutoLibrary/README.md](/QAutoLibrary/README.md) for more detailed PythonOCR installation instructions!
+**NOTE:** See [/QAutoLibrary/README.md](QAutoLibrary/README.md) for more detailed PythonOCR installation instructions!
 
 PythonOCR module requires the following library installations:
 
@@ -46,7 +46,7 @@ PythonOCR module requires the following library installations:
 
 [poppler](https://github.com/oschwartz10612/poppler-windows), download from: https://github.com/oschwartz10612/poppler-windows/releases/
 
-[pdf2image](https://pypi.org/project/pdf2image/), and more at https://github.com/Belval/pdf2image. Install with pip: ```pip install pdf2image```
+[pdf2image](https://pypi.org/project/pdf2image/), with more information at https://github.com/Belval/pdf2image. Install with pip: ```pip install pdf2image```
 
 [Google Tesseract OCR](https://github.com/tesseract-ocr/tessdoc), download from: https://github.com/UB-Mannheim/tesseract/wiki
 
@@ -82,9 +82,15 @@ Optionally, QAutoLibrary can be used by setting it as a PYTHONPATH environment v
 
 1. On Windows, go to: ```Advanced System Properties > Environment Variables...```
 
-2. Create a new system variable, or edit an existing system variable called ```PythonPath```
+2. Create a new system variable, or edit an existing system variable called ```PYTHONPATH```
 
-3. Work in progress...
+3. Make sure the Variable value contains Python directory path. If not, add the Python directory path. ```C:\path\to\Python\version```
+
+4. Add QAutoLibrary directory path as PYTHONPATH variable value. ```C:\path\to\QAutoLibrary```
+
+5. Edit System variable called ```Path```, and add the following values to the Variable values: ```%PYTHONPATH%;%PYTHONPATH%\Lib;%PYTHONPATH%\DLLs;%PYTHONPATH%\Lib\lib-tk;```
+
+6. If QAutoLibrary was installed using pip, include the following value to the Path Variable values: ```%PYTHONPATH%\Scripts```
 
 ## Usage
 
