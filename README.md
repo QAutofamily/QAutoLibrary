@@ -4,38 +4,114 @@ QAutofamily testing framework library. To be used as RobotFramework testing libr
 
 ## Getting Started
 
-Library is installed using setup.py. **Note!** Optionally library could be used by setting PYTHONPATH environment variable (useful for continuous integration like jenkins).
+QAutoLibrary requires Python, and different additional libraries depending on which QAutoLibrary modules you want to use.
+
+The library can be installed using pip, or straight from the source code using setup.py file.
+
+**NOTE:** Optionally, QAutoLibrary can be set up as a PYTHONPATH environment variable.
 
 ### Prerequisites
 
-For libary to be usable you need to install [Python 3.7](https://docs.python.org/3/), [Selenium](https://www.seleniumhq.org/docs/) and [RobotFramework](http://robotframework.org/#documentation), [Requests] (http://docs.python-requests.org/en/master/), [Pillow] (https://pillow.readthedocs.io/en/stable/), [LXML] (https://lxml.de/) and [SimpleJSON] (https://simplejson.readthedocs.io/en/latest/).
+QAutoLibrary requires [Python 3.7+](https://docs.python.org/3/) in order to be usable.
+
+Additionally, QAutoLibrary modules may require other library installations, as detailed in the following sections.
+
+#### QAutoRobot Prerequisites
+
+QAutoRobot modules require the following library installations:
+
+[Selenium](https://www.seleniumhq.org/docs/): ```pip install selenium```
+
+[Robot Framework](http://robotframework.org/#documentation): ```pip install robotframework```
+
+[Requests](http://docs.python-requests.org/en/master/): ```pip install requests```
+
+[Pillow](https://pillow.readthedocs.io/en/stable/): ```pip install Pillow```
+
+[LXML](https://lxml.de/): ```pip install lxml```
+
+[SimpleJSON](https://simplejson.readthedocs.io/en/latest/): ```pip install simplejson```
+
+[pymongo](https://pypi.org/project/pymongo/): ```pip install pymongo```
+
+[pycryptodome](https://pypi.org/project/pycryptodome/): ```pip install pycryptodome```
+
+#### PythonOCR Prerequisites
+
+**NOTE:** See [/QAutoLibrary/README.md](/QAutoLibrary/README.md) for more detailed PythonOCR installation instructions!
+
+PythonOCR module requires the following library installations:
+
+[pyautogui](https://pypi.org/project/PyAutoGUI/): ```pip install pyautogui```
+
+[poppler](https://github.com/oschwartz10612/poppler-windows), download from: https://github.com/oschwartz10612/poppler-windows/releases/
+
+[pdf2image](https://pypi.org/project/pdf2image/), and more at https://github.com/Belval/pdf2image. Install with pip: ```pip install pdf2image```
+
+[Google Tesseract OCR](https://github.com/tesseract-ocr/tessdoc), download from: https://github.com/UB-Mannheim/tesseract/wiki
+
+[pytesseract](https://pypi.org/project/pytesseract/): ```pip install pytesseract```
+
+### Installing with pip
+
+QAutoLibrary can be downloaded and installed to your local Python libraries, using pip:
+
+```pip install --upgrade https://customer.qautomate.fi/downloadQautoLibrary.html```
+
+### Installing from Source Files
+
+Alternatively, QAutoLibrary can be installed straight from the source files. The library is installed using [setup.py](setup.py) file.
+
+1. Open Command Prompt and navigate to a directory path where you want to download QAutoLibrary.
+
+2. Download the source files by cloning the Git repository:
+
+```git clone https://github.com/QAutofamily/QAutoLibrary```
+
+3. Navigate to the QAutoLibrary directory:
+
+```cd QAutoLibrary```
+
+4. Run setup.py module as a script:
+
+```python -m setup.py install```
+
+### Setting QAutoLibrary to PYTHONPATH
+
+Optionally, QAutoLibrary can be used by setting it as a PYTHONPATH environment variable (useful for continuous integration like Jenkins).
+
+1. On Windows, go to: ```Advanced System Properties > Environment Variables...```
+
+2. Create a new system variable, or edit an existing system variable called ```PythonPath```
+
+3. Work in progress...
+
+## Usage
+
+Work in progress...
+
+### Importing to Python
+
+```import QAutoRobot```
+
+```from QAutoLibrary import PythonOCR```
+
+To import a class from module:
+
+```from QAutoLibrary.QAutoElement import QAutoElement```
+
+### Importing to QAutoRobot
+
+QAutoLibrary modules can be imported to QAutoRobot as libraries. Import a module to robot in the Settings field:
 
 ```
-pip install selenium
-pip install robotframework
-pip install Pillow
-pip install requests
-pip install lxml
-pip install simplejson
-pip install pymongo
-pip install pycryptodome
+*** Settings ***
+Library  |  QAutoLibrary.<Module>
 ```
 
-### Installing
+Keywords of the module can then be used in the robot:
 
-#### Download
-
-pip install --upgrade https://customer.qautomate.fi/downloadQautoLibrary.html
-
-#### From source
-
-Library installation is done using setup.py file.
-
-```
-git clone https://github.com/QAutofamily/QAutoLibrary
-cd QAutoLibrary
-python -m setup.py install
-```
+```<Module Keyword>  |  ${<arguments>}```
 
 ## Built With
 * [Python 3.7](https://docs.python.org/3/) - Programming language
