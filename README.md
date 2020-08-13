@@ -2,23 +2,23 @@
 
 QAutofamily testing framework library. To be used as RobotFramework testing library and collection of web-testing tools for python.
 
+QAutoLibrary is an extension for RobotFramework and Python, providing automation tools and RPA (Robotic Process Automation) libraries.
+
 ## Getting Started
 
 QAutoLibrary requires Python, and different additional libraries depending on which QAutoLibrary modules you want to use.
 
 The library can be installed using pip, or straight from the source code using setup.py file.
 
-**NOTE:** Optionally, QAutoLibrary can be set up as a PYTHONPATH environment variable.
-
 ### Prerequisites
 
-QAutoLibrary requires [Python 3.7+](https://docs.python.org/3/) in order to be usable.
+QAutoLibrary requires [Python 3.7](https://docs.python.org/3/) in order to be usable.
 
 Additionally, QAutoLibrary modules may require other library installations, as detailed in the following sections.
 
 #### QAutoRobot Prerequisites
 
-**NOTE:** If you have installed QAutomate tool, libraries required by QAutoRobot should already be installed.
+**NOTE:** If you have installed [QAutomate tool](https://qautomate.fi/qautomate/), the libraries required by QAutoRobot should already be installed.
 
 QAutoRobot modules require the following library installations:
 
@@ -40,7 +40,7 @@ QAutoRobot modules require the following library installations:
 
 #### PythonOCR Prerequisites
 
-**NOTE:** See [/QAutoLibrary/README.md](./QAutoLibrary/README.md) for PythonOCR installation instructions.
+**NOTE:** See /QAutoLibrary/README.md for PythonOCR installation instructions.
 
 PythonOCR module requires the following libraries:
 
@@ -86,24 +86,6 @@ cd QAutoLibrary
 python -m setup.py install
 ```
 
-### Setting QAutoLibrary to PYTHONPATH
-
-Optional. QAutoLibrary can be used by setting it as a PYTHONPATH environment variable (useful for continuous integration like Jenkins).
-
-1. On Windows, go to: ```Advanced System Properties > Environment Variables...```
-
-2. Create a new system variable, or edit an existing System variable called: ```PYTHONPATH```
-
-3. Make sure PYTHONPATH variable value contains Python directory path. If not, add the Python directory path. ```C:\path\to\Python\version```
-
-4. Add QAutoLibrary directory path as PYTHONPATH variable value. ```C:\path\to\QAutoLibrary```
-
-Separate different variable values with semicolons: ```first;second```
-
-5. Edit System variable called ```Path```, and add the following values to the variable values: ```%PYTHONPATH%```;```%PYTHONPATH%\Lib```;```%PYTHONPATH%\DLLs```;```%PYTHONPATH%\Lib\lib-tk```
-
-6. If QAutoLibrary was installed using pip, include the following value to the Path variable values: ```%PYTHONPATH%\Scripts```
-
 ## Usage
 
 QAutoLibrary modules can provide additional functionality to Python code or QAutoRobot.
@@ -129,10 +111,10 @@ from QAutoLibrary.<Module> import <Class>
 Module functions can then be used as follows:
 
 ```
-<module>.<function>()
+<Module>.<function>()
 ```
 
-And class objects can be instantiated as follows:
+Class objects can be instantiated as follows:
 
 ```
 <Object> = <Class>()
@@ -143,8 +125,7 @@ And class objects can be instantiated as follows:
 ```
 from QAutoLibrary import PythonOCR
 
-image_file = "./images/screenshot.png"
-PythonOCR.find_coordinates("Python", image_file)
+PythonOCR.find_coordinates("Python", "./images/screenshot.png")
 ```
 
 ```
