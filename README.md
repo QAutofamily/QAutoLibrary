@@ -18,6 +18,8 @@ Additionally, QAutoLibrary modules may require other library installations, as d
 
 #### QAutoRobot Prerequisites
 
+**NOTE:** If you have installed QAutomate tool, libraries required by QAutoRobot should already be installed.
+
 QAutoRobot modules require the following library installations:
 
 [Selenium](https://www.seleniumhq.org/docs/): ```pip install selenium```
@@ -38,19 +40,19 @@ QAutoRobot modules require the following library installations:
 
 #### PythonOCR Prerequisites
 
-**NOTE:** See [/QAutoLibrary/README.md](QAutoLibrary/README.md) for more detailed PythonOCR installation instructions!
+**NOTE:** See [/QAutoLibrary/README.md](QAutoLibrary/README.md) for PythonOCR installation instructions.
 
-PythonOCR module requires the following library installations:
+PythonOCR module requires the following libraries:
 
-[pyautogui](https://pypi.org/project/PyAutoGUI/): ```pip install pyautogui```
+[pyautogui](https://pypi.org/project/PyAutoGUI/)
 
-[poppler](https://github.com/oschwartz10612/poppler-windows), download from: https://github.com/oschwartz10612/poppler-windows/releases/
+[poppler](https://github.com/oschwartz10612/poppler-windows)
 
-[pdf2image](https://pypi.org/project/pdf2image/), with more information at https://github.com/Belval/pdf2image. Install with pip: ```pip install pdf2image```
+[pdf2image](https://pypi.org/project/pdf2image/), with more information at https://github.com/Belval/pdf2image
 
-[Google Tesseract OCR](https://github.com/tesseract-ocr/tessdoc), download from: https://github.com/UB-Mannheim/tesseract/wiki
+[Google Tesseract OCR](https://github.com/tesseract-ocr/tessdoc)
 
-[pytesseract](https://pypi.org/project/pytesseract/): ```pip install pytesseract```
+[pytesseract](https://pypi.org/project/pytesseract/)
 
 ### Installing with pip
 
@@ -78,25 +80,27 @@ Alternatively, QAutoLibrary can be installed straight from the source files. The
 
 ### Setting QAutoLibrary to PYTHONPATH
 
-Optionally, QAutoLibrary can be used by setting it as a PYTHONPATH environment variable (useful for continuous integration like Jenkins).
+Optional. QAutoLibrary can be used by setting it as a PYTHONPATH environment variable (useful for continuous integration like Jenkins).
 
 1. On Windows, go to: ```Advanced System Properties > Environment Variables...```
 
-2. Create a new system variable, or edit an existing system variable called ```PYTHONPATH```
+2. Create a new system variable, or edit an existing System variable called: ```PYTHONPATH```
 
-3. Make sure the Variable value contains Python directory path. If not, add the Python directory path. ```C:\path\to\Python\version```
+3. Make sure PYTHONPATH variable value contains Python directory path. If not, add the Python directory path. ```C:\path\to\Python\version```
 
 4. Add QAutoLibrary directory path as PYTHONPATH variable value. ```C:\path\to\QAutoLibrary```
 
-5. Edit System variable called ```Path```, and add the following values to the Variable values: ```%PYTHONPATH%;%PYTHONPATH%\Lib;%PYTHONPATH%\DLLs;%PYTHONPATH%\Lib\lib-tk;```
+5. Edit System variable called ```Path```, and add the following values to the variable values: ```%PYTHONPATH%```, ```%PYTHONPATH%\Lib```, ```%PYTHONPATH%\DLLs``` and ```%PYTHONPATH%\Lib\lib-tk```
 
-6. If QAutoLibrary was installed using pip, include the following value to the Path Variable values: ```%PYTHONPATH%\Scripts```
+6. If QAutoLibrary was installed using pip, include the following value to the Path variable values: ```%PYTHONPATH%\Scripts```
 
 ## Usage
 
-Work in progress...
+QAutoLibrary modules can provide additional functinality to Python code or QAutoRobot.
 
-### Importing to Python
+### Usage in Python code
+
+**Importing**
 
 ```import QAutoRobot```
 
@@ -106,7 +110,19 @@ To import a class from module:
 
 ```from QAutoLibrary.QAutoElement import QAutoElement```
 
-### Importing to QAutoRobot
+**Usage**
+
+Module functions can then be used as follows:
+
+```<module>.<function>()```
+
+For example:
+
+```PythonOCR.find_words("Word", image_file.png)```
+
+### Usage in QAutoRobot
+
+**Importing**
 
 QAutoLibrary modules can be imported to QAutoRobot as libraries. Import a module to robot in the Settings field:
 
@@ -114,6 +130,8 @@ QAutoLibrary modules can be imported to QAutoRobot as libraries. Import a module
 *** Settings ***
 Library  |  QAutoLibrary.<Module>
 ```
+
+**Usage**
 
 Keywords of the module can then be used in the robot:
 
