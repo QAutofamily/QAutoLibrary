@@ -40,7 +40,7 @@ QAutoRobot modules require the following library installations:
 
 #### PythonOCR Prerequisites
 
-**NOTE:** See [/QAutoLibrary/README.md](QAutoLibrary/README.md) for PythonOCR installation instructions.
+**NOTE:** See [/QAutoLibrary/README.md](./QAutoLibrary/README.md) for PythonOCR installation instructions.
 
 PythonOCR module requires the following libraries:
 
@@ -58,7 +58,9 @@ PythonOCR module requires the following libraries:
 
 QAutoLibrary can be downloaded and installed to your local Python libraries, using pip:
 
-```pip install --upgrade https://customer.qautomate.fi/downloadQautoLibrary.html```
+```
+pip install --upgrade https://customer.qautomate.fi/downloadQautoLibrary.html
+```
 
 ### Installing from Source Files
 
@@ -68,15 +70,21 @@ Alternatively, QAutoLibrary can be installed straight from the source files. The
 
 2. Download the source files by cloning the Git repository:
 
-```git clone https://github.com/QAutofamily/QAutoLibrary```
+```
+git clone https://github.com/QAutofamily/QAutoLibrary
+```
 
 3. Navigate to the QAutoLibrary directory:
 
-```cd QAutoLibrary```
+```
+cd QAutoLibrary
+```
 
 4. Run setup.py module as a script:
 
-```python -m setup.py install```
+```
+python -m setup.py install
+```
 
 ### Setting QAutoLibrary to PYTHONPATH
 
@@ -90,35 +98,61 @@ Optional. QAutoLibrary can be used by setting it as a PYTHONPATH environment var
 
 4. Add QAutoLibrary directory path as PYTHONPATH variable value. ```C:\path\to\QAutoLibrary```
 
-5. Edit System variable called ```Path```, and add the following values to the variable values: ```%PYTHONPATH%```, ```%PYTHONPATH%\Lib```, ```%PYTHONPATH%\DLLs``` and ```%PYTHONPATH%\Lib\lib-tk```
+Separate different variable values with semicolons: ```first;second```
+
+5. Edit System variable called ```Path```, and add the following values to the variable values: ```%PYTHONPATH%```;```%PYTHONPATH%\Lib```;```%PYTHONPATH%\DLLs```;```%PYTHONPATH%\Lib\lib-tk```
 
 6. If QAutoLibrary was installed using pip, include the following value to the Path variable values: ```%PYTHONPATH%\Scripts```
 
 ## Usage
 
-QAutoLibrary modules can provide additional functinality to Python code or QAutoRobot.
+QAutoLibrary modules can provide additional functionality to Python code or QAutoRobot.
 
 ### Usage in Python code
 
 **Importing**
 
-```import QAutoRobot```
+To import a QAutoLibrary module to Python code:
 
-```from QAutoLibrary import PythonOCR```
+```
+from QAutoLibrary import <Module>
+```
 
-To import a class from module:
+To import a class from a module:
 
-```from QAutoLibrary.QAutoElement import QAutoElement```
+```
+from QAutoLibrary.<Module> import <Class>
+```
 
 **Usage**
 
 Module functions can then be used as follows:
 
-```<module>.<function>()```
+```
+<module>.<function>()
+```
 
-For example:
+And class objects can be instantiated as follows:
 
-```PythonOCR.find_words("Word", image_file.png)```
+```
+<Object> = <Class>()
+```
+
+**Examples**
+
+```
+from QAutoLibrary import PythonOCR
+
+image_file = "./images/screenshot.png"
+PythonOCR.find_coordinates("Python", image_file)
+```
+
+```
+from QAutoLibrary.QAutoSelenium import CommonMethods
+
+my_methods = CommonMethods()
+my_methods.set_speed(timeout=5)
+```
 
 ### Usage in QAutoRobot
 
@@ -135,7 +169,34 @@ Library  |  QAutoLibrary.<Module>
 
 Keywords of the module can then be used in the robot:
 
-```<Module Keyword>  |  ${<arguments>}```
+```
+*** Tasks ***
+Test Case
+    <Module Keyword>  |  ${<argument>}
+```
+
+**Examples**
+
+```
+*** Settings ***
+Library  |  QAutoLibrary.QAutowin
+
+*** Tasks ***
+Example 1
+    Open Application  |  notepad.exe
+```
+
+```
+*** Settings ***
+Library  |  QAutoLibrary.PythonOCR
+
+*** Variables ***
+@{results_list}
+
+*** Tasks ***
+Example 2
+    @{results_list} = |  Find Words  |  Python  |  ./files/test_file.pdf  |  ./output/
+```
 
 ## Built With
 * [Python 3.7](https://docs.python.org/3/) - Programming language
