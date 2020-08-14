@@ -16,7 +16,7 @@ QAutoVisitorSuite uses the following QAutoLibrary modules: ```QAutoRobot.py```
 
 Custom Python libraries can be added to the robot in pagemodel folder. QAutoLibrary attempts to automatically load and import Python modules in pagemodel folder.
 
-When creating custom libraries for QAutoRobot, follow the Python naming convention ([PEP 8](https://www.python.org/dev/peps/pep-0008/)):
+When creating custom libraries for QAutoRobot, follow the standard Python naming convention ([PEP 8](https://www.python.org/dev/peps/pep-0008/)):
 
 * **Packages** in ```lowercase```
 

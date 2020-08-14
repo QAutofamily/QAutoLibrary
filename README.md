@@ -1,7 +1,5 @@
 # QAutoLibrary
 
-QAutofamily testing framework library. To be used as RobotFramework testing library and collection of web-testing tools for python.
-
 QAutoLibrary is an extension for RobotFramework and Python, providing automation tools and RPA (Robotic Process Automation) libraries.
 
 ## Getting Started
@@ -183,7 +181,7 @@ Example 2
 
 QAutoLibrary attempts to automatically load and import custom Python modules in a robot's pagemodel folder.
 
-Detailed instructions on how to create and use a custom Python module with QAutoLibrary can be found in /QAutoLibrary/README.md.
+Detailed instructions on how to create and use custom Python modules with QAutoLibrary can be found in /QAutoLibrary/README.md.
 
 ## Built With
 * [Python 3.7](https://docs.python.org/3/) - Programming language
