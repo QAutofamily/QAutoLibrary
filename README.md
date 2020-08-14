@@ -179,6 +179,12 @@ Example 2
     @{results_list} = |  Find Words  |  Python  |  ./files/test_file.pdf  |  ./output/
 ```
 
+### Custom libraries in QAutoRobot
+
+QAutoLibrary attempts to automatically load and import custom Python modules in a robot's pagemodel folder.
+
+Detailed instructions on how to create and use a custom Python module with QAutoLibrary can be found in /QAutoLibrary/README.md.
+
 ## Built With
 * [Python 3.7](https://docs.python.org/3/) - Programming language
 * [Python 2.7](https://docs.python.org/2/) - Programming language Old
