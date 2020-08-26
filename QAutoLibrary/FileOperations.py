@@ -145,7 +145,7 @@ def get_python_files_dict(path_to_dir):
 class FileUtils(object):
     # returns index in the string of the first method in the codestring or -1
     @classmethod
-    def first_method_index(self, codestring):
+    def first_method_index(cls, codestring):
 
         prefix = "    def "
         first_m_index = codestring.find(prefix)
@@ -155,7 +155,7 @@ class FileUtils(object):
     # returns True if file exists and name is case sensitive
     # otherwise returns False
     @classmethod
-    def isfile_case_sensitive(self, path):
+    def isfile_case_sensitive(cls, path):
         if not os.path.isfile(path):
             return False
         directory, filename = os.path.split(path)
@@ -163,7 +163,7 @@ class FileUtils(object):
 
     # returns String where tabs are changed to spaces
     @classmethod
-    def change_taps_to_spaces(self, content):
+    def change_taps_to_spaces(cls, content):
         """
 
 
@@ -173,7 +173,7 @@ class FileUtils(object):
         return re.sub('\t', '    ', content)
 
     @classmethod
-    def rename(self, old_name, new_name):
+    def rename(cls, old_name, new_name):
         """
         rename or move the file
 
@@ -190,7 +190,7 @@ class FileUtils(object):
 
 
     @classmethod
-    def get_method_index(self, method_name, codestring):
+    def get_method_index(cls, method_name, codestring):
         """
         returns index in the string of the given method name in the codestring or -1
 

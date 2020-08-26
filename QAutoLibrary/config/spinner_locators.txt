@@ -1,0 +1,5 @@
+
+# react ant-desing spinner
+# css selector,.spinning
+# custom spinner
+# css selector,.loader-wrapper .loader
