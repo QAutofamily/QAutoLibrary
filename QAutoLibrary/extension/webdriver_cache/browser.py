@@ -101,6 +101,10 @@ def create_driver(browser_name):
     if browser_name not in GlobalUtils.BROWSER_NAMES:
         raise Exception("Unsupported browser string: '%s' Use: %s" % (browser_name, GlobalUtils.BROWSER_NAMES))
 
+    spinner_locator_file = os.path.join(os.getcwd(), GlobalUtils.PROJECT_SPINNER_LOCATORS_FILE)
+    if not os.path.isfile(spinner_locator_file):
+        shutil.copyfile(GlobalUtils.FRAMEWORK_SPINNER_LOCATORS_FILE, spinner_locator_file)
+
     if __REMOTE_SERVER_ADDRESS:
         if _REMOTE_SERVER_CAPTIONS:
             desired_capabilities = _REMOTE_SERVER_CAPTIONS

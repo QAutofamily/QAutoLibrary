@@ -80,6 +80,8 @@ class GlobalUtils(object):
     RESOURCES_IE_PATH = os.path.join(WEBDRIVERS_PATH, "ie_win")
 
     BROWSER_CONFIG_FILE_FRAMEWORK = os.path.join(CONFIG_PATH, "browser_config.xml")
+    SPINNER_LOCATOR_FILE = "spinner_locators.txt"
+    FRAMEWORK_SPINNER_LOCATORS_FILE = os.path.join(CONFIG_PATH, SPINNER_LOCATOR_FILE)
 
     # JS helpers used in QAutoSelenium methods
     DRAG_DROP_HELPER = os.path.join(JS_HELPERS_PATH, "drag_and_drop_helper.js")
@@ -111,6 +113,7 @@ class GlobalUtils(object):
     # Project configs
     BROWSER_CONFIG_FILE = os.path.join(PROJECT_CONFIG_DIR, "browser_settings.xml")
     PROJECT_SETTINGS_FILE = os.path.join(PROJECT_CONFIG_DIR, "project_settings.xml")
+    PROJECT_SPINNER_LOCATORS_FILE = os.path.join(PROJECT_CONFIG_DIR, SPINNER_LOCATOR_FILE)
 
     COMMON_PARAMETERS_FOLDER_NAME = os.path.join(DATA_FOLDER_NAME, "common_parameters")
     SCREENSHOTS_FOLDER_NAME = os.path.join(DATA_FOLDER_NAME, "screenshots")

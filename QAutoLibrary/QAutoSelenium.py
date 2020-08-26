@@ -52,7 +52,8 @@ from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils
 from QAutoLibrary.extension.webdriver_cache.browser import create_driver
 from QAutoLibrary.extension.config import get_config_value
 from QAutoLibrary.extension.util.webtimings import get_measurements as webtimings_get_measurements
-from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, get_file_content
+from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, \
+                                        get_file_content, get_file_lines_without_newlines
 from QAutoLibrary.extension.util.xml_screenshot_parser import XmlScreenshotParser
 
 from QAutoLibrary.QAutoElement import QAutoElement
@@ -470,24 +471,22 @@ class CommonMethods(object):
             | using representation
             | ``QAutoRobot.click_element((By.LINK_TEXT, u'Trial'))``
         """
-
-        start = time.time()
-        self.wait_until_element_is_visible(element, get_config_value("default_timeout"), "", True)
-        self.wait_until_element_is_enabled(element, 1, "", True)
-        end = time.time()
-        duration = end - start
-        click_timeout = get_config_value("default_timeout")
-        if duration > 20:
-            click_timeout = 3
-        msg = "Failed to click element after %s seconds" % get_config_value("default_timeout")
+        self.wait_until_spinner_is_not_visible()
+        msg = f"Failed to click element '{element}' after {get_config_value('default_timeout')} seconds"
         try:
             CommonMethodsHelpers.webdriver_wait(lambda driver: self._click_element(element, to_print),
-                                                self.driver_cache._get_current_driver(), msg, click_timeout, False)
+                                                self.driver_cache._get_current_driver(), msg, get_config_value('default_timeout'), False)
         except:
             self.fallback_element(element, "click")
 
     def _click_element(self, element, to_print=True):
         web_element = self.find_element_if_not_webelement(element)
+        if not self.is_visible(web_element):
+            DebugLog.log(f"* Element '{element}' is not visible!")
+            return False
+        if self.is_disabled(web_element):
+            DebugLog.log(f"* Element '{element}' is disabled!")
+            return False
         try:
             element_loc = web_element.location
             printout = f"* Clicking element '{element}' in location {str(element_loc)}"
@@ -745,11 +744,45 @@ class CommonMethods(object):
                 msg = f"Element '{element}' is not visible for {timeout} seconds"
             else:
                 msg = f"Element '{element.text}' is not visible for {timeout} seconds"
+        self.wait_until_spinner_is_not_visible(timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout, fallback)
         # Log successfull execution if we are not doing fallback
         if not fallback:
             DebugLog.log(f"* Element '{element}' is visible")
+
+    def wait_until_spinner_is_not_visible(self, timeout=None):
+        """
+        **Wait until page loading spinner is not visible**
+
+        *This method is already build in some of the common methods. Used locator for
+        spinner element can be added in '/config/project_config/spinner_locators.txt' file*
+
+        :param timeout: Uses default timeout, unless custom value provided.
+        :exception:  If time exceeds DEFAULT_TIMEOUT, then rise exception.
+        ------------
+        :Example:
+            | *Page model level example*
+            | using web element
+            | ``QAutoRobot.wait_until_spinner_is_not_visible()``
+            | using timeout
+            | ``QAutoRobot.wait_until_spinner_is_not_visible(10)``
+
+        """
+        locator_file = os.path.join(os.getcwd(), GlobalUtils.PROJECT_SPINNER_LOCATORS_FILE)
+        if os.path.isfile(locator_file):
+            # go through locator file, is there any active locators
+            locator_lines = get_file_lines_without_newlines(locator_file)
+            for locator_line in locator_lines:
+                if locator_line.startswith("#"):
+                    continue
+                else:
+                    # spinner locator found
+                    locator_by, locator_value = locator_line.strip().split(",", 1)
+                    element = QAutoElement((locator_by, locator_value))
+                    DebugLog.log(f"* Spinner element '{element}'")
+                    # wait for spinner is not visible
+                    self.wait_until_element_is_not_visible(element, timeout)
 
     def wait_until_element_is_not_visible(self, element, timeout=None, msg=None):
         """
@@ -809,6 +842,7 @@ class CommonMethods(object):
                 msg = f"Element '{element}' is not disabled after {timeout} seconds"
             else:
                 msg = f"Element '{element.text}' is not disabled after {timeout} seconds"
+        self.wait_until_spinner_is_not_visible(timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_disabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
         DebugLog.log(f"* Element '{element}' is disabled")
@@ -840,6 +874,7 @@ class CommonMethods(object):
                 msg = f"Element '{element}' is not enabled after {timeout} seconds"
             else:
                 msg = f"Element '{element.text}' is not enabled after {timeout} seconds"
+        self.wait_until_spinner_is_not_visible(timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_enabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout, fallback)
         # Log successfull execution if we are not doing fallback
