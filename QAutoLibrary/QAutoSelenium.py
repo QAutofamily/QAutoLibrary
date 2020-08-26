@@ -774,12 +774,15 @@ class CommonMethods(object):
             # go through locator file, is there any active locators
             locator_lines = get_file_lines_without_newlines(locator_file)
             for locator_line in locator_lines:
-                if locator_line.startswith("#"):
+                if locator_line.strip().startswith("#"):
                     continue
                 else:
                     # spinner locator found
-                    locator_by, locator_value = locator_line.strip().split(",", 1)
-                    element = QAutoElement((locator_by, locator_value))
+                    try:
+                        locator_by, locator_value = locator_line.strip().split(",", 1)
+                    except ValueError as e:
+                        continue
+                    element = QAutoElement((locator_by.strip(), locator_value.strip()))
                     DebugLog.log(f"* Spinner element '{element}'")
                     # wait for spinner is not visible
                     self.wait_until_element_is_not_visible(element, timeout)
