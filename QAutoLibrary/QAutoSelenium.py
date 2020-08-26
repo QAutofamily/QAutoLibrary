@@ -167,7 +167,7 @@ class CommonMethods(object):
             | ``QAutoRobot.warning("My message")``
 
         """
-        message = "**WARN**Warning: %s*WARN*" % message
+        message = f"**Warning: {message}"
         warn(message)
 
     def measure_async_screen_response_time(self, measurement_name, timeout, reference_picture, element=None):
@@ -769,6 +769,8 @@ class CommonMethods(object):
             | ``QAutoRobot.wait_until_spinner_is_not_visible(10)``
 
         """
+        if not timeout:
+            timeout = get_config_value(("default_timeout"))
         locator_file = os.path.join(os.getcwd(), GlobalUtils.PROJECT_SPINNER_LOCATORS_FILE)
         if os.path.isfile(locator_file):
             # go through locator file, is there any active locators
@@ -784,8 +786,13 @@ class CommonMethods(object):
                         continue
                     element = QAutoElement((locator_by.strip(), locator_value.strip()))
                     DebugLog.log(f"* Spinner element '{element}'")
-                    # wait for spinner is not visible
-                    self.wait_until_element_is_not_visible(element, timeout)
+                    try:
+                        # wait for spinner is not visible
+                        self.wait_until_element_is_not_visible(element, timeout)
+                    except:
+                        # give warning if spinner is visible
+                        self.warning(f"Spinner element '{element}' was still visible after {timeout} seconds")
+
 
     def wait_until_element_is_not_visible(self, element, timeout=None, msg=None):
         """
