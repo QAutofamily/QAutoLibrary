@@ -258,7 +258,11 @@ Use guides include QAutoRobot and PythonOCR use instructions. QAutoRobot use gui
 
 **Importing**
 
+Work in progress...
+
 **Usage**
+
+Work in progress...
 
 #### Importing Custom Libraries
 
@@ -303,6 +307,28 @@ Test Custom Module
 ```
 
 When creating custom libraries for QAutoRobot, follow the standard Python naming convention ([PEP 8](https://www.python.org/dev/peps/pep-0008/)).
+
+#### Usage in Python code
+
+Work in progress...
+
+**Importing**
+
+Import QAutoRobot to your Python code:
+
+```
+from QAutoLibrary import QAutoRobot
+```
+
+**Usage**
+
+Functions of the QAutoRobot module can then be used as follows:
+
+```QAutoRobot.<function>()```
+
+For example:
+
+``````
 
 ### PythonOCR Usage
 
