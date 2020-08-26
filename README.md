@@ -48,7 +48,7 @@ QAutoRobot modules require the following library installations:
 
 #### PythonOCR Prerequisites
 
-**NOTE:** See [INSTRUCTIONS.md](INSTRUCTIONS.md) for PythonOCR installation instructions.
+**NOTE:** See on INSTRUCTIONS.md file, in [PythonOCR Prerequisites](INSTRUCTIONS.md#pythonocr-prerequisites)-section, for PythonOCR prerequisites' installation instructions.
 
 PythonOCR module requires the following libraries:
 
@@ -139,9 +139,9 @@ Library  |  QAutoLibrary.<Module>
 Keywords of the module can then be used in the robot:
 
 ```
-*** Tasks ***
+*** Test Cases ***
 Test Case
-    <Module Keyword>  |  ${<argument1>}  |  ${<argument2>}  |  ...
+  |  <Module Keyword>  |  ${<argument1>}  |  ${<argument2>}  |  ...
 ```
 
 **Examples**
@@ -170,9 +170,9 @@ Example 2
 
 ### Custom libraries in QAutoRobot
 
-QAutoLibrary attempts to automatically load and import custom Python modules in a robot's pagemodel folder.
+Custom Python libraries can be provided to QAutoRobot. QAutoRobot dynamically (during runtime) imports modules located in the robot's 'pagemodel' folder.
 
-Detailed instructions on how to create and use custom Python modules with QAutoLibrary can be found in /QAutoLibrary/README.md.
+Detailed instructions on how to create and use custom Python modules with QAutoRobot can be found in INSTRUCTIONS.md file, in [Importing Custom Libraries](INSTRUCTIONS.md#importing-custom-libraries)-section.
 
 ## Built With
 * [Python 3.7](https://docs.python.org/3/) - Programming language

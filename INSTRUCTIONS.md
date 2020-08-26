@@ -6,7 +6,7 @@ QAutoLibrary Instructions on how to install prerequisites of the different modul
 
 QAutoLibrary requires Python 3.7 in order to be used.
 
-Additionally, modules of the QAutoLibrary may use external libraries, which have to be installed. See sections [QAutoRobot Prerequisites](#qautorobot-prerequisites) and [PythonOCR Prerequisites](#pythonocr-prerequisites) for further details.
+Additionally, modules of the QAutoLibrary may use external libraries, which have to be installed.
 
 ### Python
 
@@ -140,7 +140,7 @@ pip install pyautogui
 
 More information at: https://pypi.org/project/PyAutoGUI/
 
-#### poppler (Windows)
+#### poppler
 
 **Windows:**
 
@@ -170,7 +170,7 @@ pip install pdf2image
 
 More information at: https://pypi.org/project/pdf2image/ and https://github.com/Belval/pdf2image
 
-#### Tesseract OCR (Windows)
+#### Tesseract OCR
 
 **Windows:**
 
@@ -188,7 +188,7 @@ Work in progress...
 sudo apt install poppler-utils tesseract-ocr
 ```
 
-#### pytesseract (Windows)
+#### pytesseract
 
 **NOTE:** Install Tesseract OCR before installing pytesseract!
 
@@ -248,33 +248,61 @@ python -m setup.py install
 
 ## Usage
 
+QAutoLibrary modules can be used in Python code or Robot.
+
+Use guides include QAutoRobot and PythonOCR use instructions. QAutoRobot use guide also includes
+
 ### QAutoRobot Usage
+
+#### Usage in Robot
 
 **Importing**
 
 **Usage**
 
-**Examples**
-
 #### Importing Custom Libraries
 
-Work in progress...
+Custom Python libraries can be added to the robot in 'pagemodel' folder. QAutoRobot dynamically (during runtime) imports modules located in the robot's 'pagemodel' folder.
 
-Custom Python libraries can be added to the robot in pagemodel folder. QAutoLibrary attempts to automatically load and import Python modules in pagemodel folder.
+Custom modules can, for example, provide custom keywords for QAutoRobot.
 
-When creating custom libraries for QAutoRobot, follow the standard Python naming convention ([PEP 8](https://www.python.org/dev/peps/pep-0008/)):
+**Custom module requirements:**
 
-* Packages in ```lowercase```
+* The Python file should locate in the robot's 'pagemodel' folder.
 
-* Modules in ```lowercase```
+```/pagemodel/<module>.py```
 
-* Classes in ```CamelCase```
+* The Python file should contain a class. This class can contain custom functions.
 
-* Global varibles in ```UPPERCASE_WITH_UNDERSCORES```
+```
+class <Class>():
 
-* Functions in ```lowercase_with_underscores```
+	def <function>():
+		...
+```
 
-* Variables in ```lowercase_with_underscores```
+* The name of the Python file should match the name of the class. However, the file name should be all lowercase and the class name should start with Uppercase.
+
+**Custom module example:**
+
+```/pagemodel/add_numbers.py```
+
+```
+class Add_numbers():
+
+	def add_integers(self, a, b):
+		return int(a) + int(b)
+```
+
+The example function, 'add_integers()', can then be used as a keyword in QAutoRobot:
+
+```
+*** Tasks ***
+Test Custom Module
+  |  ${total} =  |  Add Integers  |  1  |  2
+```
+
+When creating custom libraries for QAutoRobot, follow the standard Python naming convention ([PEP 8](https://www.python.org/dev/peps/pep-0008/)).
 
 ### PythonOCR Usage
 
@@ -328,7 +356,7 @@ PythonOCR.<function>(<parameter1>, <parameter2>,...)
 
 ```PythonOCR.click_word("Python", "screenshot.png")``` As above, but the screenshot is saved to the current project directory as 'screenshot.png'.
 
-```PythonOCR.click_word("Python", "./screenshots/screenshot.png")``` As above, but the screenshot is saved to folder 'screenshots' in the current project directory.
+```PythonOCR.click_word("Python", "./screenshots/screenshot.png")``` As above, but the screenshot is saved to 'screenshots' folder in the current project directory.
 
 ```PythonOCR.click_word("Python", "C:/project_folder/screenshots/screenshot.png")``` As above, but the screenshot is saved to the specific directory.
 
@@ -407,7 +435,7 @@ PythonOCR functions can then be used as keywords:
 
 ```Click Word  |  Python  |  screenshot.png``` As above, but the screenshot is saved to the current project directory as 'screenshot.png'.
 
-```Click Word  |  Python  |  ./screenshots/screenshot.png``` As above, but the screenshot is saved to folder 'screenshots' in the current project directory.
+```Click Word  |  Python  |  ./screenshots/screenshot.png``` As above, but the screenshot is saved to 'screenshots' folder in the current project directory.
 
 ```Click Word  |  Python  |  index=0``` Searches for the word on screen and if finds multiple instances of the word, clicks the first found instance (at index position 0 (zero)). Screenshot is not saved.
 
