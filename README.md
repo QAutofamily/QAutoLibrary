@@ -2,6 +2,12 @@
 
 QAutoLibrary is an extension for RobotFramework and Python, providing automation tools and RPA (Robotic Process Automation) libraries.
 
+## Main Libraries
+
+**QAutoRobot**, extensive RPA library for Robot Framework.
+
+**PythonOCR**, library of functions for finding and locating words on screen, in image files or PDF files using OCR (Optical Character Recognition).
+
 ## Getting Started
 
 QAutoLibrary requires Python, and different additional libraries depending on which QAutoLibrary modules you want to use.
@@ -38,7 +44,7 @@ QAutoRobot modules require the following library installations:
 
 #### PythonOCR Prerequisites
 
-**NOTE:** See /QAutoLibrary/README.md for PythonOCR installation instructions.
+**NOTE:** See [INSTRUCTIONS.md](INSTRUCTIONS.md) for PythonOCR installation instructions.
 
 PythonOCR module requires the following libraries:
 

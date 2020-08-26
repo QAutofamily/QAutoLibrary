@@ -1,6 +1,6 @@
 # QAutoLibrary Instructions
 
-QAutoLibrary Instructions on how to install prerequisites of the different modules, how to install QAutoLibrary and guides on how to use the different modules on your projects.
+QAutoLibrary Instructions on how to install prerequisites of the different modules, how to install QAutoLibrary and guide on how to use the different modules on your projects.
 
 ## Prerequisites
 
@@ -8,7 +8,7 @@ QAutoLibrary requires Python 3.7 in order to be used.
 
 Additionally, modules of the QAutoLibrary may use external libraries, which have to be installed. See sections [QAutoRobot Prerequisites](#qautorobot-prerequisites) and [PythonOCR Prerequisites](#pythonocr-prerequisites) for further details.
 
-### Python 3.7
+### Python
 
 Install Python 3.7 and include pip with the installation. **Add Python to PATH.**
 
@@ -140,7 +140,7 @@ pip install pyautogui
 
 More information at: https://pypi.org/project/PyAutoGUI/
 
-#### poppler
+#### poppler (Windows)
 
 Download the latest poppler release (.zip file) from: https://github.com/oschwartz10612/poppler-windows/releases/
 
@@ -151,6 +151,10 @@ More information at: https://github.com/oschwartz10612/poppler-windows
 2. Add the poppler folder ('poppler-xx') to your Program Files. (For example, to: ```C:\Program Files (x86)\Poppler\ ```.)
 
 3. Include the 'poppler-xx\bin' folder as a SYSTEM PATH environment variable. (For example, add: ```C:\Program Files (x86)\Poppler\poppler-0.90.1\bin``` to PATH.)
+
+#### poppler (Linux)
+
+Work in progress...
 
 #### pdf2image
 
@@ -234,8 +238,78 @@ python -m setup.py install
 
 ### PythonOCR Usage
 
+PythonOCR main functions:
+
+```click_word()``` takes a screenshot, searches for a word on screen and clicks the location of a found instance.
+
+```find_words()``` searches for all instances of a specified word in an image or PDF file, and returns results.
+
+```find_coordinates()``` searches for all instances of a specified word and their coordinates in an image or PDF file, and returns results.
+
+```verify_word()``` searches for any instance of a specified word in an image file, and returns True or False whether an instance was found.
+
+PythonOCR functions can be used in both Python code or robot.
+
+#### Usage in Python code
+
+**Importing**
+
+To import PythonOCR to your Python code:
+
+```
+from QAutoLibrary import PythonOCR
+```
+
+**Usage**
+
+PythonOCR functions can be then used as follows:
+
+```
+PythonOCR.<function>()
+```
+
+Parameters of each of the main functions are as follows:
+
+```
+PythonOCR.click_word(word, save_screenshot_as, index)
+```
+
+```
+PythonOCR.find_words(word, file_path, output_path)
+```
+
+```
+PythonOCR.find_coordinates(word, file_path, output_path)
+```
+
+```
+PythonOCR.verify_word(word, image_path)
+```
+
+#### Examples (Python)
+
+**click_word()**
+
+```PythonOCR.click_word("Python")``` Searches for word 'Python' on screen and if a single instance is found, clicks its location. Screenshot is not saved.
+
+```PythonOCR.click_word("Python", "screenshot.png")``` As above, but the screenshot is saved to the current project directory as 'screenshot.png'.
+
+```PythonOCR.click_word("Python", "./screenshots/screenshot.png")``` As above, but the screenshot is saved to folder 'screenshots' in the current project directory.
+
+```PythonOCR.click_word("Python", "C:/project_folder/screenshots/screenshot.png")``` As above, but the screenshot is saved to the specific directory.
+
+```PythonOCR.click_word("Python", index=0)``` Searches for the word on screen and if finds multiple instances of the word, clicks the first found instance (at index position 0 (zero)). Screenshot is not saved.
+
+**find_words()**
+
+**find_coordinates()**
+
+**verify_word()**
+
+#### Usage in Robot
+
 **Importing**
 
 **Usage**
 
-**Examples**
+#### Examples (Robot)
