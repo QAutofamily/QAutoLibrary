@@ -258,9 +258,27 @@ python -m setup.py install
 
 #### Importing Custom Libraries
 
+Work in progress...
+
+Custom Python libraries can be added to the robot in pagemodel folder. QAutoLibrary attempts to automatically load and import Python modules in pagemodel folder.
+
+When creating custom libraries for QAutoRobot, follow the standard Python naming convention ([PEP 8](https://www.python.org/dev/peps/pep-0008/)):
+
+* Packages in ```lowercase```
+
+* Modules in ```lowercase```
+
+* Classes in ```CamelCase```
+
+* Global varibles in ```UPPERCASE_WITH_UNDERSCORES```
+
+* Functions in ```lowercase_with_underscores```
+
+* Variables in ```lowercase_with_underscores```
+
 ### PythonOCR Usage
 
-PythonOCR main functions:
+**Main functions** of the PythonOCR are as follows:
 
 ```click_word()``` takes a screenshot, searches for a word on screen and clicks the location of a found instance.
 
@@ -270,13 +288,25 @@ PythonOCR main functions:
 
 ```verify_word()``` searches for any instance of a specified word in an image file, and returns True or False whether an instance was found.
 
+**Parameters** of each of the main functions are as follows:
+
+```click_word(word, save_screenshot_as, index)``` with ```save_screenshot_as``` and ```index``` being optional.
+
+```find_words(word, file_path, output_path)``` with ```output_path``` being optional; used when processing PDF files.
+
+```find_coordinates(word, file_path, output_path)``` with ```output_path``` being optional; used when processing PDF files.
+
+```verify_word(word, image_path)```
+
+**NOTE:** Provide file paths and directory paths in string format to function parameters. Include file type endings, such as '.jpg' or '.png', when providing file paths.
+
 PythonOCR functions can be used in both Python code or robot.
 
 #### Usage in Python code
 
 **Importing**
 
-To import PythonOCR to your Python code:
+Import PythonOCR to your Python code:
 
 ```
 from QAutoLibrary import PythonOCR
@@ -287,25 +317,7 @@ from QAutoLibrary import PythonOCR
 PythonOCR functions can be then used as follows:
 
 ```
-PythonOCR.<function>()
-```
-
-Parameters of each of the main functions are as follows:
-
-```
-PythonOCR.click_word(word, save_screenshot_as, index)
-```
-
-```
-PythonOCR.find_words(word, file_path, output_path)
-```
-
-```
-PythonOCR.find_coordinates(word, file_path, output_path)
-```
-
-```
-PythonOCR.verify_word(word, image_path)
+PythonOCR.<function>(<parameter1>, <parameter2>,...)
 ```
 
 #### Examples (Python)
@@ -324,14 +336,110 @@ PythonOCR.verify_word(word, image_path)
 
 **find_words()**
 
+```PythonOCR.find_words("Python", "image_file.png")``` Returns all found instances of the word 'Python' in 'image_file.png'.
+
+```results_list = PythonOCR.find_words("Python", "image_file.png")``` As above, but the results are assigned to 'results_list' variable.
+
+```print(PythonOCR.find_words("Python", "image_file.png"))``` As above, but the results are printed to console.
+
+```PythonOCR.find_words("Python", "./project_files/image_file.png")``` Returns all found instances of the word in 'image_file.png' located in 'project_files' folder in the current project directory.
+
+```PythonOCR.find_words("Python", "pdf_file.pdf")``` Returns all found instances of the word 'Python' in 'pdf_file.pdf'. Images converted from the PDF file are saved to the current project directory.
+
+```PythonOCR.find_words("Python", "pdf_file.pdf", "./output")``` As above, but images are saved to 'output' folder in the current project directory.
+
+```PythonOCR.find_words("Python", "C:/projet_folder/pdf_file.pdf", "C:/project_folder/output")``` As above, but file path and output folder for images are provided as absolute file paths.
+
 **find_coordinates()**
 
+```PythonOCR.find_coordinates("Python", "image_file.png")``` Returns all instances of the word 'Python' and their coordinates in 'image_file.png'.
+
+```results_list = PythonOCR.find_coordinates("Python", "image_file.png")``` As above, but the results are assigned to 'results_list' variable.
+
+```print(PythonOCR.find_coordinates("Python", "image_file.png"))``` As above, but the results are printed to console.
+
+```PythonOCR.find_coordinates("Python", "./project_files/image_file.png")``` Returns all found instances of the word and their coordinates in 'image_file.png' located in 'project_files' folder in the current project directory.
+
+```PythonOCR.find_coordinates("Python", "pdf_file.pdf")``` Returns all found instances of the word 'Python' and their coordinates in 'pdf_file.pdf'. Images converted from the PDF file are saved to the current project directory.
+
+```PythonOCR.find_coordinates("Python", "pdf_file.pdf", "./output")``` As above, but images are saved to 'output' folder in the current project directory.
+
+```PythonOCR.find_coordinates("Python", "C:/projet_folder/pdf_file.pdf", "C:/project_folder/output")``` As above, but file path and output folder for images are provided as absolute file paths.
+
 **verify_word()**
+
+```PythonOCR.verify_word("Python", "image_file.png")``` Returns True or False if finds any instances of the word 'Python' in 'image_file.png'.
+
+```found_word = PythonOCR.verify_word("Python", "image_file.png")``` As above, but the result is assigned to 'found_word' variable.
+
+```print(PythonOCR.verify_word("Python", "image_file.png"))``` As above, but the result is printed to console.
+
+```PythonOCR.verify_word("Python", "./project_files/image_file.png")``` Returns the result regarding the 'image_file.png' located in 'project_files' folder in the current project directory.
+
+```PythonOCR.verify_word("Python", "C:/project_folder/project_files/image_file.png")``` As above, but the file path is provided as an absolute path.
 
 #### Usage in Robot
 
 **Importing**
 
+Import PythonOCR module from QAutoLibrary to the robot:
+
+```
+*** Settings ***
+Library  |  QAutoLibrary.PythonOCR
+```
+
 **Usage**
 
+PythonOCR functions can then be used as keywords:
+
+```
+*** Test Cases ***
+<Test Case>
+  |  <Function Keyword>  |  ${<argument1>}  |  ${argument2}  |  ...
+```
+
 #### Examples (Robot)
+
+**click_word()**
+
+```Click Word  |  Python``` Searches for word 'Python' on screen and if a single instance is found, clicks its location. Screenshot is not saved.
+
+```Click Word  |  Python  |  screenshot.png``` As above, but the screenshot is saved to the current project directory as 'screenshot.png'.
+
+```Click Word  |  Python  |  ./screenshots/screenshot.png``` As above, but the screenshot is saved to folder 'screenshots' in the current project directory.
+
+```Click Word  |  Python  |  index=0``` Searches for the word on screen and if finds multiple instances of the word, clicks the first found instance (at index position 0 (zero)). Screenshot is not saved.
+
+**find_words()**
+
+```Find Words  |  Python  |  image_file.png``` Returns all found instances of the word 'Python' in 'image_file.png'.
+
+```@{results_list} =  |  Find Words  |  Python  |  image_file.png``` As above, but the results are assigned to 'results_list' variable.
+
+```Find Words  |  Python  |  ./project_files/image_file.png``` Returns all found instances of the word in 'image_file.png' located in 'project_files' folder in the current project directory.
+
+```Find Words  |  Python  |  pdf_file.pdf``` Returns all found instances of the word 'Python' in 'pdf_file.pdf'. Images converted from the PDF file are saved to the current project directory.
+
+```Find Words  |  Python  |  pdf_file.pdf  |  ./output``` As above, but images are saved to 'output' folder in the current project directory.
+
+**find_coordinates()**
+
+```Find Coordinates  |  Python  |  image_file.png``` Returns all instances of the word 'Python' and their coordinates in 'image_file.png'.
+
+```@{results_list} =  |  Find Coordinates  |  Python  |  image_file.png``` As above, but the results are assigned to 'results_list' variable.
+
+```Find Coordinates  |  Python  |  ./project_files/image_file.png``` Returns all found instances of the word and their coordinates in 'image_file.png' located in 'project_files' folder in the current project directory.
+
+```Find Coordinates  |  Python  |  pdf_file.pdf``` Returns all found instances of the word 'Python' and their coordinates in 'pdf_file.pdf'. Images converted from the PDF file are saved to the current project directory.
+
+```Find Coordinates  |  Python  |  pdf_file.pdf  |  ./output``` As above, but images are saved to 'output' folder in the current project directory.
+
+**verify_word()**
+
+```Verify Word  |  Python  |  image_file.png``` Returns True or False if finds any instances of the word 'Python' in 'image_file.png'.
+
+```${found_word} =  |  Verify Word  |  Python  |  image_file.png``` As above, but the result is assigned to 'found_word' variable.
+sult is printed to console.
+
+```Verify Word  |  Python  |  ./project_files/image_file.png``` Returns the result regarding the 'image_file.png' located in 'project_files' folder in the current project directory.
