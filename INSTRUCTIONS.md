@@ -142,6 +142,8 @@ More information at: https://pypi.org/project/PyAutoGUI/
 
 #### poppler (Windows)
 
+**Windows:**
+
 Download the latest poppler release (.zip file) from: https://github.com/oschwartz10612/poppler-windows/releases/
 
 More information at: https://github.com/oschwartz10612/poppler-windows
@@ -152,7 +154,7 @@ More information at: https://github.com/oschwartz10612/poppler-windows
 
 3. Include the 'poppler-xx\bin' folder as a SYSTEM PATH environment variable. (For example, add: ```C:\Program Files (x86)\Poppler\poppler-0.90.1\bin``` to PATH.)
 
-#### poppler (Linux)
+**Linux:**
 
 Work in progress...
 
@@ -168,7 +170,9 @@ pip install pdf2image
 
 More information at: https://pypi.org/project/pdf2image/ and https://github.com/Belval/pdf2image
 
-#### Tesseract OCR
+#### Tesseract OCR (Windows)
+
+**Windows:**
 
 Install Google Tesseract OCR and include Finnish. **Add Tesseract-OCR to PATH.**
 
@@ -176,9 +180,19 @@ Download Tesseract OCR: https://github.com/UB-Mannheim/tesseract/wiki
 
 More information at: https://github.com/tesseract-ocr/tessdoc
 
-#### pytesseract
+**Linux:**
+
+Work in progress...
+
+```
+sudo apt install poppler-utils tesseract-ocr
+```
+
+#### pytesseract (Windows)
 
 **NOTE:** Install Tesseract OCR before installing pytesseract!
+
+**Windows:**
 
 Install pytesseract using pip:
 
@@ -188,9 +202,17 @@ pip install pytesseract
 
 More information at: https://pypi.org/project/pytesseract/
 
+**Linux:**
+
+Work in progress...
+
+```
+python3.7 -m pip install --user pytesseract
+```
+
 ## Installation
 
-Before installing QAutoLibrary, make sure all the prerequisites are met.
+Before installing QAutoLibrary, make sure all the prerequisites of the modules you want to use are met.
 
 ### Installing using pip
 
@@ -202,7 +224,7 @@ pip install --upgrade https://customer.qautomate.fi/downloadQautoLibrary.html
 
 ### Installing from Source Files
 
-Alternatively, QAutoLibrary can be installed straight from the source files. The library is installed using [setup.py](setup.py) file.
+Alternatively, QAutoLibrary can be installed straight from the source files. The library is installed using setup.py file.
 
 1. Open Command Prompt and navigate to a directory path where you want to download QAutoLibrary.
 

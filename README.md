@@ -6,13 +6,17 @@ QAutoLibrary is an extension for RobotFramework and Python, providing automation
 
 **QAutoRobot**, extensive RPA library for Robot Framework.
 
-**PythonOCR**, library of functions for finding and locating words on screen, in image files or PDF files using OCR (Optical Character Recognition).
+**PythonOCR**, Python library of functions for finding and locating words on screen, in image files or PDF files using OCR (Optical Character Recognition).
+
+**NOTE:** PythonOCR is unreliable at best when finding words in files, and should only be used as an assistance to process files. Usage of other confirmation methods (such as manual labor) is adviced, when processing important files!
 
 ## Getting Started
 
-QAutoLibrary requires Python, and different additional libraries depending on which QAutoLibrary modules you want to use.
+QAutoLibrary requires Python, and additional libraries depending on which QAutoLibrary modules you want to use.
 
 The library can be installed using pip, or straight from the source code using setup.py file.
+
+Extensive and detailed instructions on prerequisites, installing, importing and usage, with examples, is provided in [INSTRUCTIONS.md](INSTRUCTIONS.md) file.
 
 ### Prerequisites
 
@@ -58,7 +62,9 @@ PythonOCR module requires the following libraries:
 
 [pytesseract](https://pypi.org/project/pytesseract/)
 
-### Installing with pip
+### Installing
+
+The library can be installed using pip, or straight from the source code using setup.py file. Instructions on how to install from the source files is provided in INSTRUCTIONS.md file, in [Installing from Source Files](INSTRUCTIONS.md#installing-from-source-files)-section.
 
 QAutoLibrary can be downloaded and installed to your local Python libraries, using pip:
 
@@ -66,33 +72,11 @@ QAutoLibrary can be downloaded and installed to your local Python libraries, usi
 pip install --upgrade https://customer.qautomate.fi/downloadQautoLibrary.html
 ```
 
-### Installing from Source Files
-
-Alternatively, QAutoLibrary can be installed straight from the source files. The library is installed using [setup.py](setup.py) file.
-
-1. Open Command Prompt and navigate to a directory path where you want to download QAutoLibrary.
-
-2. Download the source files by cloning the Git repository:
-
-```
-git clone https://github.com/QAutofamily/QAutoLibrary
-```
-
-3. Navigate to the QAutoLibrary directory:
-
-```
-cd QAutoLibrary
-```
-
-4. Run setup.py module as a script:
-
-```
-python -m setup.py install
-```
-
 ## Usage
 
-QAutoLibrary modules can provide additional functionality to Python code or QAutoRobot.
+QAutoLibrary modules can provide additional functionality to Python code or Robot.
+
+Extensive and detailed instructions, with examples, are provided in INSTRUCTIONS.md file, in [Usage](INSTRUCTIONS.md#usage)-section.
 
 ### Usage in Python code
 
@@ -127,16 +111,16 @@ Class objects can be instantiated as follows:
 **Examples**
 
 ```
-from QAutoLibrary import PythonOCR
-
-PythonOCR.find_coordinates("Python", "./images/screenshot.png")
-```
-
-```
 from QAutoLibrary.QAutoSelenium import CommonMethods
 
 my_methods = CommonMethods()
 my_methods.set_speed(timeout=5)
+```
+
+```
+from QAutoLibrary import PythonOCR
+
+PythonOCR.find_coordinates("Python", "./images/screenshot.png")
 ```
 
 ### Usage in QAutoRobot
@@ -157,7 +141,7 @@ Keywords of the module can then be used in the robot:
 ```
 *** Tasks ***
 Test Case
-    <Module Keyword>  |  ${<argument>}
+    <Module Keyword>  |  ${<argument1>}  |  ${<argument2>}  |  ...
 ```
 
 **Examples**
@@ -176,11 +160,12 @@ Example 1
 Library  |  QAutoLibrary.PythonOCR
 
 *** Variables ***
+${file} =  ./files/test_file.pdf
 @{results_list}
 
 *** Tasks ***
 Example 2
-    @{results_list} = |  Find Words  |  Python  |  ./files/test_file.pdf  |  ./output/
+    @{results_list} =  |  Find Words  |  Python  |  ${file}  |  ./output/
 ```
 
 ### Custom libraries in QAutoRobot
