@@ -180,13 +180,13 @@ More information at: https://pypi.org/project/pdf2image/ and https://github.com/
 
 #### Tesseract OCR
 
+More information at: https://github.com/tesseract-ocr/tessdoc
+
 **Windows:**
 
 Install Google Tesseract OCR and include Finnish. **Add Tesseract-OCR to PATH.**
 
 Download Tesseract OCR: https://github.com/UB-Mannheim/tesseract/wiki
-
-More information at: https://github.com/tesseract-ocr/tessdoc
 
 **Linux:**
 
