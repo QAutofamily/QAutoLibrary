@@ -156,7 +156,15 @@ More information at: https://github.com/oschwartz10612/poppler-windows
 
 **Linux:**
 
-Work in progress...
+**NOTE:** Installing poppler is not be neccessarily needed, if ```pdftoppm``` and ```pdftocairo``` are installed.
+
+To install poppler on Ubuntu:
+
+```
+sudo apt install poppler-utils
+```
+
+More information at: https://pdf2image.readthedocs.io/en/latest/installation.html
 
 #### pdf2image
 
@@ -182,17 +190,15 @@ More information at: https://github.com/tesseract-ocr/tessdoc
 
 **Linux:**
 
-Work in progress...
+Install Tesseract OCR using the command:
 
 ```
-sudo apt install poppler-utils tesseract-ocr
+sudo apt install tesseract-ocr
 ```
 
 #### pytesseract
 
 **NOTE:** Install Tesseract OCR before installing pytesseract!
-
-**Windows:**
 
 Install pytesseract using pip:
 
@@ -202,9 +208,11 @@ pip install pytesseract
 
 More information at: https://pypi.org/project/pytesseract/
 
-**Linux:**
+**Permission Error (Linux):**
 
-Work in progress...
+If the attempt to install pytesseract on Linux resulted in Permission error, you can attempt to install pytesseract on access-level where you have persmissions.
+
+To install to a user-specific directory, use ```--user``` flag. For example, to install pytesseract to user-specific directory as Python 3.7 module:
 
 ```
 python3.7 -m pip install --user pytesseract
@@ -342,8 +350,10 @@ QAutoRobot can be imported and used in Python code, for example, when creating c
 Import QAutoRobot to your Python code:
 
 ```
-from QAutoLibrary import QAutoRobot
+import QAutoRobot
 ```
+
+**NOTE:** IDE compilers may complain that they cannot import QAutoRobot this way, but when robot dynamically imports custom modules during runtime, this kind of import succeeds.
 
 **Usage**
 
