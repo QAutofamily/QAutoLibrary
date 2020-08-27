@@ -248,21 +248,46 @@ python -m setup.py install
 
 ## Usage
 
-QAutoLibrary modules can be used in Python code or Robot.
-
-Use guides include QAutoRobot and PythonOCR use instructions. QAutoRobot use guide also includes
+Use guides include QAutoRobot and PythonOCR use instructions. QAutoRobot use guide also includes how to include user-made, custom Python libraries to QAutoRobot.
 
 ### QAutoRobot Usage
+
+QAutoRobot RPA module can be used in robot, or in Python code. Importing custom Python modules to a robot that utilizes QAutoRobot is simple, as QAutoRobot attempts to automatically import custom modules during runtime.
+
+**NOTE:** Robots made with [QAutomate tools](https://qautomate.fi/qautomate/) already contain QAutoRobot libraries.
 
 #### Usage in Robot
 
 **Importing**
 
-Work in progress...
+To import QAutoRobot into your robot:
+
+```
+*** Settings ***
+Library  |  QAutoLibary.QAutoRobot
+```
 
 **Usage**
 
-Work in progress...
+QAutoRobot keywords can then be used in your robot as follows:
+
+```
+*** Test Cases ***
+<Test Case>
+  |  <QAutoRobot Keyword>  |  <argument1>  |  <argument2>  |  ...
+```
+
+**Example**
+
+In the following example, ```Start Recording``` and ```Stop Recording``` are the keywords from QAutoRobot:
+
+```
+*** Test Cases ***
+Recording Example
+  |  Start Recording  |  Recording Example
+  |  Open Browser  |  https://qautomate.fi/  |  googlechrome
+  |  Stop Recording
+```
 
 #### Importing Custom Libraries
 
@@ -310,7 +335,7 @@ When creating custom libraries for QAutoRobot, follow the standard Python naming
 
 #### Usage in Python code
 
-Work in progress...
+QAutoRobot can be imported and used in Python code, for example, when creating custom Python modules for robot.
 
 **Importing**
 
@@ -324,13 +349,13 @@ from QAutoLibrary import QAutoRobot
 
 Functions of the QAutoRobot module can then be used as follows:
 
-```QAutoRobot.<function>()```
-
-For example:
-
-``````
+```
+QAutoRobot.<function>(<argument1>, <argument2>, ...)
+```
 
 ### PythonOCR Usage
+
+PythonOCR functions can be used in both Python code or robot.
 
 **Main functions** of the PythonOCR are as follows:
 
@@ -353,8 +378,6 @@ For example:
 ```verify_word(word, image_path)```
 
 **NOTE:** Provide file paths and directory paths in string format to function parameters. Include file type endings, such as '.jpg' or '.png', when providing file paths.
-
-PythonOCR functions can be used in both Python code or robot.
 
 #### Usage in Python code
 
