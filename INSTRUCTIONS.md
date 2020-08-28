@@ -334,7 +334,7 @@ class Add_numbers():
 The example function, 'add_integers()', can then be used as a keyword in QAutoRobot:
 
 ```
-*** Tasks ***
+*** Test Cases ***
 Test Custom Module
   |  ${total} =  |  Add Integers  |  1  |  2
 ```
