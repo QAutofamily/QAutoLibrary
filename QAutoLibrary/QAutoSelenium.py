@@ -35,7 +35,7 @@ from robot.libraries.BuiltIn import BuiltIn
 from QAutoLibrary.Cryptomodule import AESCipher
 
 from requests.auth import HTTPBasicAuth
-from selenium.common.exceptions import WebDriverException, NoAlertPresentException
+from selenium.common.exceptions import WebDriverException, NoAlertPresentException, NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
@@ -52,16 +52,11 @@ from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils
 from QAutoLibrary.extension.webdriver_cache.browser import create_driver
 from QAutoLibrary.extension.config import get_config_value
 from QAutoLibrary.extension.util.webtimings import get_measurements as webtimings_get_measurements
-from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, get_file_content
+from QAutoLibrary.FileOperations import open_file, get_file_lines, save_content_to_file, \
+                                        get_file_content, get_file_lines_without_newlines
 from QAutoLibrary.extension.util.xml_screenshot_parser import XmlScreenshotParser
 
 from QAutoLibrary.QAutoElement import QAutoElement
-
-# TODO decide how to fix this
-try:
-    from QAutoLibrary.extension import XmlScreenshotParser
-except:
-    pass
 
 ERROR_UNSUPPORTED_ELEMENT_TYPE = "Element type is unsupported"
 
@@ -138,7 +133,11 @@ class CommonMethods(object):
         sleep(self.selenium_speed)
         element_type = type(element)
         if element_type in [QAutoElement, tuple]:
-            return self.find_element(element)
+            try:
+                return self.find_element(element)
+            except NoSuchElementException as e:
+                DebugLog.log(f"* Element '{element}' not found!")
+                raise e
         elif element_type == WebElement:
             return element
         else:
@@ -168,7 +167,7 @@ class CommonMethods(object):
             | ``QAutoRobot.warning("My message")``
 
         """
-        message = "**WARN**Warning: %s*WARN*" % message
+        message = f"**Warning: {message}"
         warn(message)
 
     def measure_async_screen_response_time(self, measurement_name, timeout, reference_picture, element=None):
@@ -211,7 +210,7 @@ class CommonMethods(object):
             ref_scr_h = int(xml_meta_data['h'])
         else:
             if not element:
-                print("Web element must be given, if using element screenshot")
+                DebugLog.log("* Web element must be given, if using element screenshot")
                 return False
             element = self.find_element_if_not_webelement(element)
 
@@ -241,7 +240,7 @@ class CommonMethods(object):
                 with open(perf_png, 'wb') as f:
                     f.write(perf_png_data)
             except IOError:
-                print("Failed to save screenshot: %s" % perf_png)
+                DebugLog.log("* Failed to save screenshot: %s" % perf_png)
                 continue
 
             scr_curr = Image.open(perf_png)
@@ -266,19 +265,19 @@ class CommonMethods(object):
             is_similar = (100 - difference) >= similarity
 
             if is_similar:
-                print("Comparing screenshots...  Screenshots match. Reference screenshot: %s. " +
+                DebugLog.log("* Comparing screenshots...  Screenshots match. Reference screenshot: %s. " +
                       "Similarity level is %s.") % (ref_scr_file_name, str(100 - difference) + "%")
-                print("Match found and time was: %s" % elapsed)
+                DebugLog.log("* Match found and time was: %s" % elapsed)
                 return elapsed
             else:
-                print("Comparing screenshots... Screenshots do not match. Current screenshot: %s. " +
+                DebugLog.log("* Comparing screenshots... Screenshots do not match. Current screenshot: %s. " +
                       "Similarity level is %s.") % (os.path.basename(actual_screenshot), str(100 - difference) + "%")
 
         return False
 
     def _save_screen_element(self, x, y, w, h, image_name):
         driver = self.driver_cache._get_current_driver()
-        driver.save_screenshot(os.getcwd() + os.sep + "test_reports" + os.sep + image_name);
+        driver.save_screenshot(os.getcwd() + os.sep + "test_reports" + os.sep + image_name)
 
         x = x
         y = y
@@ -322,7 +321,7 @@ class CommonMethods(object):
             element = self.last_element_details()
 
         else:
-            print("Element not found")
+            DebugLog.log("* Element not found")
             return None
 
     def find_element_with_coordinates(self, x, y):
@@ -375,39 +374,21 @@ class CommonMethods(object):
         return driver.find_elements(by, value)
 
     def fallback_element(self, element, action, value=""):
-        locator_by = element[0]
-        locator_value = element[1]
         last_elem = self.last_element_details(True, action)
 
-        if last_elem == None:
-            msg = "Failed to click %s '%s, %s' after %s seconds" % (action,
-                                                                    locator_by.upper(), locator_value,
-                                                                    get_config_value("default_timeout"))
-            self.fail(msg)
-            return False
-
-        if last_elem[0] == None and last_elem[1] == None:
-            msg = "Failed to %s element '%s, %s' after %s seconds" % (action,
-                                                                      locator_by.upper(), locator_value,
-                                                                      get_config_value("default_timeout"))
-            self.fail(msg)
-            return False
-        elif last_elem[1] != None:
+        if last_elem:
+            # Element found by coordinates, so maybe locator is changed
             if action == "input":
-                self.input_text_element_at_coordinates(last_elem[0], last_elem[1], last_elem[2], value)
+                self._input_text(last_elem, value)
                 sleep(1)
             else:
-                self.click_element_at_coordinates(last_elem[0], last_elem[1], last_elem[2])
+                self._click_element(last_elem)
                 sleep(1)
             return True
-        elif last_elem[0] != None:
-            msg = "UI layout changed. Failed to %s element '%s, %s' after %s seconds" % (action,
-                                                                                         locator_by.upper(),
-                                                                                         locator_value,
-                                                                                         get_config_value(
-                                                                                             "default_timeout"))
+        else:
+            msg = f"Failed to {action} element '{element}' after {get_config_value('default_timeout')} seconds"
             self.fail(msg)
-            raise
+            return False
 
     def last_element_details(self, fallback=False, action=""):
         self.print_keywords()
@@ -437,19 +418,18 @@ class CommonMethods(object):
                 element_tag_name = element.tag_name
                 element_text = element.text
                 element_size = element.size
-                print("Found element id: " + locator_id)
-                print("Found element class: " + locator_class)
-                print("Found element tag name: " + element_tag_name)
-                print("Found element text: " + element_text.replace("\n", " "))
+                DebugLog.log("* Found element id: " + locator_id)
+                DebugLog.log("* Found element class: " + locator_class)
+                DebugLog.log("* Found element tag name: " + element_tag_name)
+                DebugLog.log("* Found element text: " + element_text.replace("\n", " "))
                 try:
                     htmldoc = element.find_element_by_xpath("parent::*").find_element_by_xpath(
                         "parent::*").get_attribute("innerHTML")
                 except:
                     htmldoc = element.get_attribute("outerHTML")
-                print("")
 
                 document_root = html.fromstring(htmldoc)
-                print(etree.tostring(document_root, encoding='unicode', pretty_print=True))
+                DebugLog.log(etree.tostring(document_root, encoding='unicode', pretty_print=True))
                 self._save_screen_element(x, y, w, h, "Searched_" + test_name + "_" + action + "_element.png")
                 BuiltIn().log("<img src='" + "Searched_" + test_name + "_" + action + "_element.png" + "'>", "HTML")
                 BuiltIn().log("Current element coordinates and size:  x: " + str(element_location['x']) + " y: " + str(
@@ -462,18 +442,20 @@ class CommonMethods(object):
 
                 if h == element_size['height'] and w == element_size['width']:
                     if fallback:
-                        self.warning(
-                            "#Fallback at coordinates ---> Testcase: " + test_name + " ---> Searched element locator is changed: " + str(
-                                self.last_element.locator) + " .Element locator needs to be updated. ")
+                        self.warning(f"#Fallback at coordinates ---> Testcase: {test_name} ---> Searched element locator '{str(self.last_element)}' "+
+                                        "is changed. Element locator needs to be updated.")
                     else:
-                        self.warning("#Testcase: " + test_name + " ---> Searched element locator is changed: " + str(
-                            self.last_element.locator) + " .Element locator needs to be updated. ")
+                        self.warning(f"#Testcase: {test_name} ---> Searched element locator '{str(self.last_element)}' is changed. " +
+                                        "Element locator needs to be updated.")
 
-                    return (element, str(int(elem_middle_x)), str(int(elem_middle_y)))
+                    return element
                 else:
-                    return (element, None, None)
+                    return None
+            else:
+                # Element cannot fit browser window
+                return None
         except Exception as e:
-            return (None, None, None)
+            return None
 
     def click_element(self, element, to_print=True):
         """
@@ -489,49 +471,41 @@ class CommonMethods(object):
             | using representation
             | ``QAutoRobot.click_element((By.LINK_TEXT, u'Trial'))``
         """
-
-        start = time.time()
-        self.wait_until_element_is_visible(element, get_config_value("default_timeout"), "", True)
-        self.wait_until_element_is_enabled(element, 1, "", True)
-        end = time.time()
-        duration = end - start
-        click_timeout = get_config_value("default_timeout")
-        if duration > 20:
-            click_timeout = 3
-        msg = "Failed to click element after %s seconds" % get_config_value("default_timeout")
+        self.wait_until_spinner_is_not_visible()
+        msg = f"Failed to click element '{element}' after {get_config_value('default_timeout')} seconds"
         try:
             CommonMethodsHelpers.webdriver_wait(lambda driver: self._click_element(element, to_print),
-                                                self.driver_cache._get_current_driver(), msg, click_timeout, False)
+                                                self.driver_cache._get_current_driver(), msg, get_config_value('default_timeout'), False)
         except:
             self.fallback_element(element, "click")
 
     def _click_element(self, element, to_print=True):
-        printout = ""
-        locator_by = element[0]
-        locator_value = element[1]
-
         web_element = self.find_element_if_not_webelement(element)
-        element_loc = web_element.location
+        if not self.is_visible(web_element):
+            DebugLog.log(f"* Element '{element}' is not visible!")
+            return False
+        if self.is_disabled(web_element):
+            DebugLog.log(f"* Element '{element}' is disabled!")
+            return False
         try:
-            if web_element.text != "":
-                printout = "* Clicking at '%s' '%s:%s' in %s" % (
-                web_element.text, locator_by, locator_value, str(element_loc))
-            else:
-                try:
-                    printout = "* Clicking at '%s:%s' in %s" % (locator_by, locator_value, str(element_loc))
-                except:
-                    printout = "* Clicking at Unknown button"
+            element_loc = web_element.location
+            printout = f"* Clicking element '{element}' in location {str(element_loc)}"
         except:
-            print("* Clicking at Unknown button")
+            printout = "* Clicking at unknown element"
         try:
             web_element.click()
         except WebDriverException as e:
             if "is not clickable at point" in e.msg:
-                DebugLog.log("Retry click after exception: " + e.msg)
+                DebugLog.log("* Retry click after exception: " + e.msg)
                 self.execute_javascript('window.scrollBy(0,100)')
                 return False
+            elif "element has zero size" in e.msg:
+                DebugLog.log("* Zero size WebDriverException, try to scroll view to element")
+                actions = self._get_actions()
+                actions.move_to_element(web_element).perform()
+                return False
             else:
-                DebugLog.log("Stopped running on WebDriverException: " + e.msg)
+                DebugLog.log("* Stopped running on WebDriverException: " + e.msg)
                 raise
 
         if to_print:
@@ -553,24 +527,15 @@ class CommonMethods(object):
             | ``QAutoRobot.double_click_element((By.LINK_TEXT, u'Trial'))``
 
         """
-        locator_by = element[0]
-        locator_value = element[1]
         actions = self._get_actions()
         self.wait_until_element_is_visible(element)
         web_element = self.find_element_if_not_webelement(element)
         if to_print:
             try:
-                if web_element.text != "":
-                    DebugLog.log("Double clicking at '%s' '%s:%s' in %s" % (
-                    web_element.text, locator_by, locator_value, str(element_loc)))
-                else:
-                    try:
-                        element_loc = web_element.location
-                        DebugLog.log("Double clicking at '%s:%s' in %s" % (locator_by, locator_value, str(element_loc)))
-                    except:
-                        DebugLog.log("Double clicking at UNKNOWN BUTTON")
+                element_loc = web_element.location
+                DebugLog.log(f"* Double clicking element '{element}' in location {str(element_loc)}")
             except:
-                DebugLog.log("Double clicking at UNKNOWN BUTTON")
+                DebugLog.log("* Double clicking at unknown element")
 
         actions.double_click(web_element).perform()
 
@@ -594,17 +559,10 @@ class CommonMethods(object):
         web_element = self.find_element_if_not_webelement(element)
         if to_print:
             try:
-                if web_element.text != "":
-                    DebugLog.log("* Triple clicking at '%s'" % web_element.text)
-                else:
-                    try:
-                        element_information = repr(element)
-                        element_loc = web_element.location
-                        DebugLog.log("* Triple clicking at '%s'" % str(element_information) + str(element_loc))
-                    except:
-                        DebugLog.log("* Triple clicking at UNKNOWN BUTTON")
+                element_loc = web_element.location
+                DebugLog.log(f"* Triple clicking element '{element}' in location {str(element_loc)}")
             except:
-                DebugLog.log("* Triple clicking at UNKNOWN BUTTON")
+                DebugLog.log("* Triple clicking at unknown element")
 
         actions.click(web_element)
         actions.double_click(web_element)
@@ -633,20 +591,11 @@ class CommonMethods(object):
         if to_print:
             try:
                 if web_element.text != "":
-                    print("* Clicking at element (%s, %s, %s)" % (
-                        web_element.text + " ", x + ",", y + " ") + " coordinates")
+                    DebugLog.log(f"* Clicking element '{web_element.text}' at coordinates ({x}, {y})")
                 else:
-                    try:
-                        element_information = repr(element)
-                        element_loc = web_element.location
-                        DebugLog.log("* Clicking at element (%s, %s, %s)" % (
-                            str(element_information) + str(element_loc) + " " + x + ",", y + " ") + " coordinates")
-                    except:
-                        DebugLog.log("* Clicking at element (%s, %s, %s)" % (
-                            "Unknown button" + " ", x + ",", y + " ") + " coordinates")
-            except:
-                DebugLog.log(
-                    "* Clicking at element (%s, %s, %s)" % ("Unknown button" + " ", x + ",", y + " ") + " coordinates")
+                    DebugLog.log(f"* Clicking element '{element}' at coordinates ({x}, {y})")
+            except Exception as e:
+                DebugLog.log(f"* Clicking unknown element at coordinates ({x}, {y})")
         actions.move_to_element(web_element).move_by_offset(x, y).click().perform()
 
     def input_text_element_at_coordinates(self, element, x, y, text, to_print=True):
@@ -673,20 +622,11 @@ class CommonMethods(object):
         if to_print:
             try:
                 if web_element.text != "":
-                    print("* Input text at element (%s, %s, %s)" % (
-                        web_element.text + " ", x + ",", y + " ") + " coordinates")
+                    DebugLog.log(f"* Input text in element '{web_element.text}' at coordinates ({x}, {y})")
                 else:
-                    try:
-                        element_information = repr(element)
-                        element_loc = web_element.location
-                        DebugLog.log("* Input text at element (%s, %s, %s)" % (
-                            str(element_information) + str(element_loc) + " " + x + ",", y + " ") + " coordinates")
-                    except:
-                        DebugLog.log("* Input text at element (%s, %s, %s)" % (
-                            "Unknown button" + " ", x + ",", y + " ") + " coordinates")
-            except:
-                DebugLog.log(
-                    "* Input at element (%s, %s, %s)" % ("Unknown button" + " ", x + ",", y + " ") + " coordinates")
+                    DebugLog.log(f"* Input text in element '{element}' at coordinates ({x}, {y})")
+            except Exception as e:
+                DebugLog.log(f"* Input text in unknown element at coordinates ({x}, {y})")
         # actions.move_to_element(web_element).move_by_offset(x, y).send_keys_to_element(web_element, text).perform()
         actions.send_keys_to_element(web_element, text).perform()
 
@@ -726,7 +666,7 @@ class CommonMethods(object):
         try:
             if encrypt:
                 project_folder = os.getcwd()
-                DebugLog.log("Encrypted password")
+                DebugLog.log("* Encrypted password")
                 _key = ""
                 _key = get_file_content(project_folder + os.sep + "key.txt")
 
@@ -736,8 +676,6 @@ class CommonMethods(object):
         except Exception as e:
             DebugLog.log(e)
 
-        locator_by = element[0]
-        locator_value = element[1]
         web_element = self.find_element_if_not_webelement(element)
         valuelog = value
         try:
@@ -750,18 +688,11 @@ class CommonMethods(object):
         if to_print:
             try:
                 element_loc = web_element.location
-                DebugLog.log("* Clear and Typing text '%s' into element field '%s:%s' in %s" % (
-                    valuelog, locator_by, locator_value, element_loc))
+                DebugLog.log(f"* Clear and Typing text '{valuelog}' into element '{element}' in {element_loc}")
             except:
-                try:
-                    DebugLog.log("* Clear and Typing text '%s' into element field 'Unknown element'" % valuelog)
-                except:
-                    DebugLog.log(
-                        "* Clear and Typing text '%s' into element field 'Unknown element'" % valuelog.encode(
-                            'ascii',
-                            'ignore'))
+                DebugLog.log(f"* Clear and Typing text '{valuelog}' into unknown element")
+
         web_element.clear()
-        value = CommonMethodsHelpers.contains_nonascii(value)
         web_element.send_keys(value)
         return True
 
@@ -785,17 +716,10 @@ class CommonMethods(object):
         web_element = self.find_element_if_not_webelement(element)
         if to_print:
             try:
-                element_information = repr(element)
                 element_loc = web_element.location
-                DebugLog.log(
-                    "* Typing text '%s' into element field '%s'" % (value, str(element_information) + str(element_loc)))
+                DebugLog.log(f"* Typing text '{value}' into element '{element}' in {element_loc}")
             except:
-                try:
-                    DebugLog.log("* Typing text '%s' into element field '%s'" % (value, "Unknown button"))
-                except:
-                    DebugLog.log("* Typing text '%s' into element field '%s'" % (value.encode('ascii', 'ignore'),
-                                                                                 "Unknown button"))
-        value = CommonMethodsHelpers.contains_nonascii(value)
+                DebugLog.log(f"* Typing text '{value}' into unknown element")
         web_element.send_keys(value)
 
     def wait_until_element_is_visible(self, element, timeout=None, msg=None, fallback=False):
@@ -822,11 +746,58 @@ class CommonMethods(object):
             timeout = get_config_value(("default_timeout"))
         if not msg:
             if type(element) in [tuple, QAutoElement]:
-                msg = "Element '%s' is not visible for %s seconds" % (element[1], timeout)
+                msg = f"Element '{element}' is not visible for {timeout} seconds"
             else:
-                msg = "Element '%s' is not visible for %s seconds" % (element.text, timeout)
+                msg = f"Element '{element.text}' is not visible for {timeout} seconds"
+        self.wait_until_spinner_is_not_visible(timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout, fallback)
+        # Log successfull execution if we are not doing fallback
+        if not fallback:
+            DebugLog.log(f"* Element '{element}' is visible")
+
+    def wait_until_spinner_is_not_visible(self, timeout=None):
+        """
+        **Wait until page loading spinner is not visible**
+
+        *This method is already build in some of the common methods. Used locator for
+        spinner element can be added in '/config/project_config/spinner_locators.txt' file*
+
+        :param timeout: Uses default timeout, unless custom value provided.
+        :exception:  If time exceeds DEFAULT_TIMEOUT, then rise exception.
+        ------------
+        :Example:
+            | *Page model level example*
+            | using web element
+            | ``QAutoRobot.wait_until_spinner_is_not_visible()``
+            | using timeout
+            | ``QAutoRobot.wait_until_spinner_is_not_visible(10)``
+
+        """
+        if not timeout:
+            timeout = get_config_value(("default_timeout"))
+        locator_file = os.path.join(os.getcwd(), GlobalUtils.PROJECT_SPINNER_LOCATORS_FILE)
+        if os.path.isfile(locator_file):
+            # go through locator file, is there any active locators
+            locator_lines = get_file_lines_without_newlines(locator_file)
+            for locator_line in locator_lines:
+                if locator_line.strip().startswith("#"):
+                    continue
+                else:
+                    # spinner locator found
+                    try:
+                        locator_by, locator_value = locator_line.strip().split(",", 1)
+                    except ValueError as e:
+                        continue
+                    element = QAutoElement((locator_by.strip(), locator_value.strip()))
+                    DebugLog.log(f"* Spinner element '{element}'")
+                    try:
+                        # wait for spinner is not visible
+                        self.wait_until_element_is_not_visible(element, timeout)
+                    except:
+                        # give warning if spinner is visible
+                        self.warning(f"Spinner element '{element}' was still visible after {timeout} seconds")
+
 
     def wait_until_element_is_not_visible(self, element, timeout=None, msg=None):
         """
@@ -852,12 +823,12 @@ class CommonMethods(object):
             timeout = get_config_value(("default_timeout"))
         if not msg:
             if type(element) in [tuple, QAutoElement]:
-                msg = "Element '%s' is visible for %s seconds" % (element[1], timeout)
+                msg = f"Element '{element}' is visible for {timeout} seconds"
             else:
-                msg = "Element '%s' is visible for %s seconds" % (element.text, timeout)
+                msg = f"Element '{element.text}' is visible for {timeout} seconds"
         CommonMethodsHelpers.webdriver_wait(lambda driver: not self.is_visible(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
-        print("Element (" + element[0] + ":" + element[1] + ") not visible in " + str(timeout) + " seconds")
+        DebugLog.log(f"* Element '{element}' is not visible")
 
     def wait_until_element_is_disabled(self, element, timeout=None, msg=None):
         """
@@ -883,11 +854,13 @@ class CommonMethods(object):
             timeout = get_config_value(("default_timeout"))
         if not msg:
             if type(element) in [tuple, QAutoElement]:
-                msg = "Element '%s' is not disabled after %s seconds" % (element[1], timeout)
+                msg = f"Element '{element}' is not disabled after {timeout} seconds"
             else:
-                msg = "Element '%s' is not disabled after %s seconds" % (element.text, timeout)
+                msg = f"Element '{element.text}' is not disabled after {timeout} seconds"
+        self.wait_until_spinner_is_not_visible(timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_disabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout)
+        DebugLog.log(f"* Element '{element}' is disabled")
 
     def wait_until_element_is_enabled(self, element, timeout=None, msg=None, fallback=False):
         """
@@ -913,23 +886,27 @@ class CommonMethods(object):
             timeout = get_config_value(("default_timeout"))
         if not msg:
             if type(element) in [tuple, QAutoElement]:
-                msg = "Element '%s' is not enabled after %s seconds" % (element[1], timeout)
+                msg = f"Element '{element}' is not enabled after {timeout} seconds"
             else:
-                msg = "Element '%s' is not enabled after %s seconds" % (element.text, timeout)
+                msg = f"Element '{element.text}' is not enabled after {timeout} seconds"
+        self.wait_until_spinner_is_not_visible(timeout)
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_enabled(element),
                                             self.driver_cache._get_current_driver(), msg, timeout, fallback)
+        # Log successfull execution if we are not doing fallback
+        if not fallback:
+            DebugLog.log(f"* Element '{element}' is enabled")
 
     def get_download_time(self, downloads_folder="", max_download_time=120):
         """
-                **Return file download time in Chrome**
+            **Return file download time in Chrome**
 
-                :param downloads_folder: Chrome download folder
-                :param max_download_time: Max timeout to download
-                :return: time
-                ---------------
-                :Example:
-                    | *Page model level example*
-                    | ``value = QAutoRobot.get_download_time()``
+            :param downloads_folder: Chrome download folder
+            :param max_download_time: Max timeout to download
+            :return: time
+            ---------------
+            :Example:
+                | *Page model level example*
+                | ``value = QAutoRobot.get_download_time()``
 
         """
         downloadtime = None
@@ -949,20 +926,20 @@ class CommonMethods(object):
             time.sleep(0.1)
             currenttime = datetime.now() - search_start
             if int(round(currenttime.total_seconds(), 1)) > 8:  # Search timeout 8 seconds
-                print(".crdownload not found after: " + "8" + " seconds")
+                DebugLog.log("* .crdownload not found after: " + "8" + " seconds")
                 return None
 
             # Go through files in path_to_downloads
             for filename in os.listdir(path_to_downloads):
                 if filename.endswith('.crdownload'):
-                    print("File found")
+                    DebugLog.log("* File found")
                     # File found! start tracking download time
                     DL_start_time = datetime.now()
-                    print(path_to_downloads + os.sep + filename)
+                    DebugLog.log(path_to_downloads + os.sep + filename)
                     while (os.path.isfile(path_to_downloads + os.sep + filename) == True):
                         currentdownloadtime = datetime.now() - DL_start_time  # Tracking download time
                         if int(round(currentdownloadtime.total_seconds(), 1)) > int(max_download_time):
-                            print("Download max timeout exceeded: " + str(max_download_time) + " seconds")
+                            DebugLog.log("* Download max timeout exceeded: " + str(max_download_time) + " seconds")
                             return None
                         time.sleep(0.05)
                     downloadtime = datetime.now() - DL_start_time
@@ -982,11 +959,11 @@ class CommonMethods(object):
 
         """
         console_log = self.driver_cache._get_current_driver().get_log("browser")
-        print(console_log)
+        DebugLog.log(console_log)
         return console_log
 
     @classmethod
-    def get_timestamp(self):
+    def get_timestamp(cls):
         """
         **Return timestamp**
 
@@ -1024,19 +1001,19 @@ class CommonMethods(object):
         if not section:
             parameters.update({name: value})
             try:
-                print("* Dynamic parameter '%s'='%s' added to parameters dictionary" % (name, value))
+                DebugLog.log("* Dynamic parameter '%s'='%s' added to parameters dictionary" % (name, value))
             except:
-                print("* Dynamic parameter added to parameters dictionary")
+                DebugLog.log("* Dynamic parameter added to parameters dictionary")
         else:
             if section in list(parameters.keys()):
                 parameters[section].update({name: value})
             else:
                 parameters.update({section: {name: value}})
             try:
-                print("* Dynamic parameter ('%s'='%s') added to '%s' section of parameters dictionary" % (name, value,
+                DebugLog.log("* Dynamic parameter ('%s'='%s') added to '%s' section of parameters dictionary" % (name, value,
                                                                                                           section))
             except:
-                print("* Dynamic parameter added to parameters dictionary")
+                DebugLog.log("* Dynamic parameter added to parameters dictionary")
 
     def get_measurements(self, measurement_name):
         """
@@ -1132,17 +1109,17 @@ class CommonMethods(object):
 
                 save_content_to_file(content, js_file)
                 save_content_to_file(content_jtl, jtl_file)
-                print("Total loading time: " + str(round(total_duration)) + " ms")
+                DebugLog.log("* Total loading time: " + str(round(total_duration)) + " ms")
                 self.execute_javascript("return window.performance.clearResourceTimings();", log=False)
                 BuiltIn().set_test_documentation(
                     "*Webpage loading times:*\n\n*" + measurement_name.capitalize() + "* total loading time: *" + str(
                         round(total_duration)) + "* ms\n\n", append=True)
                 return resource_timings
             else:
-                print("%s: No resource timings to measure!!" % measurement_name)
+                DebugLog.log("* %s: No resource timings to measure!!" % measurement_name)
                 return []
         except Exception as e:
-            print("Failed to get resource timings:\n%s" % str(e))
+            DebugLog.log("* Failed to get resource timings:\n%s" % str(e))
             return None
 
     def get_dom_element_count(self, log=True):
@@ -1175,11 +1152,11 @@ class CommonMethods(object):
 
         """
 
-        browser_name = browser_name and browser_name or get_config_value("browser_name")
+        browser_name = browser_name if browser_name else get_config_value("browser_name")
         if alias:
-            DebugLog.log("* Opening browser '%s' with alias '%s'" % (browser_name, alias))
+            DebugLog.log(f"* Opening browser '{browser_name}' with alias '{alias}'")
         else:
-            DebugLog.log("* Opening browser '%s'" % browser_name)
+            DebugLog.log(f"* Opening browser '{browser_name}'")
         driver = create_driver(browser_name)
 
         # register driver and get id
@@ -1189,7 +1166,7 @@ class CommonMethods(object):
             driver.maximize_window()
 
         if url:
-            DebugLog.log("* Opening base url '%s'" % url)
+            DebugLog.log(f"* Opening base url '{url}'")
             driver.get(url)
 
         return _id
@@ -1209,7 +1186,7 @@ class CommonMethods(object):
 
         """
 
-        DebugLog.log("* Switching browser with id or alias '%s'" % id_or_alias)
+        DebugLog.log(f"* Switching browser with id or alias '{id_or_alias}'")
         self.driver_cache.switch_driver(id_or_alias)
 
     def close_browser(self):
@@ -1254,7 +1231,7 @@ class CommonMethods(object):
         driver = self.driver_cache._get_current_driver()
         if log:
             try:
-                DebugLog.log("* Opening: '%s'" % url)
+                DebugLog.log("* Opening url: '%s'" % url)
             except:
                 DebugLog.log("* Opening url")
 
@@ -1564,11 +1541,11 @@ class CommonMethods(object):
                 else:
                     return requests.delete(url, data=open(data), auth=HTTPBasicAuth(username, password))
             else:
-                print("Method not recognized")
+                DebugLog.log("* Method not recognized")
         except HTTPError as e:
-            print('Error code: ', e.code, e.read())
+            DebugLog.log('* Error code: ', e.code, e.read())
         except URLError as e:
-            print(e.reason)
+            DebugLog.log(e.reason)
 
     def get_soap_response(self, url, request_file_xml):
         """
@@ -1594,7 +1571,7 @@ class CommonMethods(object):
             else:
                 return response.content
         except ConnectionError as e:
-            print(e)
+            DebugLog.log(e)
 
     def get_text_length(self, element):
         """
@@ -1613,7 +1590,7 @@ class CommonMethods(object):
         """
         self.wait_until_element_is_visible(element)
         element = self.find_element_if_not_webelement(element)
-        print("Element text length: ", len(element.text))
+        DebugLog.log(f"* Element text length: {len(element.text)}")
         return len(element.text)
 
     def start_zapproxy_daemon(self, installation_dir):
@@ -1634,26 +1611,26 @@ class CommonMethods(object):
         try:
             from zapv2 import ZAPv2
         except Exception as e:
-            print("ZAP installation does not found or missing!" + str(e))
-        print('Starting ZAP ...')
+            DebugLog.log("* ZAP installation does not found or missing!" + str(e))
+        DebugLog.log('* Starting ZAP ...')
         try:
             zap_test_measurement_folder = os.getcwd() + os.sep + "test_reports"
             if not os.path.exists(zap_test_measurement_folder):
                 os.mkdir(zap_test_measurement_folder)
         except Exception as e:
-            print("Could not create zap measurements folder:\n%s" % str(e))
+            DebugLog.log("* Could not create zap measurements folder:\n%s" % str(e))
 
         session_name = "qautorobot_zap_session_" + self.get_timestamp()
         try:
             newsession = zap_test_measurement_folder + os.sep + session_name
-            print(newsession)
+            DebugLog.log(newsession)
             subprocess.Popen(installation_dir + " -daemon -newsession " + newsession)
-            print('Waiting for ZAP to load ...')
+            DebugLog.log('* Waiting for ZAP to load ...')
             zap = ZAPv2(proxies={'http': 'http://127.0.0.1:8092', 'https': 'http://127.0.0.1:8092'})
             for _ in range(25):
                 try:
                     _ = requests.head("http://127.0.0.1:8092")
-                    print("ZAPproxy running")
+                    DebugLog.log("* ZAPproxy running")
                     time.sleep(5)
                     return zap, session_name
                 except requests.ConnectionError:
@@ -1661,7 +1638,7 @@ class CommonMethods(object):
                 time.sleep(3)
 
         except Exception as e:
-            print("Failed to start zap proxy and session! Please check installation path and settings." + str(e))
+            DebugLog.log("* Failed to start zap proxy and session! Please check installation path and settings." + str(e))
 
     def stop_zapproxy_daemon(self, zap):
         """
@@ -1682,7 +1659,7 @@ class CommonMethods(object):
             # To close ZAP:
             zap.core.shutdown()
         except Exception as e:
-            print("Zap " + str(e))
+            DebugLog.log("* Zap " + str(e))
         time.sleep(4)
 
     def generate_zap_test_report(self, installation_dir, session_name, report_name="qautorobot_zap_report.html"):
@@ -1704,11 +1681,11 @@ class CommonMethods(object):
         """
         try:
             zap_test_report_folder = os.getcwd() + os.sep + "test_reports"
-            print("Generating zap report")
+            DebugLog.log("* Generating zap report")
             subprocess.Popen(
                 installation_dir + " -last_scan_report " + zap_test_report_folder + os.path.sep + report_name + " -session " + zap_test_report_folder + os.path.sep + session_name + " -cmd")
         except Exception as e:
-            print("Failed to generate zap test report" + str(e))
+            DebugLog.log("* Failed to generate zap test report" + str(e))
         time.sleep(1)
 
     def send_email(self, smtp_username, smtp_password, receiver, mail_subject, mail_content):
@@ -1751,7 +1728,7 @@ class WebMethods(CommonMethods):
     """
 
     def __init__(self, driver_cache=None):
-        self.driver_cache = driver_cache and driver_cache or DriverCache()
+        self.driver_cache = driver_cache if driver_cache else DriverCache()
         CommonMethods.__init__(self, self.driver_cache)
         # print "WebMethods"
 
@@ -1770,6 +1747,7 @@ class WebMethods(CommonMethods):
             | ``QAutoRobot.get_selected_list_value((By.ID, u'dropdown'))``
 
         """
+        self.wait_until_element_is_visible(element)
         element = self.find_element_if_not_webelement(element)
         return Select(element).first_selected_option.get_attribute('value')
 
@@ -1788,6 +1766,7 @@ class WebMethods(CommonMethods):
             | ``QAutoRobot.get_selected_list_label((By.ID, u'dropdown'))``
 
         """
+        self.wait_until_element_is_visible(element)
         element = self.find_element_if_not_webelement(element)
         return Select(element).first_selected_option.text
 
@@ -1806,14 +1785,10 @@ class WebMethods(CommonMethods):
             | ``QAutoRobot.select_from_list_by_value((By.ID, u'dropdown'), 10)``
 
         """
-        self.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
-        element = Select(element)
-        try:
-            DebugLog.log("* Selecting '%s' from dropdown list" % value)
-        except:
-            DebugLog.log("* Selecting from dropdown list")
-        element.select_by_value(value)
+        DebugLog.log(f"* Selecting with option value '{value}' from select element '{element}'")
+        msg = f"Failed to select after {get_config_value('default_timeout')} seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: self._select_from_select_element(element, value, "option_value"),
+                                            self.driver_cache._get_current_driver(), msg)
 
     def select_from_list_by_label(self, element, text):
         """
@@ -1830,19 +1805,18 @@ class WebMethods(CommonMethods):
             | ``QAutoRobot.select_from_list_by_label((By.ID, u'dropdown'), "value")``
 
         """
-        self.wait_until_element_is_visible(element)
-        msg = "Failed to select from list after %s seconds" % get_config_value("default_timeout")
-        CommonMethodsHelpers.webdriver_wait(lambda driver: self._select_from_list_by_label(element, text),
+        DebugLog.log(f"* Selecting with visible test '{text}' from select element '{element}'")
+        msg = f"Failed to select after {get_config_value('default_timeout')} seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: self._select_from_select_element(element, text, "visible_text"),
                                             self.driver_cache._get_current_driver(), msg)
 
-    def _select_from_list_by_label(self, element, text):
+    def _select_from_select_element(self, element, text, select_type):
         element = self.find_element_if_not_webelement(element)
         element = Select(element)
-        try:
-            DebugLog.log("* Selecting '%s' from dropdown list" % text)
-        except:
-            DebugLog.log("* Selecting from dropdown list")
-        element.select_by_visible_text(text)
+        if select_type == "visible_text":
+            element.select_by_visible_text(text)
+        elif select_type == "option_value":
+            element.select_by_value(text)
         return True
 
     def select_from_list_by_random_option(self, element, *val_to_skip):
@@ -1860,17 +1834,15 @@ class WebMethods(CommonMethods):
             | ``QAutoRobot.select_from_list_by_random_option((By.ID, u'dropdown'))``
 
         """
-        self.wait_until_element_is_visible(element)
         options = self.get_selected_list_labels(element)
         option_to_select = self._get_random_value(options, *val_to_skip)
         self.select_from_list_by_label(element, option_to_select)
 
-    def unselect_checkbox(self, element, status="unchecked"):
+    def unselect_checkbox(self, element):
         """
         **Unchecks the checkbox**
 
         :param element: checkbox element
-        :param status: final state of the checkbox "checked" or "unchecked"
         ----------------
         :Example:
             | *Page model level example*
@@ -1880,56 +1852,46 @@ class WebMethods(CommonMethods):
             | ``QAutoRobot.unselect_checkbox((By.ID, u'checkbox1'))``
 
         """
-        if self.get_attribute(element, "type") == "checkbox":
-            if status == "unchecked":
-                if self.get_attribute(element, "checked") == "true" or self.get_attribute(element,
-                                                                                          "checked") == "checked":
-                    DebugLog.log("* Unchecking the checkbox")
-                    self.click_element(element)
-                else:
-                    DebugLog.log("* Checkbox is already unchecked")
-        else:
-            DebugLog.log("Element might be not a checkbox")
+        msg = f"Failed to unselect checkbox after {get_config_value('default_timeout')} seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: self._select_checkbox(element, False),
+                                            self.driver_cache._get_current_driver(), msg)
 
-    def select_checkbox(self, element, status="checked"):
+    def select_checkbox(self, element):
         """
         **Checks the checkbox**
 
         :param element: checkbox element
-        :param status: final state of the checkbox "checked" or "unchecked"
         --------------
         :Example:
             | *Page model level example*
             | using web element
             | ``QAutoRobot.select_checkbox(self.ID_CHECKBOX1)``
-            | ``QAutoRobot.select_checkbox(self.ID_CHECKBOX1, "unchecked")``
             | using representation
             | ``QAutoRobot.select_checkbox((By.ID, u'checkbox1'))``
-            | ``QAutoRobot.select_checkbox((By.ID, u'checkbox1'), "unchecked")``
 
         """
-        self.wait_until_element_is_visible(element)
-        msg = "Failed to select checkbox after %s seconds" % get_config_value("default_timeout")
-        CommonMethodsHelpers.webdriver_wait(lambda driver: self._select_checkbox(element, status),
+        msg = f"Failed to select checkbox after {get_config_value('default_timeout')} seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: self._select_checkbox(element, True),
                                             self.driver_cache._get_current_driver(), msg)
 
-    def _select_checkbox(self, element, status="checked"):
-        if self.get_attribute(element, "type") in ["checkbox", "radio"]:
-            if status == "checked":
-                if self.get_attribute(element, "checked") is None:
+    def _select_checkbox(self, element, select=True):
+        self.wait_until_element_is_visible(element)
+        element = self.find_element_if_not_webelement(element)
+        if element.get_attribute("type") == "checkbox":
+            if select:
+                if element.get_attribute("checked") is None:
                     DebugLog.log("* Checking the checkbox")
-                    self.click_element(element)
+                    self._click_element(element)
                 else:
                     DebugLog.log("* Checkbox is already checked")
-            elif status == "unchecked":
-                if self.get_attribute(element, "checked") == "true" or self.get_attribute(element,
-                                                                                          "checked") == "checked":
+            else:
+                if element.get_attribute("checked") == "true" or element.get_attribute("checked") == "checked":
                     DebugLog.log("* Unchecking the checkbox")
-                    self.click_element(element)
+                    self._click_element(element)
                 else:
                     DebugLog.log("* Checkbox is already unchecked")
         else:
-            DebugLog.log("Element might be not a checkbox or radio button")
+            DebugLog.log("* Element might not be a checkbox")
         return True
 
     def get_selected_list_labels(self, element):
@@ -1951,7 +1913,7 @@ class WebMethods(CommonMethods):
         values = []
         element = self.find_element_if_not_webelement(element)
         for value in Select(element).options:
-            values.append(self.get_text(value))
+            values.append(value.text)
         return values
 
     def get_selected_list_values(self, element):
@@ -1973,7 +1935,7 @@ class WebMethods(CommonMethods):
         values = []
         element = self.find_element_if_not_webelement(element)
         for value in Select(element).options:
-            values.append(self.get_attribute(value, "value"))
+            values.append(value.get_attribute("value"))
         return values
 
     def get_attribute(self, element, attr):
@@ -2017,7 +1979,7 @@ class WebMethods(CommonMethods):
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
-        message = "Element {By: '%s', value: '%s'} is not presented for %s seconds" % (element[0], element[1], timeout)
+        message = f"Element '{element}' is not presented for {timeout} seconds"
         CommonMethodsHelpers.webdriver_wait(lambda driver: self.is_present(element),
                                             self.driver_cache._get_current_driver(), message, timeout)
 
@@ -2042,7 +2004,7 @@ class WebMethods(CommonMethods):
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
-        message = "Element {By: '%s', value: '%s'} is presented for %s seconds" % (element[0], element[1], timeout)
+        message = f"Element '{element}' is presented for {timeout} seconds"
         CommonMethodsHelpers.webdriver_wait(lambda driver: not self.is_present(element),
                                             self.driver_cache._get_current_driver(), message, timeout)
 
@@ -2286,12 +2248,12 @@ class WebMethods(CommonMethods):
     def _get_random_value(self, _list, *val_to_skip):
         _tmp = list(_list)
         for skipped in val_to_skip:
-            _tmp.remove(CommonMethodsHelpers.contains_nonascii(skipped))
+            _tmp.remove(skipped)
         value = random.choice(_tmp)
         try:
-            print("* Random value is '%s'" % value)
+            DebugLog.log("* Random value is '%s'" % value)
         except:
-            print("* Random value")
+            DebugLog.log("* Random value")
 
         return value
 
@@ -2374,9 +2336,11 @@ class WebMethods(CommonMethods):
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
-        msg = "Text '%s' did not disappear in '%s' seconds from element" % (text, timeout)
-        text = CommonMethodsHelpers.contains_nonascii(text)
-        CommonMethodsHelpers.webdriver_wait(lambda driver: text not in self.get_text(element), msg, timeout)
+        msg = f"Element '{element}' still contains text '{text}' after '{timeout}' seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: text not in self.get_text(element),
+                                            self.driver_cache._get_current_driver(), msg, timeout)
+
+        DebugLog.log(f"* Element '{element}' did not contain text '{text}'")
 
     def wait_until_element_contains(self, element, text, timeout=None):
         """
@@ -2395,9 +2359,11 @@ class WebMethods(CommonMethods):
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
-        msg = "Text '%s' did not appear in '%s' seconds from element" % (text, timeout)
-        text = CommonMethodsHelpers.contains_nonascii(text)
-        CommonMethodsHelpers.webdriver_wait(lambda driver: text in self.get_text(element), msg, timeout)
+        msg = f"Element '{element}' did not contain text '{text}' in '{timeout}' seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: text in self.get_text(element),
+                                            self.driver_cache._get_current_driver(), msg, timeout)
+
+        DebugLog.log(f"* Element '{element}' contains text '{text}'")
 
     def wait_until_element_should_not_be(self, element, text, timeout=None):
         """
@@ -2420,9 +2386,10 @@ class WebMethods(CommonMethods):
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
-        msg = "Text equals '%s' did not disappear in '%s' seconds from element" % (text, timeout)
-        text = CommonMethodsHelpers.contains_nonascii(text)
-        CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_text(element) != text, msg, timeout)
+        msg = f"Element '{element}' text is '{text}' after '{timeout}' seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_text(element) != text,
+                                            self.driver_cache._get_current_driver(), msg, timeout)
+        DebugLog.log(f"* Element '{element}' text was different than '{text}'")
 
     def wait_until_element_should_be(self, element, text, timeout=None):
         """
@@ -2440,15 +2407,67 @@ class WebMethods(CommonMethods):
             | ``QAutoRobot.wait_until_element_should_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this')``
             | using timeout
             | ``QAutoRobot.wait_until_element_should_be(self.TEST, u'Cell text is this', 10)``
-            | ``QAutoRobot.wait_until_element_should_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this'1', 10)``
+            | ``QAutoRobot.wait_until_element_should_be((By.CSS_SELECTOR, u'#tableTest>tbody>tr>td'), u'Cell text is this', 10)``
 
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
-        msg = "Text equals '%s' did not appear in '%s' seconds from element" % (text, timeout)
-        text = CommonMethodsHelpers.contains_nonascii(text)
-        CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_text(element) == text, msg, timeout)
-        print("Element locator " + element[0] + ":" + element[1])
+        msg = f"Element '{element}' text is not '{text}' in '{timeout}' seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_text(element) == text,
+                                            self.driver_cache._get_current_driver(), msg, timeout)
+        DebugLog.log(f"* Element '{element}' text was '{text}'")
+
+    def wait_until_element_value_should_be(self, element, value, timeout=None):
+        """
+        **Wait until element's value is equal**
+
+        :param element: Element representation (By, value) or WebElement.
+        :param value: Element's value which should be
+        :param timeout: Uses default timeout, unless custom value provided.
+        ------------
+        :Example:
+            | *Page model level example*
+            | using web element
+            | ``QAutoRobot.wait_until_element_value_should_be(self.TEST, u'Element value is this')``
+            | using representation
+            | ``QAutoRobot.wait_until_element_value_should_be((By.CSS_SELECTOR, u'#valueTest input'), u'Element value is this')``
+            | using timeout
+            | ``QAutoRobot.wait_until_element_value_should_be(self.TEST, u'Element value is this', 10)``
+            | ``QAutoRobot.wait_until_element_value_should_be((By.CSS_SELECTOR, u'#valueTest input'), u'Element value is this', 10)``
+        """
+        if not timeout:
+            timeout = get_config_value(("default_timeout"))
+        msg = f"Element '{element}' value is not '{value}' in '{timeout}' seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_value(element) == value,
+                                            self.driver_cache._get_current_driver(), msg, timeout)
+        DebugLog.log(f"* Element '{element}' value was '{value}'")
+
+    def wait_until_element_value_contains(self, element, value, timeout=None):
+        """
+        **Wait until element's value contains as expected**
+
+        :param element: Element representation (By, value) or WebElement.
+        :param value: Element's value which expected
+        :param timeout: Uses default timeout, unless custom value provided.
+        -----------------
+        :Example:
+            | *Page model level example*
+            | using web element
+            | ``QAutoRobot.wait_until_element_value_contains(self.TEST, u'Part of element value')``
+            | using representation
+            | ``QAutoRobot.wait_until_element_value_contains((By.CSS_SELECTOR, u'#valueTest input'), u'Part of element value')``
+            | using timeout
+            | ``QAutoRobot.wait_until_element_value_contains(self.TEST, u'Part of element value', 10)``
+            | ``QAutoRobot.wait_until_element_value_contains((By.CSS_SELECTOR, u'#valueTest input'), u'Part of element value', 10)``
+
+        """
+        if not timeout:
+            timeout = get_config_value(("default_timeout"))
+        msg = f"Element '{element}' value did not contain '{value}' in '{timeout}' seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: value in self.get_value(element),
+                                            self.driver_cache._get_current_driver(), msg, timeout)
+
+        DebugLog.log(f"* Element '{element}' value contains '{value}'")
 
     def wait_until_element_attribute_contains(self, element, attr, expected_value, timeout=None):
         """
@@ -2472,10 +2491,37 @@ class WebMethods(CommonMethods):
         """
         if not timeout:
             timeout = get_config_value(("default_timeout"))
-        expected_value = CommonMethodsHelpers.contains_nonascii(expected_value)
-        msg = "Webelement's attribute '%s' doesn't contains '%s'" % (attr, expected_value)
-        CommonMethodsHelpers.webdriver_wait(lambda driver: expected_value in self.get_attribute(element, attr), msg,
-                                            timeout)
+        msg = f"Element '{element}' attribute '{attr}' doesn't contain '{expected_value}' in '{timeout}' seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: expected_value in self.get_attribute(element, attr),
+                                            self.driver_cache._get_current_driver(), msg, timeout)
+        DebugLog.log(f"* Element '{element}' attribute '{attr}' contains '{expected_value}'")
+
+    def wait_until_element_attribute_should_be(self, element, attr, expected_value, timeout=None):
+        """
+        **Wait until element's attribute is equal**
+
+        :param element: Element representation (By, value) or WebElement.
+        :param attr: Element's attribute
+        :param expected_value: Element's attribute value which should be
+        :param timeout: Uses default timeout, unless custom value provided.
+        ----------------
+         :Example:
+            | *Page model level example*
+            | using web element
+            | ``QAutoRobot.wait_until_element_attribute_should_be(self.ID_DROPDOWN, "class", "partialtext")``
+            | using representation
+            | ``QAutoRobot.wait_until_element_attribute_should_be((By.ID, u'dropdown'), "class", "partialtext")``
+            | using timeout
+            | ``QAutoRobot.wait_until_element_attribute_should_be(self.ID_DROPDOWN, "class", "partialtext", 10)``
+            | ``QAutoRobot.wait_until_element_attribute_should_be((By.ID, u'dropdown'), "class", "partialtext", 10)``
+
+        """
+        if not timeout:
+            timeout = get_config_value(("default_timeout"))
+        msg = f"Element '{element}' attribute '{attr}' is not '{expected_value}' in '{timeout}' seconds"
+        CommonMethodsHelpers.webdriver_wait(lambda driver: self.get_attribute(element, attr) == expected_value,
+                                            self.driver_cache._get_current_driver(), msg, timeout)
+        DebugLog.log(f"* Element '{element}' attribute '{attr}' was '{expected_value}'")
 
     def wait_until_document_ready(self):
         """
@@ -2508,8 +2554,7 @@ class WebMethods(CommonMethods):
         if not msg:
             msg = "'%s' not equal to '%s'" % (js_script, value)
         CommonMethodsHelpers.webdriver_wait(lambda driver:
-                                            CommonMethodsHelpers.contains_nonascii(driver.execute_script(js_script)) ==
-                                            CommonMethodsHelpers.contains_nonascii(value),
+                                            driver.execute_script(js_script) == value,
                                             self.driver_cache._get_current_driver(), msg)
 
     def wait_until_jquery_ajax_loaded(self, timeout=None):
@@ -2667,6 +2712,7 @@ class WebMethods(CommonMethods):
         cells = table_rows * table_columns
         return cells, table_rows, table_columns
 
+    "TODO: This keyword is nothing to do with tables, should be removed???"
     def table_contains_text(self, element, value):
         """
         **Checks if table contains text**
@@ -2722,10 +2768,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print("* Found text contains '%s' from column '%s' and row '%s'" % (text, column, row))
+                    DebugLog.log(f"* Column '{column}' and row '{row}' contains text '{text}'")
                     return elem, elem_c, row, column
 
-        self.fail("* Text '%s' contains not found from table" % text)
+        self.fail(f"Text '{text}' not found from table")
 
     def get_table_column_and_row_by_text(self, element, text, row="TBODY/TR", cell="TD"):
         """
@@ -2762,10 +2808,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print("* Found text '%s' from column '%s' and row '%s'" % (text, column, row))
+                    DebugLog.log(f"* Text '{text}' found from column '{column}' and row '{row}'")
                     return elem, elem_c, row, column
 
-        self.fail("* Text '%s' not found from table" % text)
+        self.fail(f"Text '{text}' not found from table")
 
     def get_table_column_and_row_by_value_contains(self, element, value, row="TBODY/TR", cell="TD"):
         """
@@ -2802,10 +2848,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print("* Found value contains '%s' from column '%s' and row '%s'" % (value, column, row))
+                    DebugLog.log(f"* Column '{column}' and row '{row}' contains value '{value}'")
                     return elem, elem_c, row, column
 
-        self.fail("* Value '%s' contains not found from table" % value)
+        self.fail(f"Value '{value}' not found from table")
 
     def get_table_column_and_row_by_value(self, element, value, row="TBODY/TR", cell="TD"):
         """
@@ -2842,10 +2888,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print("* Value text '%s' from column '%s' and row '%s'" % (value, column, row))
+                    DebugLog.log(f"* Value '{value}' found from column '{column}' and row '{row}'")
                     return elem, elem_c, row, column
 
-        self.fail("* Value '%s' not found from table" % value)
+        self.fail(f"Value '{value}' not found from table")
 
     def get_table_column_and_row_by_attribute_value(self, element, attribute, value, row="TBODY/TR", cell="TD"):
         """
@@ -2883,10 +2929,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print("* Found attribute with value '%s' from column '%s' and row '%s'" % (value, column, row))
+                    DebugLog.log(f"* Attribute '{attribute}' with value '{value}' found from column '{column}' and row '{row}'")
                     return elem, elem_c, row, column
 
-        self.fail("* Attribute with value '%s' not found from table" % value)
+        self.fail(f"Attribute '{attribute}' with value '{value}' not found from table")
 
     def get_table_column_and_row_by_attribute_value_contains(self, element, attribute, value, row="TBODY/TR",
                                                              cell="TD"):
@@ -2925,10 +2971,10 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print("* Found attribute contains value '%s' from column '%s' and row '%s'" % (value, column, row))
+                    DebugLog.log(f"* Column '{column}' and row '{row}' contains attribute '{attribute}' with value '{value}'")
                     return elem, elem_c, row, column
 
-        self.fail("* Attribute with value '%s' not found from table" % value)
+        self.fail(f"Attribute '{attribute}' with value '{value}' not found from table")
 
     def get_table_column_and_row_by_multiple_text(self, element, text1, text2, row="TBODY/TR", cell="TD"):
         """
@@ -2976,11 +3022,11 @@ class WebMethods(CommonMethods):
                     # return "real" row and column numbers
                     column = element_column.index(elem_c) + 1
                     row = element_rows.index(elem) + 1
-                    print("* Found text1 '%s' from column '%s' and row '%s'" % (text1, temp_column + 1, temp_row + 1))
-                    print("* Found text2 '%s' from column '%s' and row '%s'" % (text2, column, row))
+                    DebugLog.log(f"* Found text1 '{text1}' from column '{temp_column + 1}' and row '{temp_row + 1}'")
+                    DebugLog.log(f"* Found text2 '{text2}' from column '{column}' and row '{row}'")
                     return temp_elem, temp_elem_c, temp_row + 1, temp_column + 1, elem, elem_c, row, column
 
-        self.fail("* Texts '%s' and '%s' not found from table in same row" % (text1, text2))
+        self.fail(f"Texts '{text1}' and '{text2}' not found from table in same row")
 
     def get_table_cell_text_by_column_and_row(self, element, column, row, cell="TD"):
         """
@@ -3005,7 +3051,7 @@ class WebMethods(CommonMethods):
 
         element_row = element.find_elements(By.XPATH, "TBODY/TR")[int(row) - 1]
         table_text = element_row.find_elements(By.XPATH, cell)[int(column) - 1].text
-        print("* Found text '%s' from column '%s' and row '%s'" % (table_text, str(column), str(row)))
+        DebugLog.log("* Found text '%s' from column '%s' and row '%s'" % (table_text, str(column), str(row)))
         return table_text
 
     def click_table_cell_by_column_and_row(self, element, column, row, cell="TD"):
@@ -3086,17 +3132,17 @@ class WebMethods(CommonMethods):
         for elem in element_rows:
             if cell == "" and self.is_visible(elem) and text in self.get_text(elem):
                 row = element_rows.index(elem) + 1
-                print("* Found text '%s' from row '%s'" % (text, row))
+                DebugLog.log("* Found text '%s' from row '%s'" % (text, str(row)))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and text in self.get_text(cell_elem):
                         row = element_rows.index(elem) + 1
-                        print("* Found text '%s' from row '%s'" % (text, row))
+                        DebugLog.log("* Found text '%s' from row '%s'" % (text, str(row)))
                         return cell_elem, row
 
-        print("* Text '%s' not found from list" % text)
+        DebugLog.log("* Text '%s' not found from list" % text)
         return None, None
 
     def get_list_row_by_text(self, element, text, row="LI", cell=""):
@@ -3133,17 +3179,17 @@ class WebMethods(CommonMethods):
             if cell == "" and self.is_visible(elem) and text == self.get_text(elem):
                 # return "real" row and column numbers
                 row = element_rows.index(elem) + 1
-                print("* Found text '%s' from row '%s'" % (text, row))
+                DebugLog.log("* Found text '%s' from row '%s'" % (text, str(row)))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and text == self.get_text(cell_elem):
                         row = element_rows.index(elem) + 1
-                        print("* Found text '%s' from row '%s'" % (text, row))
+                        DebugLog.log("* Found text '%s' from row '%s'" % (text, str(row)))
                         return cell_elem, row
 
-        print("* Text '%s' not found from list" % text)
+        DebugLog.log("* Text '%s' not found from list" % text)
         return None, None
 
     def get_list_row_by_value(self, element, value, row="LI", cell=""):
@@ -3180,17 +3226,17 @@ class WebMethods(CommonMethods):
             if cell == "" and self.is_visible(elem) and self.get_value(elem) == value:
                 # return "real" row and column numbers
                 row = element_rows.index(elem) + 1
-                print("* Found value '%s' from row '%s'" % (value, row))
+                DebugLog.log("* Found value '%s' from row '%s'" % (value, str(row)))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and self.get_value(cell_elem) == value:
                         row = element_rows.index(elem) + 1
-                        print("* Found value '%s' from row '%s'" % (value, row))
+                        DebugLog.log("* Found value '%s' from row '%s'" % (value, str(row)))
                         return cell_elem, row
 
-        print("* Value '%s' not found from list" % value)
+        DebugLog.log("* Value '%s' not found from list" % value)
         return None, None
 
     def get_list_row_by_value_contains(self, element, value, row="LI", cell=""):
@@ -3226,17 +3272,17 @@ class WebMethods(CommonMethods):
         for elem in element_rows:
             if cell == "" and self.is_visible(elem) and value in self.get_value(elem):
                 row = element_rows.index(elem) + 1
-                print("* Found value contains '%s' from row '%s'" % (value, row))
+                DebugLog.log("* Found value contains '%s' from row '%s'" % (value, str(row)))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and value in self.get_value(cell_elem):
                         row = element_rows.index(elem) + 1
-                        print("* Found value contains '%s' from row '%s'" % (value, row))
+                        DebugLog.log("* Found value contains '%s' from row '%s'" % (value, str(row)))
                         return cell_elem, row
 
-        print("* Value '%s' contains not found from list" % value)
+        DebugLog.log("* Value '%s' contains not found from list" % value)
         return None, None
 
     def get_list_row_by_attribute_value(self, element, attribute, value, row="LI", cell=""):
@@ -3272,17 +3318,17 @@ class WebMethods(CommonMethods):
         for elem in element_rows:
             if cell == "" and self.is_visible(elem) and self.get_attribute(elem, attribute) == value:
                 row = element_rows.index(elem) + 1
-                print("* Found attribute with value '%s' from row '%s'" % (value, row))
+                DebugLog.log("* Found attribute with value '%s' from row '%s'" % (value, str(row)))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and self.get_attribute(cell_elem, attribute) == value:
                         row = element_rows.index(elem) + 1
-                        print("* Found attribute with value '%s' from row '%s'" % (value, row))
+                        DebugLog.log("* Found attribute with value '%s' from row '%s'" % (value, str(row)))
                         return cell_elem, row
 
-        print("* Attribute with value '%s' contains not found from list" % value)
+        DebugLog.log("* Attribute with value '%s' contains not found from list" % value)
         return None, None
 
     def get_list_row_by_attribute_value_contains(self, element, attribute, value, row="LI", cell=""):
@@ -3318,17 +3364,17 @@ class WebMethods(CommonMethods):
         for elem in element_rows:
             if cell == "" and self.is_visible(elem) and value in self.get_attribute(elem, attribute):
                 row = element_rows.index(elem) + 1
-                print("* Found attribute contains value '%s' from row '%s'" % (value, row))
+                DebugLog.log("* Found attribute contains value '%s' from row '%s'" % (value, str(row)))
                 return elem, row
             elif cell:
                 cell_elements = elem.find_elements(By.XPATH, cell)
                 for cell_elem in cell_elements:
                     if self.is_visible(cell_elem) and value in self.get_attribute(cell_elem, attribute):
                         row = element_rows.index(elem) + 1
-                        print("* Found attribute contains value '%s' from row '%s'" % (value, row))
+                        DebugLog.log("* Found attribute contains value '%s' from row '%s'" % (value, str(row)))
                         return cell_elem, row
 
-        print("* Attribute with value '%s' contains not found from list" % value)
+        DebugLog.log("* Attribute with value '%s' contains not found from list" % value)
         return None, None
 
     def go_back(self):
@@ -3444,7 +3490,7 @@ class WebMethods(CommonMethods):
 
         """
         if not self.driver_cache._is_gc():
-            print("get_js_memory_heap is currently supported only by the Google Chrome browser.")
+            DebugLog.log("* get_js_memory_heap is currently supported only by the Google Chrome browser.")
             return
 
         memory_data = self.execute_javascript("return performance.memory;", log=False)
@@ -3458,7 +3504,7 @@ class WebMethods(CommonMethods):
                 if not os.path.exists(measurement_folder):
                     os.mkdir(measurement_folder)
             except Exception as e:
-                print("Could not create measurements folder:\n%s" % str(e))
+                DebugLog.log("* Could not create measurements folder:\n%s" % str(e))
 
             js_file = os.path.join(measurement_folder, GlobalUtils.MEMORY_DATA_PREFIX + str(measurement_name) + ".js")
 
@@ -3482,10 +3528,10 @@ class WebMethods(CommonMethods):
                     save_content_to_file(content, js_file)
                 return memory_data['usedJSHeapSize']
             except Exception as e:
-                print("Could not generate js file:\n%s" % str(e))
+                DebugLog.log("* Could not generate js file:\n%s" % str(e))
                 return None
         else:
-            print("%s: No memory heap to measure!!" % measurement_name)
+            DebugLog.log("* %s: No memory heap to measure!!" % measurement_name)
             return None
 
 
@@ -3658,8 +3704,8 @@ class Asserts(object):
         :Example:
             | ``QAutoRobot.element_text_should_be(self.element, text)``
         """
-        CommonMethodsHelpers.assert_equal(text, self._wm.get_text(element))
-        print("Element locator " + element[0] + ":" + element[1])
+        CommonMethodsHelpers.assert_equal(text, self._wm.get_text(element), msg=f"Element '{element}' text doesn't match")
+        DebugLog.log(f"* Element '{element}' text is '{text}'")
 
     def element_value_should_be(self, element, value):
         """
@@ -3671,8 +3717,8 @@ class Asserts(object):
         :Example:
             | ``QAutoRobot.element_text_should_be(self.element, value)``
         """
-        CommonMethodsHelpers.assert_equal(value, self._wm.get_value(element))
-        print("Element locator " + element[0] + ":" + element[1])
+        CommonMethodsHelpers.assert_equal(value, self._wm.get_value(element), msg=f"Element '{element}' value doesn't match")
+        DebugLog.log(f"* Element '{element}' value is '{value}'")
 
     def list_value_should_be(self, element, value):
         """
@@ -3685,8 +3731,8 @@ class Asserts(object):
             | ``QAutoRobot.list_value_should_be(self.element, value)``
 
         """
-        CommonMethodsHelpers.assert_equal(value, self._wm.get_selected_list_value(element))
-        print("Element locator " + element[0] + ":" + element[1])
+        CommonMethodsHelpers.assert_equal(value, self._wm.get_selected_list_value(element), msg=f"Element '{element}' selected value doesn't match")
+        DebugLog.log(f"* Element '{element}' selected option value is '{value}'")
 
     def list_label_should_be(self, element, text):
         """
@@ -3698,8 +3744,8 @@ class Asserts(object):
         :Example:
             | ``QAutoRobot.list_label_should_be(self.element, text)``
         """
-        CommonMethodsHelpers.assert_equal(text, self._wm.get_selected_list_label(element))
-        print("Element locator " + element[0] + ":" + element[1])
+        CommonMethodsHelpers.assert_equal(text, self._wm.get_selected_list_label(element), msg=f"Element '{element}' selected label doesn't match")
+        DebugLog.log(f"* Element '{element}' selected visible text is '{text}'")
 
     def element_attribute_should_be(self, element, attribute, value):
         """
@@ -3712,8 +3758,8 @@ class Asserts(object):
         :Example:
             | ``QAutoRobot.wait_until_element_should_not_be(self.element, attribute, value)``
         """
-        CommonMethodsHelpers.assert_equal(value, self._wm.get_attribute(element, attribute))
-        print("Element locator " + element[0] + ":" + element[1])
+        CommonMethodsHelpers.assert_equal(value, self._wm.get_attribute(element, attribute), msg=f"Element '{element}' attribute doesn't match")
+        DebugLog.log(f"* Element '{element}' attribute '{attribute}' value is '{value}'")
 
     def element_attribute_should_contains(self, element, attr, expected_value):
         """
@@ -3727,16 +3773,9 @@ class Asserts(object):
             | ``QAutoRobot.element_attribute_should_contains(self.CONTACT_QAUTOMATE_FI, u'href', u'mailto')``
         """
         atr_text = self._wm.get_attribute(element, attr)
-        print("Element locator " + element[0] + ":" + element[1])
-        try:
-            msg = "Element attribute '%s' doesn't contain text '%s'" % (attr, expected_value)
-        except:
-            msg = "Element attribute doesn't contain correct text"
+        msg = f"Element '{element}' attribute '{attr}' doesn't contain text '{expected_value}'"
         unittest.TestCase("assertTrue").assertTrue(expected_value in atr_text, msg)
-        try:
-            print("Element attribute '%s' contains text '%s'" % (attr, expected_value))
-        except:
-            pass
+        DebugLog.log(f"* Element '{element}' attribute '{attr}' contains '{expected_value}'")
 
     def elements_count_should_be(self, element, value_int):
         """
@@ -3748,8 +3787,8 @@ class Asserts(object):
         :Example:
             | ``QAutoRobot.elements_count_should_be(self.element, value_int)``
         """
-        CommonMethodsHelpers.assert_equal(int(value_int), self._wm.get_elements_count(element))
-        print("Element locator " + element[0] + ":" + element[1])
+        CommonMethodsHelpers.assert_equal(int(value_int), self._wm.get_elements_count(element), msg=f"Element '{element}' count doesn't match")
+        DebugLog.log(f"Element '{element}' count is '{value_int}'")
 
     def element_should_contain(self, element, text):
         """
@@ -3762,12 +3801,9 @@ class Asserts(object):
             | ``QAutoRobot.element_should_contain(self.CLASS_MAIN_HEADER, text)``
         """
         el_text = self._wm.get_text(element)
-        print("Element locator " + element[0] + ":" + element[1])
-        try:
-            msg = "Element text '%s' doesn't contain text '%s'" % (el_text, text)
-        except:
-            msg = "Element text doesn't contain correct text"
+        msg = f"Element '{element}' text '{el_text}' doesn't contain text '{text}'"
         unittest.TestCase("assertTrue").assertTrue(text in el_text, msg)
+        DebugLog.log(f"* Element '{element}' text '{el_text}' contains '{text}'")
 
     def element_should_be_visible(self, element):
         """
@@ -3781,15 +3817,9 @@ class Asserts(object):
             | ``rcm = (By.ID, "map-player-rcMenu")``
             | ``element_should_be_visible(self, rcm)``
         """
-        by = element[0]
-        value = element[1]
         visible = self._wm.is_visible(element)
-        unittest.TestCase("assertTrue").assertTrue(visible,
-                                                   "Element {By: '%s', value: '%s'} is not visible" % (by, value))
-        try:
-            DebugLog.log("* Element 'By: %s, value: %s' is visible" % (by, value))
-        except:
-            DebugLog.log("* Element is visible")
+        unittest.TestCase("assertTrue").assertTrue(visible, f"Element '{element}' is not visible")
+        DebugLog.log(f"* Element '{element}' is visible")
 
     def element_should_be_present(self, element):
         """
@@ -3803,15 +3833,9 @@ class Asserts(object):
             | ``rcm = (By.ID, "map-player-rcMenu")``
             | ``element_should_be_present(self, rcm)``
         """
-        by = element[0]
-        value = element[1]
         present = self._wm.is_present(element)
-        unittest.TestCase("assertTrue").assertTrue(present,
-                                                   "Element {By: '%s', value: '%s'} is not present" % (by, value))
-        try:
-            DebugLog.log("* Element 'By: %s, value: %s' is present" % (by, value))
-        except:
-            DebugLog.log("* Element is present")
+        unittest.TestCase("assertTrue").assertTrue(present, f"Element '{element}' is not present")
+        DebugLog.log(f"* Element '{element}' is present")
 
     def element_should_be_disabled(self, element):
         """
@@ -3825,15 +3849,9 @@ class Asserts(object):
             | ``rcm = (By.ID, "map-player-rcMenu")``
             | ``element_should_be_disabled(self, rcm)``
         """
-        by = element[0]
-        value = element[1]
-        present = self._wm.is_disabled(element)
-        unittest.TestCase("assertTrue").assertTrue(present,
-                                                   "Element {By: '%s', value: '%s'} is not disabled" % (by, value))
-        try:
-            DebugLog.log("* Element 'By: %s, value: %s' is disabled" % (by, value))
-        except:
-            DebugLog.log("* Element is disabled")
+        is_disabled = self._wm.is_disabled(element)
+        unittest.TestCase("assertTrue").assertTrue(is_disabled, f"Element '{element}' is not disabled")
+        DebugLog.log(f"* Element '{element}' is disabled")
 
     def element_should_be_enabled(self, element):
         """
@@ -3848,15 +3866,9 @@ class Asserts(object):
             | ``element_should_be_enabled(self, rcm)``
 
         """
-        by = element[0]
-        value = element[1]
-        present = self._wm.is_enabled(element)
-        unittest.TestCase("assertTrue").assertTrue(present,
-                                                   "Element {By: '%s', value: '%s'} is not enabled" % (by, value))
-        try:
-            DebugLog.log("* Element 'By: %s, value: %s' is enabled" % (by, value))
-        except:
-            DebugLog.log("* Element is enabled")
+        is_enabled = self._wm.is_enabled(element)
+        unittest.TestCase("assertTrue").assertTrue(is_enabled, f"Element '{element}' is not enabled")
+        DebugLog.log(f"* Element '{element}' is enabled")
 
     def title_should_be(self, string):
         """
@@ -3867,9 +3879,9 @@ class Asserts(object):
         """
         driver = self.driver_cache._get_current_driver()
         title = driver.title
-        msgpass = "Page title: %s" % title
         msg = "Wrong page title"
-        CommonMethodsHelpers.assert_equal(string, title, msgpass, msg)
+        CommonMethodsHelpers.assert_equal(string, title, msg=msg)
+        DebugLog.log(f"* Page title is '{string}'")
 
     def element_should_be_table_column_and_row(self, element, text, column, row, cell="TD"):
         """
@@ -3892,11 +3904,10 @@ class Asserts(object):
         element = self.find_element_if_not_webelement(element)
 
         element_row = element.find_elements(By.XPATH, "TBODY/TR")[int(row) - 1]
-        msgpass = "* Text found from table: %s" % text
         msg = "Wrong text in table:"
         CommonMethodsHelpers.assert_equal(text,
-                                          self._wm.get_text(element_row.find_elements(By.XPATH, cell)[int(column) - 1]),
-                                          msgpass, msg)
+                                          self._wm.get_text(element_row.find_elements(By.XPATH, cell)[int(column) - 1]), msg=msg)
+        DebugLog.log(f"* Text found from table: '{text}'")
 
     def verify_rest_api_xml_value(self, url, method, expected_file, auth_file, request_file_xml):
         """
@@ -3976,12 +3987,11 @@ class Asserts(object):
         expected_response_file = get_file_lines(
             os.path.abspath(os.path.join(os.getcwd(), GlobalUtils.JSON_RESPONSE_FOLDER_NAME,
                                          expected_file)))
-        msgpass = "* Values are equal"
         msg = "Values are not equal"
         for line in expected_response_file:
             (key, expected_value) = line.split()
-            CommonMethodsHelpers.assert_equal(expected_value, str(reduce(dict.get, key.split("."), response)), msgpass,
-                                              msg)
+            CommonMethodsHelpers.assert_equal(expected_value, str(reduce(dict.get, key.split("."), response)), msg=msg)
+            DebugLog.log("* Values are equal")
 
     def verify_soap_api_value(self, url, request_file_xml, response_file, full_file=True):
         """
@@ -4020,19 +4030,19 @@ class Asserts(object):
             if str(expected) == str(response):
                 DebugLog.log("* Files are equal")
             else:
-                DebugLog.log("Files are not equal")
+                DebugLog.log("* Files are not equal")
                 msg = "\n\nExpected:\n'%s' \n\nActual:\n'%s'" % (expected, response)
                 self._wm.fail(msg)
         else:
             root = etree.fromstring(response)
-            msgpass = "* Values are equal"
             msg = "Values are not equal"
             expected_response_file = get_file_lines(os.path.abspath(os.path.join(os.getcwd(),
                                                                                  GlobalUtils.SOAP_RESPONSE_FOLDER_NAME,
                                                                                  response_file)))
             for line in expected_response_file:
                 (xpath, expected_value) = line.split()
-                CommonMethodsHelpers.assert_equal(expected_value, ''.join(root.xpath(xpath)), msgpass, msg)
+                CommonMethodsHelpers.assert_equal(expected_value, ''.join(root.xpath(xpath)), msg=msg)
+                DebugLog.log("* Values are equal")
 
     def element_text_length_should_be(self, element, expected_length):
         """
@@ -4045,29 +4055,29 @@ class Asserts(object):
             | ``QAutoRobot.verify_text_length(self.FEATURELIST_FEATURE, u'13')``
         """
         self._wm.wait_until_element_is_visible(element)
-        element = self.find_element_if_not_webelement(element)
+        web_element = self.find_element_if_not_webelement(element)
 
-        msgpass = "* Text length is same as expected"
-        msg = "Text length is different than expected"
-        CommonMethodsHelpers.assert_equal(str(expected_length), str(len(element.text)), msgpass, msg)
+        msg = f"Element '{element}' text length is different than expected"
+        CommonMethodsHelpers.assert_equal(str(expected_length), str(len(web_element.text)), msg=msg)
+        DebugLog.log(f"* Element '{element}' text length is as expected '{expected_length}'")
 
     def checkbox_should_be_selected(self, element):
         """
-        **Check radiobutton is selected.**
+        **Check checkbox is selected.**
 
-        :param element: Radiobutton element
+        :param element: Checkbox element
         :Example:
-            | ``QAutoRobot.checkbox_should_be_selected(self.CLASS_RADIO)``
+            | ``QAutoRobot.checkbox_should_be_selected(self.CLASS_CHECKBOX)``
         """
-        if self._wm.get_attribute(element, "type") == "checkbox":
-            msg = "%s checkbox should have been selected" % self._wm.get_attribute(element, "name")
-            unittest.TestCase("assertTrue").assertTrue(self._wm.get_attribute(element, "checked"), msg)
-            try:
-                DebugLog.log("%s checkbox is selected" % self._wm.get_attribute(element, "name"))
-            except:
-                pass
+        self._wm.wait_until_element_is_visible(element)
+        web_element = self._wm.find_element_if_not_webelement(element)
+        if web_element.get_attribute("type") == "checkbox":
+            if web_element.get_attribute("checked") is None:
+                self._wm.fail(f"Checkbox in element '{element}' wasn't selected")
+            else:
+                DebugLog.log(f"* Checkbox in element '{element}' was selected")
         else:
-            print("Element might be not a radiobutton")
+            DebugLog.log(f"* Element '{element}' might not be a checkbox")
 
     def checkbox_should_not_be_selected(self, element):
         """
@@ -4078,15 +4088,15 @@ class Asserts(object):
         :Example:
             | ``QAutoRobot.checkbox_should_not_be_selected(self.CLASS_RADIO)``
         """
-        if self._wm.get_attribute(element, "type") == "checkbox":
-            msg = "%s checkbox should not have been selected" % self._wm.get_attribute(element, "name")
-            unittest.TestCase("assertTrue").assertTrue(self._wm.get_attribute(element, "checked") is None, msg)
-            try:
-                DebugLog.log("%s checkbox is not selected" % self._wm.get_attribute(element, "name"))
-            except:
-                pass
+        self._wm.wait_until_element_is_visible(element)
+        web_element = self._wm.find_element_if_not_webelement(element)
+        if web_element.get_attribute("type") == "checkbox":
+            if web_element.get_attribute("checked") == "true" or web_element.get_attribute("checked") == "checked":
+                self._wm.fail(f"Checkbox in element '{element}' was selected")
+            else:
+                DebugLog.log(f"* Checkbox in element '{element}' wasn't selected")
         else:
-            print("Element might be not a checkbox")
+            DebugLog.log(f"* Element '{element}' might not be a checkbox")
 
 
 class CommonWrappers(object):
@@ -4386,9 +4396,9 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             saving_dir = os.getenv('Temp') + "/"
         path_to_file = os.path.abspath(saving_dir + CommonUtils.get_timestamp() + action + ".png")
         try:
-            print("* Saving screenshot to '%s'" % path_to_file)
+            DebugLog.log("* Saving screenshot to '%s'" % path_to_file)
         except:
-            print("* Saving screenshot")
+            DebugLog.log("* Saving screenshot")
         self.get_current_driver().save_screenshot(path_to_file)
 
     def get_random_value(self, _list, *val_to_skip):
@@ -4407,12 +4417,12 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         """
         _tmp = list(_list)
         for skipped in val_to_skip:
-            _tmp.remove(CommonMethodsHelpers.contains_nonascii(skipped))
+            _tmp.remove(skipped)
         value = random.choice(_tmp)
         try:
-            print("* Random value is '%s'" % value)
+            DebugLog.log("* Random value is '%s'" % value)
         except:
-            print("* Random value")
+            DebugLog.log("* Random value")
 
         return value
 
@@ -4544,7 +4554,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         self.execute_javascript_with_args(drag_and_drop_helper + drag_and_drop_js, draggable, droppable)
 
     @classmethod
-    def write_value_jtl_file(self, measurement_name, sample):
+    def write_value_jtl_file(cls, measurement_name, sample):
         """
         **Writes given value to file in jtl format**
 
@@ -4562,7 +4572,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             if not os.path.exists(measurement_folder):
                 os.mkdir(measurement_folder)
         except Exception as e:
-            print("Could not create measurements folder:\n%s" % str(e))
+            DebugLog.log("* Could not create measurements folder:\n%s" % str(e))
 
         jtl_file = os.path.join(measurement_folder, GlobalUtils.NAVIGATION_DATA_PREFIX + str(measurement_name) + ".jtl")
         js_file = os.path.join(measurement_folder, GlobalUtils.NAVIGATION_DATA_PREFIX + str(measurement_name) + ".js")
@@ -4585,7 +4595,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
                 content = "".join(new_lines)
                 save_content_to_file(content, jtl_file)
         except Exception as e:
-            print("Could not generate jtl file" + str(e))
+            DebugLog.log("* Could not generate jtl file" + str(e))
 
         # javascript file
         try:
@@ -4605,7 +4615,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
                 content = "".join(new_lines)
                 save_content_to_file(content, js_file)
         except Exception as e:
-            print("Could not generate js file:\n%s" % str(e))
+            DebugLog.log("* Could not generate js file:\n%s" % str(e))
 
     def create_ref_screenshot(self, ref_scr_name, ref_scr_x, ref_scr_y, ref_scr_w, ref_scr_h):
         """
@@ -4632,7 +4642,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
 
             ref_scr_subim.save(os.path.join(current_dir, GlobalUtils.SCREENSHOTS_FOLDER_NAME, ref_scr_name))
         except Exception as ex:
-            print("Failed to create reference screenshot:\n", str(ex))
+            DebugLog.log("* Failed to create reference screenshot:\n", str(ex))
             scr_created = False
 
         return scr_created
@@ -4702,7 +4712,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
 
             ref_scr_subim.save(os.path.join(current_dir, GlobalUtils.SCREENSHOTS_FOLDER_NAME, ref_scr_name))
         except Exception as ex:
-            print("Create reference screenshot of object inside canvas exception: ", str(ex))
+            DebugLog.log("* Create reference screenshot of object inside canvas exception: ", str(ex))
             scr_created = False
 
         return scr_created, ref_scr_name
@@ -4733,7 +4743,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
             unittest.TestCase("assertTrue").assertTrue(found is True,
                                                        "%s Reference screenshot: %s." % (msg, new_file_name))
             # found screenshot with different browser
-            print("WARNING: Reference screenshot (%s) not found. Using screenshot (%s), " +
+            DebugLog.log("* WARNING: Reference screenshot (%s) not found. Using screenshot (%s), " +
                   "which was created different browser (%s).") % (
                 ref_scr_file_name, new_file_name, xml_meta_data['browser'])
             ref_scr_file_name = new_file_name
@@ -4778,12 +4788,10 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         is_similar = (100 - difference) >= similarity
 
         unittest.TestCase("assertTrue").assertTrue(is_similar,
-                                                   (
-                                                           "Screenshots do not match. Reference screenshot: %s. Similarity level " +
-                                                           "is '%s' percent") % (
-                                                       ref_scr_file_name, str(100 - difference)))
+                                                   ("Screenshots do not match. Reference screenshot: %s. Similarity level " +
+                                                    "is '%s' percent") % (ref_scr_file_name, str(100 - difference)))
 
-        print("Comparing screenshots... Screenshots match. Reference screenshot: %s. "
+        DebugLog.log("* Comparing screenshots... Screenshots match. Reference screenshot: %s. "
               "Similarity level is %s.") % (ref_scr_file_name, str(100 - difference) + "%")
 
     @classmethod

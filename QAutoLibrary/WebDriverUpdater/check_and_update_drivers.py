@@ -1,4 +1,5 @@
 from sys import platform as _platform
+from lxml import html
 import platform
 import argparse
 import requests
@@ -50,14 +51,19 @@ class BrowserDriverControl():
     def choose_driver_based_on_browser(self, path=None, browser=None,):
         if browser == None:
             self.check_chromeDriver(path)
-        elif browser == "chrome":
+        elif browser == "chrome" or browser == "Chrome" or browser == "CHROME" or browser == "gc":
             self.check_chromeDriver(path)
-        elif browser == "firefox":
+        elif browser == "firefox" or browser == "Firefox" or browser == "FIREFOX" or browser == "ff":
             self.check_geckoDriver(path)
-        elif browser == "edge":
+        elif browser == "edge" or browser == "Edge" or browser == "EDGE" or browser == "me":
             self.check_edgeDriver(path)
-        elif browser == "opera":
+        elif browser == "opera" or browser == "Opera" or browser == "OPERA" or browser == "op":
             self.check_operaDriver(path)
+        elif browser == "all" or browser == "All" or browser == "ALL":
+            self.check_chromeDriver()
+            self.check_geckoDriver()
+            self.check_edgeDriver()
+            self.check_operaDriver()
         else:
             print('Browser "' + str(browser) + '" not recognized.')
 
@@ -78,18 +84,17 @@ class BrowserDriverControl():
                 break
 
     def print_information(self, browser, webdriver):
-        print("Browser and webdriver information below:")
+        print("\n" + "Browser and webdriver information below:")
         print("- " + webdriver + " path: " + self.driver_path)
         print("- " + webdriver + " version: " + self.driver_full_version)
         print("- " + webdriver + " major version: " + self.driver_major_version)
         print("- " + browser + " version: " + self.browser_full_version)
-        print("- " + browser + " major version: " + self.browser_major_version)
+        print("- " + browser + " major version: " + self.browser_major_version + "\n")
 
     def check_latest_chromeDriver_release(self):
         link = "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_" + self.browser_major_version
         f = requests.get(link)
         latest_chromeDriver_version = f.text
-        print("Latest major ChromeDriver " + self.driver_major_version + " version: " + latest_chromeDriver_version)
         return latest_chromeDriver_version
 
     def download_chromeDriver(self):
@@ -139,7 +144,8 @@ class BrowserDriverControl():
             with zipfile.ZipFile(self.driver_path + os.sep + "chromedriver_win32.zip", 'r') as zip_ref:
                 zip_ref.extractall(self.driver_path)
 
-        print("Latest ChromeDriver version downloaded successfully. New version: " + latest_ChromeDriver_release)
+        print("Latest ChromeDriver version downloaded successfully.")
+        print("New installed version: " + latest_ChromeDriver_release)
 
     # Chrome ChromeDriver
     def check_chromeDriver(self, path=None):
@@ -231,7 +237,6 @@ class BrowserDriverControl():
     def check_latest_geckoDriver_release(self):
         l = requests.get("https://github.com/mozilla/geckodriver/releases/latest")
         latest_geckodriver_version = str(l.url).rsplit('tag/', 1)[1]
-        print("Latest GeckoDriver: " + latest_geckodriver_version)
         return latest_geckodriver_version
 
     def download_geckoDriver(self):
@@ -246,7 +251,6 @@ class BrowserDriverControl():
             download_link = "https://github.com/mozilla/geckodriver/releases/download/" + latest_release + "/geckodriver-" + latest_release + "-win64.zip"
             # https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-win64.zip
 
-        print("Geckodriver download link: " + download_link)
 
         with open(self.driver_path + os.sep + file_name, "wb") as file:
             r = requests.get(download_link)
@@ -276,7 +280,8 @@ class BrowserDriverControl():
             with zipfile.ZipFile(self.driver_path + os.sep + file_name, 'r') as zip_ref:
                 zip_ref.extractall(self.driver_path)
 
-        print("Latest GeckoDriver release downloaded successfully. New version: " + self.check_latest_geckoDriver_release())
+        print("Latest GeckoDriver release downloaded successfully.")
+        print("New installed version: " + latest_release)
 
     # Mozilla Firefox
     def check_geckoDriver(self, path=None):
@@ -387,7 +392,8 @@ class BrowserDriverControl():
         with zipfile.ZipFile(self.driver_path + os.sep + "edgedriver_win64.zip", 'r') as zip_ref:
                 zip_ref.extractall(self.driver_path)
 
-        print("Latest WebDriver downloaded successfully. New version: " + latest_release)
+        print("Latest WebDriver downloaded successfully.")
+        print("New installed version: " + latest_release)
 
     # Microsoft Edge
     # Linux version is coming in year 2021
@@ -425,7 +431,7 @@ class BrowserDriverControl():
             if not path == None:
                 print("Could not get edge version or path to driver.")
             else:
-                raise ValueError("Error! Could not get edge version or path to driver.")
+                raise ValueError("Error! Could not get edge webdriver version or path to driver.")
                 print(str(e))
 
         self.print_information("Microsoft Edge", "WebDriver")
@@ -444,13 +450,21 @@ class BrowserDriverControl():
 
     # https://github.com/operasoftware/operachromiumdriver/releases/latest
     def check_latest_operaDriver_release(self):
-        l = requests.get("https://github.com/operasoftware/operachromiumdriver/releases/latest")
-        latest_release = str(l.url).rsplit('tag/', 1)[1]
-        print("Latest OperaDriver release: " + latest_release)
-        return latest_release
+        page = requests.get("https://github.com/operasoftware/operachromiumdriver/releases/latest")
+        latest_release = str(page.url).rsplit('tag/', 1)[1]
+
+        # Use xpath to get text which include supported Opera version and take last two characters
+        tree = html.fromstring(page.content)
+        content = tree.xpath('//a[contains(text(),"Opera Stable")]')
+        supported_opera_version = str(content[0].text)[-2:]
+        return latest_release, supported_opera_version
 
     def download_operaDriver(self):
-        latest_release = self.check_latest_operaDriver_release()
+        latest_release, supported_opera_version  = self.check_latest_operaDriver_release()
+
+        if not supported_opera_version == self.browser_major_version:
+            print("Current Opera version does not support latest OperaDriver release. Update Opera manually to " + supported_opera_version + " version.")
+            return
 
         if "linux" in _platform or "darwin" in _platform:
             download_link = "https://github.com/operasoftware/operachromiumdriver/releases/download/" + latest_release + "/operadriver_linux64.zip"
@@ -459,7 +473,6 @@ class BrowserDriverControl():
             download_link = "https://github.com/operasoftware/operachromiumdriver/releases/download/" + latest_release + "/operadriver_win64.zip"
             file_name = "operadriver_win64.zip"
 
-        print("OperaDriver download link: " + download_link)
 
         with open(self.driver_path + os.sep + file_name, "wb") as file:
             r = requests.get(download_link)
@@ -514,7 +527,8 @@ class BrowserDriverControl():
             except Exception as e:
                 raise OSError("Fail to move files.")
 
-        print("Latest OperaDriver release downloaded successfully. New version: " + latest_release)
+        print("Latest OperaDriver release downloaded successfully.")
+        print("New installed version: " + latest_release)
 
     # Opera version
     def check_operaDriver(self, path=None):
@@ -527,7 +541,11 @@ class BrowserDriverControl():
 
         # Notice that if you give normal cmd command "opera --version" -> doesn't print anything, but this subprocess.check_output does.
         try:
-            p = subprocess.check_output(['opera', '--version'], shell=False).decode("utf-8")
+            if "linux" in _platform or "darwin" in _platform:
+                p = subprocess.check_output(['opera', '--version'], shell=False).decode("utf-8")
+            else:
+                p = subprocess.check_output(['launcher', '--version'], shell=False).decode("utf-8")
+
             self.browser_major_version = self.get_major_version(str(p))
             self.browser_full_version = self.get_full_version(str(p))
 
@@ -568,13 +586,14 @@ class BrowserDriverControl():
 
         self.print_information("Opera", "OperaDriver")
 
-        # Assuming the user has the latest version of Opera browser
-        # Opera 70 = OperaDriver 84
-        # Opera 69 = OperaDriver 83
-        if self.driver_full_version == self.check_latest_operaDriver_release():
-            print("Current OperaDriver version is latest.")
+        if self.browser_major_version < "69":
+            print("Opera version too old, update Opera browser manually.")
+        elif self.browser_major_version == "69" and self.driver_major_version == "83":
+            print("Current Opera browser and OperaDriver match.")
+        elif self.browser_major_version == "70" and self.driver_major_version == "84":
+            print("Current Opera browser and OperaDriver match.")
         else:
-            print("New release available. Trying to download latest release...")
+            print("Current Opera browser and OperaDriver does not match. Checking latest release...")
             self.download_operaDriver()
 
 if __name__ == '__main__':
