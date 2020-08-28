@@ -499,6 +499,11 @@ class CommonMethods(object):
                 DebugLog.log("* Retry click after exception: " + e.msg)
                 self.execute_javascript('window.scrollBy(0,100)')
                 return False
+            elif "element has zero size" in e.msg:
+                DebugLog.log("* Zero size WebDriverException, try to scroll view to element")
+                actions = self._get_actions()
+                actions.move_to_element(web_element).perform()
+                return False
             else:
                 DebugLog.log("* Stopped running on WebDriverException: " + e.msg)
                 raise
