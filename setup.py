@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/QAutofamily/QAutoLibrary",
     packages=setuptools.find_packages(),
-    package_data={'QAutoLibrary.config': ['*.xml', '*.ini']},
+    package_data={'QAutoLibrary.config': ['*.xml', '*.ini', '*.txt*']},
     classifiers=(
         "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: Apache License 2.0",

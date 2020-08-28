@@ -50,42 +50,6 @@ class CommonMethodsHelpers(object):
             raise e
 
     @classmethod
-    def contains_nonascii(self, *args):
-        """
-        Helper method to avoid unicode related issues
-        Converts all input strings to unicode if non-ascii characters are found in any
-
-        :param args:
-        :return:
-        """
-        result = []
-        found = False
-        for i in args:
-            try:
-                if(isinstance(i, str)):
-                    found = True
-                    break
-                if(isinstance(i, str)):
-                    i.decode('ascii')
-            except UnicodeDecodeError:
-                found = True
-                break
-
-        if(found):
-            for string in args:
-                if(isinstance(string, str)):
-                    result.append(string)
-                else:
-                    result.append(string)
-            if(len(result) == 1):
-                return result[0]
-            return result
-        else:
-            if(len(args) == 1):
-                return args[0]
-            return args
-
-    @classmethod
     def assert_equal(cls, expected, actual, msgpass='', msg=''):
         """
         Assertion with printing
@@ -97,16 +61,11 @@ class CommonMethodsHelpers(object):
         :param msg: Message to print if fail
         :return:
         """
-        expected, actual = CommonMethodsHelpers.contains_nonascii(expected, actual)
         info = "%s %s\nexpected: '%s', actual '%s'" % (DebugLog.get_timestamp(), msg, expected, actual)
         unittest.TestCase("assertEqual").assertEqual(expected, actual, info)
-        try:
-            DebugLog.log(info)
-        except:
-            pass
 
     @classmethod
-    def escape_xpath_text(csl, text):
+    def escape_xpath_text(cls, text):
         text = str(text)
         if '"' in text and '\'' in text:
             parts = text.split('\'')
