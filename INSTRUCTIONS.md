@@ -251,7 +251,7 @@ cd QAutoLibrary
 4. Run setup.py module as a script:
 
 ```
-python -m setup.py install
+python setup.py install
 ```
 
 ## Usage

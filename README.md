@@ -4,7 +4,9 @@ QAutoLibrary is an extension for RobotFramework and Python, providing automation
 
 ## Main Libraries
 
-**QAutoRobot**, extensive RPA library for Robot Framework.
+**QAutoRobot**, extensive RPA and test automation library for Robot Framework.
+
+**QAutowin**, a testing tool for native Windows applications. QAutowin can be used with QAutoRobot.
 
 **PythonOCR**, Python library of functions for finding and locating words on screen, in image files or PDF files using OCR (Optical Character Recognition).
 
