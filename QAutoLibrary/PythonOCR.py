@@ -206,10 +206,6 @@ def click_word(word, save_screenshot_as="", index=-1):
                           "on screen!".format(param=word, amount=len(results))
         warnings.warn(warning_message, RuntimeWarning)
 
-    else:
-        print("pythonocr.click_word({param}): Found no instances of the word '{param}' on screen."
-              .format(param=word))
-
 
 def find_words(word, file_path, output_path="./"):
     """
