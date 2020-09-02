@@ -66,8 +66,8 @@ def _get_word_coordinates_from_data(word, image_data, page_number=1):
     # 'image_data' is a dictionary of lists.
     # Accessing specific data list in dictionary:  image_data[<dictionary_key>]
     # Accessing specific data in a list, by index: image_data[<dictionary_key>][<index>]
-    number_of_items = len(image_data["level"])
-    for index in range(int(number_of_items)-1):
+    number_of_items = len(image_data["text"])
+    for index in range(number_of_items):
         text = image_data["text"][index]
 
         if word in text:
