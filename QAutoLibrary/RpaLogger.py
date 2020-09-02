@@ -97,7 +97,7 @@ class RpaLogger():
         :param \**kwargs: 1..n named arguments
         -------------
         Examples:
-        | Save rpa data      | MyDataName=MyDataValue | SecondDataName=SecondDataValue
+        | Save data      | MyDataName=MyDataValue | SecondDataName=SecondDataValue
 
         """
 
@@ -134,8 +134,8 @@ class RpaLogger():
         :param robotname: String name of the robot that is running
         -------------
         Examples:
-        | Setup rpa data      | runid=${RUNID} | robotname=${ROBOTNAME}
-        | Setup rpa data      | ${RUNID} | ${ROBOTNAME}
+        | Setup data      | runid=${RUNID} | robotname=${ROBOTNAME}
+        | Setup data      | ${RUNID} | ${ROBOTNAME}
 
         """
 
@@ -201,10 +201,10 @@ class RpaLogger():
         **msg (string): Message to be saved to logs (optional)
         -------------
         Examples:
-        | Log rpa      | state=ReadyReading | title=excelRead  | msg=All reading completed
-        | Log rpa      | state=ReadyOngoing |
-        | Log rpa      | title=excelRead | msg=All reading failed | type=Warning
-        | Log rpa      | title=excelRead | msg=Generic error | type=Error
+        | Log data      | state=ReadyReading | title=excelRead  | msg=All reading completed
+        | Log data      | state=ReadyOngoing |
+        | Log data      | title=excelRead | msg=All reading failed | type=Warning
+        | Log data      | title=excelRead | msg=Generic error | type=Error
 
         """
         if self.filename == None:

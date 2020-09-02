@@ -182,6 +182,7 @@ class BrowserDriverControl():
                 p = subprocess.check_output(['which', 'chromedriver'], shell=False).decode("utf-8")
                 p = p.replace("chromedriver", "")
                 p = p.replace("\n", "")
+                p = p.replace("\r", "")
                 self.driver_path = p
 
                 file = self.driver_path + os.sep + 'chromedriver'
@@ -201,6 +202,7 @@ class BrowserDriverControl():
             try:
                 p = subprocess.check_output('where chromedriver', shell=False).decode("utf-8")
                 p = p.replace("chromedriver.exe", "")
+                p = p.replace("\r", "")
                 p = p.replace("\n", "")
                 self.driver_path = p
 
@@ -568,6 +570,7 @@ class BrowserDriverControl():
             if "linux" in _platform or "darwin" in _platform:
                 p = subprocess.check_output(['which', 'operadriver'], shell=False).decode("utf-8")
                 p = p.replace("\n", "")
+                p = p.replace("\r", "")
                 p = p[:-11]
             else:
                 p = subprocess.check_output(('where operadriver'), shell=False).decode("utf-8")
