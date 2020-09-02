@@ -206,6 +206,10 @@ def click_word(word, save_screenshot_as="", index=-1):
                           "on screen!".format(param=word, amount=len(results))
         warnings.warn(warning_message, RuntimeWarning)
 
+    else:
+        raise NoInstancesFoundError("pythonocr.click_word({param}): Found no instances of the word '{param}' on screen."
+                                    .format(param=word))
+
 
 def find_words(word, file_path, output_path="./"):
     """
@@ -362,4 +366,8 @@ class InvalidFileTypeError(PythonOCRError):
 
 class InvalidImageTypeError(InvalidFileTypeError):
     """Error raised when given file is not a valid image file."""
+    pass
+
+class NoInstancesFoundError(PythonOCRError):
+    """Error raised when no instances of the word are found."""
     pass
