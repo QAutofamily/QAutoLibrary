@@ -18,15 +18,27 @@ QAutoLibrary requires Python, and additional libraries depending on which QAutoL
 
 The library can be installed using pip, or straight from the source code using setup.py file.
 
-Extensive and detailed instructions on prerequisites, installing, importing and usage, with examples, is provided in [INSTRUCTIONS.md](INSTRUCTIONS.md) file.
+Extensive and detailed instructions on prerequisites, installing, dependencies, importing and usage, with examples, is provided in [INSTRUCTIONS.md](INSTRUCTIONS.md) file.
 
 ### Prerequisites
 
-QAutoLibrary requires [Python 3.7](https://docs.python.org/3/) in order to be usable.
+QAutoLibrary requires [Python 3.7](https://docs.python.org/3/). Include pip with the Python installation, and add Python to PATH.
 
-Additionally, QAutoLibrary modules may require other library installations, as detailed in the following sections.
+### Installing
 
-#### QAutoRobot Prerequisites
+The library can be installed using pip, or straight from the source code using setup.py file. Instructions on how to install from the source files is provided in INSTRUCTIONS.md file, in [Installing from Source Files](INSTRUCTIONS.md#installing-from-source-files)-section.
+
+QAutoLibrary can be downloaded and installed to your local Python libraries, using pip:
+
+```
+pip install --upgrade https://customer.qautomate.fi/downloadQautoLibrary.html
+```
+
+### Dependencies
+
+QAutoLibrary modules require other library installations, as detailed in the following sections.
+
+#### QAutoRobot Dependencies
 
 **NOTE:** If you have installed [QAutomate tool](https://qautomate.fi/qautomate/), the libraries required by QAutoRobot should already be installed.
 
@@ -48,9 +60,9 @@ QAutoRobot modules require the following library installations:
 
 [pycryptodome](https://pypi.org/project/pycryptodome/): ```pip install pycryptodome```
 
-#### PythonOCR Prerequisites
+#### PythonOCR Dependencies
 
-**NOTE:** See on INSTRUCTIONS.md file, in [PythonOCR Prerequisites](INSTRUCTIONS.md#pythonocr-prerequisites)-section, for PythonOCR prerequisites' installation instructions.
+**NOTE:** See on INSTRUCTIONS.md file, in [PythonOCR Dependencies](INSTRUCTIONS.md#pythonocr-dependencies)-section, for PythonOCR dependencies' installation instructions.
 
 PythonOCR module requires the following libraries:
 
@@ -63,16 +75,6 @@ PythonOCR module requires the following libraries:
 [Google Tesseract OCR](https://github.com/tesseract-ocr/tessdoc)
 
 [pytesseract](https://pypi.org/project/pytesseract/)
-
-### Installing
-
-The library can be installed using pip, or straight from the source code using setup.py file. Instructions on how to install from the source files is provided in INSTRUCTIONS.md file, in [Installing from Source Files](INSTRUCTIONS.md#installing-from-source-files)-section.
-
-QAutoLibrary can be downloaded and installed to your local Python libraries, using pip:
-
-```
-pip install --upgrade https://customer.qautomate.fi/downloadQautoLibrary.html
-```
 
 ## Usage
 

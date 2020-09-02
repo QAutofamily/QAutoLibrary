@@ -1,6 +1,6 @@
 # QAutoLibrary Instructions
 
-QAutoLibrary Instructions on how to install prerequisites of the different modules, how to install QAutoLibrary and guide on how to use the different modules on your projects.
+QAutoLibrary Instructions on QAutoLibrary prerequisites, how to install QAutoLibary, how to install dependencies of the different modules and guide on how to use the different modules on your projects.
 
 ## Prerequisites
 
@@ -16,7 +16,43 @@ Download Python: https://www.python.org/downloads/
 
 More information at: https://docs.python.org/3/
 
-### QAutoRobot Prerequisites
+## Installation
+
+Before installing QAutoLibrary, make sure all the prerequisites of the modules you want to use are met.
+
+### Installing using pip
+
+QAutoLibrary can be downloaded and installed to your local Python libraries, using pip:
+
+```
+pip install --upgrade https://customer.qautomate.fi/downloadQautoLibrary.html
+```
+
+### Installing from Source Files
+
+Alternatively, QAutoLibrary can be installed straight from the source files. The library is installed using setup.py file.
+
+1. Open Command Prompt and navigate to a directory path where you want to download QAutoLibrary.
+
+2. Download the source files by cloning the Git repository:
+
+```
+git clone https://github.com/QAutofamily/QAutoLibrary
+```
+
+3. Navigate to the QAutoLibrary directory:
+
+```
+cd QAutoLibrary
+```
+
+4. Run setup.py module as a script:
+
+```
+python setup.py install
+```
+
+### QAutoRobot Dependencies
 
 QAutoRobot uses the following libraries:
 
@@ -118,7 +154,7 @@ pip install pycryptodome
 
 More information at: https://pypi.org/project/pycryptodome/
 
-### PythonOCR Prerequisites
+### PythonOCR Dependencies
 
 PythonOCR uses the following libraries:
 
@@ -216,42 +252,6 @@ To install to a user-specific directory, use ```--user``` flag. For example, to 
 
 ```
 python3.7 -m pip install --user pytesseract
-```
-
-## Installation
-
-Before installing QAutoLibrary, make sure all the prerequisites of the modules you want to use are met.
-
-### Installing using pip
-
-QAutoLibrary can be downloaded and installed to your local Python libraries, using pip:
-
-```
-pip install --upgrade https://customer.qautomate.fi/downloadQautoLibrary.html
-```
-
-### Installing from Source Files
-
-Alternatively, QAutoLibrary can be installed straight from the source files. The library is installed using setup.py file.
-
-1. Open Command Prompt and navigate to a directory path where you want to download QAutoLibrary.
-
-2. Download the source files by cloning the Git repository:
-
-```
-git clone https://github.com/QAutofamily/QAutoLibrary
-```
-
-3. Navigate to the QAutoLibrary directory:
-
-```
-cd QAutoLibrary
-```
-
-4. Run setup.py module as a script:
-
-```
-python setup.py install
 ```
 
 ## Usage
