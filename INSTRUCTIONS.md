@@ -381,6 +381,8 @@ PythonOCR functions can be used in both Python code or robot.
 
 ```click_word(word, save_screenshot_as, index)``` with ```save_screenshot_as``` and ```index``` being optional.
 
+**NOTE:** By default, click_word() does not click any instance of a word if multiple instances are found. Especially when using in Robot, providing a value for parameter ```index``` is recommended!
+
 ```find_words(word, file_path, output_path)``` with ```output_path``` being optional; used when processing PDF files.
 
 ```find_coordinates(word, file_path, output_path)``` with ```output_path``` being optional; used when processing PDF files.
