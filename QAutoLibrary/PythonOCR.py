@@ -202,12 +202,12 @@ def click_word(word, save_screenshot_as="", index=-1):
         if index > -1:
             _click_coordinates(results, index)
 
-        warning_message = "pythonocr.click_word({param}): Found multiple instances ({amount}) of the word '{param}' " \
-                          "on screen!".format(param=word, amount=len(results))
+        warning_message = "pythonocr.click_word(): Found multiple instances ({amount}) of the word '{param}' " \
+                          "on screen!".format(amount=len(results), param=word)
         warnings.warn(warning_message, RuntimeWarning)
 
     else:
-        raise NoInstancesFoundError("pythonocr.click_word({param}): Found no instances of the word '{param}' on screen."
+        raise NoInstancesFoundError("pythonocr.click_word(): Found no instances of the word '{param}' on screen."
                                     .format(param=word))
 
 
