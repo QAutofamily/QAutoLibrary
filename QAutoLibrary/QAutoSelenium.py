@@ -665,14 +665,8 @@ class CommonMethods(object):
     def _input_text(self, element, value, to_print=True, encrypt=False):
         try:
             if encrypt:
-                project_folder = os.getcwd()
                 DebugLog.log("* Encrypted password")
-                _key = ""
-                _key = get_file_content(project_folder + os.sep + "key.txt")
-
-                cipher = AESCipher(_key)
-                plain_password = cipher.decrypt(value)
-                value = plain_password
+                value = self.decrypt(value)
         except Exception as e:
             DebugLog.log(e)
 
@@ -695,6 +689,26 @@ class CommonMethods(object):
         web_element.clear()
         web_element.send_keys(value)
         return True
+
+    def decrypt(self, encrypted):
+        """
+        **Decrypts encrypted string back to plain text.**
+
+        :param encrypted: Encrypted string that needs to decrypt
+        :return: decrypted string
+        --------------
+        :Example:
+            | *Page model level*
+            | ``QAutoRobot.decrypt("encrypted-key-string")``
+
+        """
+        try:
+            secred_key_file = os.path.join(os.getcwd(), "key.txt")
+            secred_key = get_file_content(secred_key_file).strip()
+            cipher = AESCipher(secred_key)
+            return cipher.decrypt(encrypted)
+        except Exception as e:
+            self.fail(f"Fail to decrypt. Check that key.txt exist.\n{e}")
 
     def send_keys(self, element, value, to_print=True):
         """

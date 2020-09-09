@@ -13,6 +13,7 @@
 """
 
 from QAutoLibrary.QAutoElement import QAutoElement
+from QAutoLibrary.extension.util.common_methods_helpers import DebugLog
 from time import sleep
 import datetime
 import os, errno
@@ -24,6 +25,7 @@ import pymongo
 import ssl
 from pymongo.errors import ConnectionFailure, OperationFailure
 from robot.libraries.BuiltIn import BuiltIn
+
 
 class RpaLogger():
 
@@ -65,18 +67,18 @@ class RpaLogger():
                     self.mongodbc = pymongo.MongoClient("mongodb://" + mongodbIPPort, username=username, password=password, ssl=sslbool, ssl_cert_reqs=ssl.CERT_NONE)
                 else:
                     self.mongodbc = pymongo.MongoClient("mongodb://" + mongodbIPPort)
-                print(self.mongodbc.admin.command('ismaster'))
+                DebugLog.log(self.mongodbc.admin.command('ismaster'))
             except (ConnectionFailure, OperationFailure) as e:
-                print(e)
+                DebugLog.log(e)
                 self.mongodbc = None
-                print("Mongodb Server not available or authentication failed")
+                DebugLog.log("Mongodb Server not available or authentication failed")
                 self.warning(
                     "RPA Mongodb Server not available or authentication failed. Please check connection parameters.")
         if filename:
             if os.path.isfile(os.getcwd() + os.sep + "test_reports" + os.sep + filename):
-                print("RPA logger file exists")
+                DebugLog.log("RPA logger file exists")
             else:
-                print("RPA logger file will be created")
+                DebugLog.log("RPA logger file will be created")
                 robot_list = [{"Robot": robotname, "Sections": []}]
                 self.append_to_file(os.getcwd() + os.sep + "test_reports" + os.sep + filename, robot_list)
         self.filename = filename
@@ -143,7 +145,7 @@ class RpaLogger():
         runid = runid and int(runid) or self.runid
         robotname = robotname and robotname or self.robotname
         query = {"Runid": runid, "Robot": robotname}
-        print("Query parameters: %s" % query)
+        DebugLog.log("Query parameters: %s" % query)
 
         # Find robot data
         result = self.mongodbc.robotData.robotSavedData.find_one(query)
@@ -208,7 +210,7 @@ class RpaLogger():
 
         """
         if self.filename == None:
-            print("RPA logger file missing. Call rpa_logger_init first.")
+            DebugLog.log("RPA logger file missing. Call rpa_logger_init first.")
             self.fail("RPA logger file missing. Call rpa_logger_init first.")
 
         message = ""
@@ -241,9 +243,9 @@ class RpaLogger():
                                 "Title": sectionname, "Robot": self.robotname, "Runid": self.runid, "State": state,
                                 "VMname": self.vmname}
             x = mycol.insert_one(entry_message_db)
-            print(x)
+            DebugLog.log(f"Title: {sectionname}, Message: {message}")
 
-        print("Appending to json...", entry_message)
+        #DebugLog.log("Appending to json...", entry_message)
         with open(os.getcwd() + os.sep + "test_reports" + os.sep + self.filename) as feedsjson:
             feeds = json.load(feedsjson)
 
@@ -261,12 +263,12 @@ class RpaLogger():
                     else:
                         secto = section["Sections"]
                 except Exception as e:
-                    print("Error in adding")
-                    print(e)
+                    DebugLog.log("Error in adding")
+                    DebugLog.log(e)
                     secto = section["Sections"]
                     break
             if already_added == False:
-                print("Already added")
+                #DebugLog.log("Already added")
                 secto = section["Sections"]
                 secto.append(entry_section)
         with open(os.getcwd() + os.sep + "test_reports" + os.sep + self.filename, mode='w') as f:
