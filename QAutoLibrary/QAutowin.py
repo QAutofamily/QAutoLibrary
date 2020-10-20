@@ -131,7 +131,8 @@ class QAutowin(object):
                     logger.info('Clicking element %s.' % kwargs)
                     for kwarg in kwargs.keys():
                         if kwarg == "text":
-                            window[(kwargs["text"])].wait('visible', timeout=10)
+                            window[(kwargs["text"])].wait('ready', timeout=10)
+                            window[(kwargs["text"])].wait('active', timeout=10)
                             window[(kwargs["text"])].click_input()
                             break
                 elif 'x' in kwargs and 'y' in kwargs:
@@ -139,7 +140,8 @@ class QAutowin(object):
                     self.Click_Coordinates(**kwargs)
                 else:
                     logger.info('Clicking element %s.' % kwargs)
-                    window.child_window(**kwargs).wait('visible', timeout=10)
+                    window.child_window(**kwargs).wait('ready', timeout=10)
+                    window.child_window(**kwargs).wait('active', timeout=10)
                     window.child_window(**kwargs).click_input()
                 return True
             except Exception as e:
@@ -176,12 +178,14 @@ class QAutowin(object):
             logger.info('Input text %s element %s.' % (user_input, kwargs))
             for kwarg in kwargs.keys():
                 if kwarg == "text":
-                    window[(kwargs["text"])].wait('visible', timeout=10)
+                    window[(kwargs["text"])].wait('ready', timeout=10)
+                    window[(kwargs["text"])].wait('active', timeout=10)
                     window[(kwargs["text"])].type_keys(user_input, with_spaces=True, with_tabs=True)
                     break
         else:
             logger.info('Input text %s element %s.' % (user_input, kwargs))
-            window.child_window(**kwargs).wait('visible', timeout=10)
+            window.child_window(**kwargs).wait('ready', timeout=10)
+            window.child_window(**kwargs).wait('active', timeout=10)
             window.child_window(**kwargs).set_text("")
             window.child_window(**kwargs).type_keys(user_input, with_spaces=True, with_tabs=True)
 
@@ -282,12 +286,14 @@ class QAutowin(object):
             logger.info('Clicking element %s.' % kwargs)
             for kwarg in kwargs.keys():
                 if kwarg == "text":
-                    window[(kwargs["text"])].wait('visible', timeout=10)
+                    window[(kwargs["text"])].wait('ready', timeout=10)
+                    window[(kwargs["text"])].wait('active', timeout=10)
                     window[(kwargs["text"])].right_click_input()
                     break
         else:
             logger.info('Clicking element %s.' % kwargs)
-            window.window(**kwargs).wait('visible', timeout=10)
+            window.window(**kwargs).wait('ready', timeout=10)
+            window.window(**kwargs).wait('active', timeout=10)
             window.window(**kwargs).right_click_input()
 
 
