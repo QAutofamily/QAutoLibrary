@@ -15,7 +15,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'selenium',
-        'robotframework==3.2.1',
+        'robotframework>=3.2.1',
         'requests',
         'Pillow',
         'lxml',
