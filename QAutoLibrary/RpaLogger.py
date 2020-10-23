@@ -111,7 +111,7 @@ class RpaLogger():
             return
 
         # Filter to find existing document
-        filter = {"Runid":self.runid, "Robot": self.robotname}
+        filter = {"Runid": self.runid, "Robot": self.robotname}
         # Data to add or modify document
         rpa_data={}
         for key, value in kwargs.items():
@@ -120,6 +120,60 @@ class RpaLogger():
 
         # Add to database. If 'filter' do not find any documents new will added
         # otherwise existing rpaData will be updated
+        self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True)
+
+    def set_custom_post_trigger(self, condition=True):
+        """
+        **Save custom post trigger to database**
+
+        If set True, other robot can be triggered, regardless of current robots result.
+
+        :param: condition: Boolean to set custom post trigger on/off. Default True.
+        -------------
+        Examples:
+        | Set custom post trigger      | True
+        | Set custom post trigger      | ${TRUE}
+        | Set custom post trigger      | ${FALSE}
+
+        """
+        if self.mongodbc == None:
+            self.warning("Mongodb Server not available, cannot set custom trigger!")
+            return
+
+        # Filter to find existing document
+        filter = {"Runid": self.runid, "Robot": self.robotname}
+        # Add or modify document
+        update = [{ "$addFields": {"CustomPostTrigger": str(condition).capitalize()}}]
+
+        # Add/update to database. If 'filter' do not find any documents new will added
+        # otherwise existing document will be updated
+        self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True)
+
+    def set_savings_multiply(self, value):
+        """
+        **Save savings multiply to database**
+
+        This value will be used to calculate robot savings. If set 0 (zero), robot has not
+        done any actual savings.
+
+        :param: value: Integer.
+        -------------
+        Examples:
+        | Set savings multiply      | 2
+        | Set savings multiply      | 0
+
+        """
+        if self.mongodbc == None:
+            self.warning("Mongodb Server not available, cannot set custom trigger!")
+            return
+
+        # Filter to find existing document
+        filter = {"Runid": self.runid, "Robot": self.robotname}
+        # Add or modify document
+        update = [{ "$addFields": {"SavingsMultiply": int(value)}}]
+
+        # Add/update to database. If 'filter' do not find any documents new will added
+        # otherwise existing document will be updated
         self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True)
 
     def setup_rpa_data (self, runid=None, robotname=None):
@@ -142,8 +196,8 @@ class RpaLogger():
         """
 
         # Set query parameters
-        runid = runid and int(runid) or self.runid
-        robotname = robotname and robotname or self.robotname
+        runid = runid if runid else self.runid
+        robotname = robotname if robotname else self.robotname
         query = {"Runid": runid, "Robot": robotname}
         DebugLog.log("Query parameters: %s" % query)
 
@@ -177,8 +231,8 @@ class RpaLogger():
             self.warning("Mongodb Server not available, cannot get rerun tasks")
             return  None
         # Set query parameters
-        runid = runid and int(runid) or self.runid
-        robotname = robotname and robotname or self.robotname
+        runid = runid if runid else self.runid
+        robotname = robotname if robotname else self.robotname
         query = {"Runid": runid, "Robot": robotname, "State" : {"$exists" : True, "$ne" : ""}}
 
         # Find all states (tags) that robot has executed with this Runid

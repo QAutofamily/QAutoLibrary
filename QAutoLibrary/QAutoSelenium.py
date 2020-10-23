@@ -3463,7 +3463,7 @@ class WebMethods(CommonMethods):
 
         """
         driver = self.driver_cache._get_current_driver()
-        driver.switch_to_alert().accept()
+        driver.switch_to.alert.accept()
         DebugLog.log("* Click Accept/OK in alert box")
 
     def dismiss_alert(self):
@@ -3476,7 +3476,7 @@ class WebMethods(CommonMethods):
 
         """
         driver = self.driver_cache._get_current_driver()
-        driver.switch_to_alert().dismiss()
+        driver.switch_to.alert.dismiss()
         DebugLog.log("* Click Dismiss/Cancel in alert box")
 
     def reload_page(self):
