@@ -148,6 +148,7 @@ class RpaLogger():
         # Add/update to database. If 'filter' do not find any documents new will added
         # otherwise existing document will be updated
         self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True)
+        DebugLog.log(f"* Set custom post trigger to: {str(condition).capitalize()}")
 
     def set_savings_multiply(self, value):
         """
@@ -175,6 +176,7 @@ class RpaLogger():
         # Add/update to database. If 'filter' do not find any documents new will added
         # otherwise existing document will be updated
         self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True)
+        DebugLog.log(f"* Updated robot savings multiply to: {value}")
 
     def setup_rpa_data (self, runid=None, robotname=None):
         """
