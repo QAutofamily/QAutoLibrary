@@ -126,7 +126,7 @@ class RpaLogger():
         """
         **Saves robot permanent data to database**
 
-        :param \**kwargs: 1..n named arguments, "robotname" in **kwargs it used to identify robot resource
+        :param \**kwargs: 1..n named arguments, if "robotname" in **kwargs it used to identify robot resource
         -------------
         Examples:
         | *Robot level example*
