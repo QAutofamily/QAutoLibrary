@@ -214,6 +214,7 @@ class QAutowin(object):
         """
         window = self.Find_Window(**kwargs)
         logger.info('Input text %s element %s.' % (user_input, kwargs))
+        window.set_text("")
         window.type_keys(user_input, with_spaces=True, with_tabs=True)
 
     @keyword(name='Click Coordinates')
