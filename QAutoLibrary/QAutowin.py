@@ -151,12 +151,9 @@ class QAutowin(object):
                     del (kwargs["parent"])
 
                 if "text" in kwargs:
-                    for kwarg in kwargs.keys():
-                        if kwarg == "text":
-                            logger.info('Finding window %s.' % kwargs["text"])
-                            window = window[kwargs["text"]]
-                            window.wait('exists', timeout=timeout)
-                            break
+                    logger.info('Finding window %s.' % kwargs["text"])
+                    window = window[kwargs["text"]]
+                    window.wait('exists', timeout=timeout)
                 else:
                     logger.info('Finding window %s.' % kwargs)
                     window = window.window(**kwargs)
@@ -169,7 +166,7 @@ class QAutowin(object):
                 error = e
                 logger.info(str(e))
 
-            raise error
+        raise error
 
     @keyword(name='Click Element')
     def Click_Element(self, **kwargs):
