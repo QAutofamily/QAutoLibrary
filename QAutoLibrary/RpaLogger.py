@@ -412,6 +412,12 @@ class RpaLogger():
         | Log data      | title=excelRead | msg=Generic error | type=Error
 
         """
+        try:
+            self.filename
+        except AttributeError:
+            self.warning("RPA logger file missing. Call rpa_logger_init first.")
+            return True
+
         if self.filename == None:
             DebugLog.log("RPA logger file missing. Call rpa_logger_init first.")
             self.fail("RPA logger file missing. Call rpa_logger_init first.")
@@ -488,6 +494,9 @@ class RpaLogger():
 
         Constructs a string based on the message and time and saves it to the filename under the robotname key
         """
+
+        if not os.path.isdir(os.getcwd() + os.sep + "test_reports"):
+            os.mkdir(os.getcwd() + os.sep + "test_reports")
 
         try:
             with io.open(filename, "a", encoding='utf-8') as myfile:
