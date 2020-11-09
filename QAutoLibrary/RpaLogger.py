@@ -86,13 +86,13 @@ class RpaLogger():
         self.runid = int(runid)
         self.vmname = vmname
 
-    def save_rpa_data (self, **kwargs):
+    def save_rpa_data(self, **kwargs):
         """
         *DEPRECATED* Use keyword `Save data` instead.
         """
         self.save_data(**kwargs)
 
-    def save_data (self, **kwargs):
+    def save_data(self, **kwargs):
         """
         **Saves robot data to database**
 
@@ -111,7 +111,7 @@ class RpaLogger():
             return
 
         # Filter to find existing document
-        filter = {"Runid":self.runid, "Robot": self.robotname}
+        filter = {"Runid": self.runid, "Robot": self.robotname}
         # Data to add or modify document
         rpa_data={}
         for key, value in kwargs.items():
@@ -121,6 +121,209 @@ class RpaLogger():
         # Add to database. If 'filter' do not find any documents new will added
         # otherwise existing rpaData will be updated
         self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True)
+
+    def save_resources(self, **kwargs):
+        """
+        **Saves robot permanent data to database**
+
+        :param \**kwargs: 1..n named arguments, if "robotname" in **kwargs it used to identify robot resource
+        -------------
+        Examples:
+        | *Robot level example*
+        | Save resources      | MyDataName=MyDataValue | SecondDataName=SecondDataValue
+        | *Page model level example*
+        | ``QAutoRobot.save_resources(MyDataName=MyData)``
+
+        """
+        if len(kwargs.keys()) == 0:
+            self.warning("RPA data missing! Nothing to add database!")
+            return
+        if self.mongodbc == None:
+            self.warning("Mongodb Server not available, cannot save data!")
+            return
+
+        # Filter to find existing document
+        robotname = kwargs.pop("robotname") if "robotname" in kwargs else self.robotname
+        filter = {"Robot": robotname}
+        # Data to add or modify document
+        data_to_save={}
+        for key, value in kwargs.items():
+            data_to_save.update({key: value})
+        update = [{ "$addFields": data_to_save}]
+
+        # Add to database. If 'filter' do not find any documents new will added
+        # otherwise existing data will be updated
+        self.mongodbc.robotData.robotResources.update_one(filter, update, upsert=True)
+        DebugLog.log(f"* '{robotname}' data saved to robotResources: {data_to_save}")
+
+    def get_resource_data(self, field=None, robotname=None):
+        """
+        **Get all robot saved data from robotResources**
+
+        :param robotname: String name of the robot (optional)
+        :param field: String name of document field (optional)
+        :return:    Robot resources whole document or only one field
+        -------------
+        Examples:
+        | *Robot level example*
+        | Get resource data
+        | Get resource data    | field=documentFieldName
+        | *Page model level example*
+        | ``QAutoRobot.get_resource_data(field="documentFieldName")"``
+
+        """
+        if self.mongodbc == None:
+            self.warning("Mongodb Server not available, cannot get resource data")
+            return  None
+        # Set query parameters
+        robotname = robotname if robotname else self.robotname
+        query = {"Robot": robotname}
+
+        results = self.mongodbc.robotData.robotResources.find_one(query)
+        if field:
+            if field in results:
+                return results[field]
+            else:
+                self.warning(f"'{robotname}' resource document has not field '{field}'")
+                return None
+        return results
+
+    def remove_resource_document(self, robotname=None):
+        """
+        **Removes whole document from robot resources**
+
+        :param robotname: String name of the robot (optional)
+        -------------
+        Examples:
+        | *Robot level example*
+        | Remove resource document
+        | *Page model level example*
+        | ``QAutoRobot.remove_resource_document()``
+
+        """
+        if self.mongodbc == None:
+            self.warning("Mongodb Server not available, cannot remove resource data")
+            return  None
+        # Set query parameters
+        robotname = robotname if robotname else self.robotname
+        query = {"Robot": robotname}
+
+        results = self.mongodbc.robotData.robotResources.delete_one(query)
+        if results.deleted_count == 0:
+            self.warning(f"Nothing removed! Maybe resource document '{robotname}' does not exists!")
+        else:
+            DebugLog.log(f"* '{robotname}' document removed from resources")
+
+    def remove_resource_field(self, field_path, robotname=None):
+        """
+        **Removes field from robot resources**
+
+        :param field_path: String path to field to remove (dot presentation)
+        :param robotname: String name of the robot (optional)
+        -------------
+        Examples:
+        | *Robot level example*
+        | Remove resource field      | field.to.remove
+        | *Page model level example*
+        | ``QAutoRobot.remove_resource_field("field.to.remove")``
+
+        """
+        if self.mongodbc == None:
+            self.warning("Mongodb Server not available, cannot remove resource data")
+            return  None
+        # Set query parameters
+        robotname = robotname if robotname else self.robotname
+        query = {"Robot": robotname}
+
+        results = self.mongodbc.robotData.robotResources.update_one(query, {"$unset": {field_path: 1 }})
+        if results.modified_count == 0:
+            self.warning(f"Nothing removed from '{robotname}' resources. Maybe field '{field_path}' does not exists!")
+        else:
+            DebugLog.log(f"* Field '{field_path}' removed from '{robotname}' resources")
+
+    def remove_resource_list_value(self, field_path, list_value, robotname=None):
+        """
+        **Removes field from robot resources**
+
+        :param field_path: String path to field to remove (dot presentation)
+        :param list_value: Any  list value to remove
+        :param robotname: String name of the robot (optional)
+        -------------
+        Examples:
+        | *Robot level example*
+        | Remove resource list value      | field.list.remove    | list value
+        | *Page model level example*
+        | ``QAutoRobot.remove_resource_list_value("field.list.remove", "list value")``
+
+        """
+        if self.mongodbc == None:
+            self.warning("Mongodb Server not available, cannot remove resource data")
+            return  None
+        # Set query parameters
+        robotname = robotname if robotname else self.robotname
+        query = {"Robot": robotname}
+
+        results = self.mongodbc.robotData.robotResources.update_one(query, {"$pull": {field_path: list_value}})
+        if results.modified_count == 0:
+            self.warning(f"Nothing removed from '{robotname}' resources. Maybe field '{field_path}' or list value '{list_value}' does not exists!")
+        else:
+            DebugLog.log(f"* '{robotname}' resources list value '{list_value}' removed from field '{field_path}'.")
+
+    def set_custom_post_trigger(self, condition=True):
+        """
+        **Save custom post trigger to database**
+
+        If set True, other robot can be triggered, regardless of current robots result.
+
+        :param: condition: Boolean to set custom post trigger on/off. Default True.
+        -------------
+        Examples:
+        | Set custom post trigger      | True
+        | Set custom post trigger      | ${TRUE}
+        | Set custom post trigger      | ${FALSE}
+
+        """
+        if self.mongodbc == None:
+            self.warning("Mongodb Server not available, cannot set custom trigger!")
+            return
+
+        # Filter to find existing document
+        filter = {"Runid": self.runid, "Robot": self.robotname}
+        # Add or modify document
+        update = [{ "$addFields": {"CustomPostTrigger": str(condition).capitalize()}}]
+
+        # Add/update to database. If 'filter' do not find any documents new will added
+        # otherwise existing document will be updated
+        self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True)
+        DebugLog.log(f"* Set custom post trigger to: {str(condition).capitalize()}")
+
+    def set_savings_multiply(self, value):
+        """
+        **Save savings multiply to database**
+
+        This value will be used to calculate robot savings. If set 0 (zero), robot has not
+        done any actual savings.
+
+        :param: value: Integer.
+        -------------
+        Examples:
+        | Set savings multiply      | 2
+        | Set savings multiply      | 0
+
+        """
+        if self.mongodbc == None:
+            self.warning("Mongodb Server not available, cannot set custom trigger!")
+            return
+
+        # Filter to find existing document
+        filter = {"Runid": self.runid, "Robot": self.robotname}
+        # Add or modify document
+        update = [{ "$addFields": {"SavingsMultiply": int(value)}}]
+
+        # Add/update to database. If 'filter' do not find any documents new will added
+        # otherwise existing document will be updated
+        self.mongodbc.robotData.robotSavedData.update_one(filter, update, upsert=True)
+        DebugLog.log(f"* Updated robot savings multiply to: {value}")
 
     def setup_rpa_data (self, runid=None, robotname=None):
         """
@@ -142,8 +345,8 @@ class RpaLogger():
         """
 
         # Set query parameters
-        runid = runid and int(runid) or self.runid
-        robotname = robotname and robotname or self.robotname
+        runid = runid if runid else self.runid
+        robotname = robotname if robotname else self.robotname
         query = {"Runid": runid, "Robot": robotname}
         DebugLog.log("Query parameters: %s" % query)
 
@@ -177,8 +380,8 @@ class RpaLogger():
             self.warning("Mongodb Server not available, cannot get rerun tasks")
             return  None
         # Set query parameters
-        runid = runid and int(runid) or self.runid
-        robotname = robotname and robotname or self.robotname
+        runid = runid if runid else self.runid
+        robotname = robotname if robotname else self.robotname
         query = {"Runid": runid, "Robot": robotname, "State" : {"$exists" : True, "$ne" : ""}}
 
         # Find all states (tags) that robot has executed with this Runid
@@ -209,6 +412,12 @@ class RpaLogger():
         | Log data      | title=excelRead | msg=Generic error | type=Error
 
         """
+        try:
+            self.filename
+        except AttributeError:
+            self.warning("RPA logger file missing. Call rpa_logger_init first.")
+            return True
+
         if self.filename == None:
             DebugLog.log("RPA logger file missing. Call rpa_logger_init first.")
             self.fail("RPA logger file missing. Call rpa_logger_init first.")
@@ -285,6 +494,9 @@ class RpaLogger():
 
         Constructs a string based on the message and time and saves it to the filename under the robotname key
         """
+
+        if not os.path.isdir(os.getcwd() + os.sep + "test_reports"):
+            os.mkdir(os.getcwd() + os.sep + "test_reports")
 
         try:
             with io.open(filename, "a", encoding='utf-8') as myfile:

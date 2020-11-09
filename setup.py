@@ -13,6 +13,17 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/QAutofamily/QAutoLibrary",
     packages=setuptools.find_packages(),
+    install_requires=[
+        'selenium',
+        'robotframework>=3.2.1',
+        'requests',
+        'Pillow',
+        'lxml',
+        'simplejson',
+        'pymongo',
+        'pycryptodome',
+        'tika'
+    ],
     package_data={'QAutoLibrary.config': ['*.xml', '*.ini', '*.txt*']},
     classifiers=(
         "Programming Language :: Python :: 3.7",

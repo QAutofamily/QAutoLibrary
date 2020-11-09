@@ -212,17 +212,22 @@ class QAutowin(object):
                     del (kwargs["parent"])
 
                 if "text" in kwargs:
-                    logger.info('Finding window %s.' % kwargs["text"])
-                    window = window[kwargs["text"]]
-                    window.wait('exists', timeout=timeout)
+                    logger.info('Clicking element %s.' % kwargs)
+                    for kwarg in kwargs.keys():
+                        if kwarg == "text":
+                            window[(kwargs["text"])].wait('ready', timeout=10)
+                            window[(kwargs["text"])].wait('active', timeout=10)
+                            window[(kwargs["text"])].click_input()
+                            break
+                elif 'x' in kwargs and 'y' in kwargs:
+                    logger.info('Clicking at coordinates %s.' % kwargs)
+                    self.Click_Coordinates(**kwargs)
                 else:
-                    logger.info('Finding window %s.' % kwargs)
-                    window = window.window(**kwargs)
-                    window.wait('exists', timeout=timeout)
-
-                window.wait('ready', timeout=timeout)
-                window.wait('active', timeout=timeout)
-                return window
+                    logger.info('Clicking element %s.' % kwargs)
+                    window.child_window(**kwargs).wait('ready', timeout=10)
+                    window.child_window(**kwargs).wait('active', timeout=10)
+                    window.child_window(**kwargs).click_input()
+                return True
             except Exception as e:
                 error = e
                 logger.info(str(e))
@@ -270,10 +275,22 @@ class QAutowin(object):
         :Example:
             | Input Text  text  title=File
         """
-        window = self.Find_Window(**kwargs)
-        logger.info('Input text %s element %s.' % (user_input, kwargs))
-        window.set_text("")
-        window.type_keys(user_input, with_spaces=True, with_tabs=True)
+        window = self.find_connected_app_window()
+        # Input text by: auto_id, class_name, class_name_re, title, title_re, control_type
+        if "text" in kwargs:
+            logger.info('Input text %s element %s.' % (user_input, kwargs))
+            for kwarg in kwargs.keys():
+                if kwarg == "text":
+                    window[(kwargs["text"])].wait('ready', timeout=10)
+                    window[(kwargs["text"])].wait('active', timeout=10)
+                    window[(kwargs["text"])].type_keys(user_input, with_spaces=True, with_tabs=True)
+                    break
+        else:
+            logger.info('Input text %s element %s.' % (user_input, kwargs))
+            window.child_window(**kwargs).wait('ready', timeout=10)
+            window.child_window(**kwargs).wait('active', timeout=10)
+            window.child_window(**kwargs).set_text("")
+            window.child_window(**kwargs).type_keys(user_input, with_spaces=True, with_tabs=True)
 
     @keyword(name='Click Coordinates')
     def Click_Coordinates(self, **kwargs):
@@ -358,9 +375,21 @@ class QAutowin(object):
         :Example:
             | Right click element  title=File
         """
-        window = self.Find_Window(**kwargs)
-        logger.info('Double clicking element %s.' % kwargs)
-        window.window(**kwargs).right_click_input()
+        window = self.find_connected_app_window()
+        if "text" in kwargs:
+            logger.info('Clicking element %s.' % kwargs)
+            for kwarg in kwargs.keys():
+                if kwarg == "text":
+                    window[(kwargs["text"])].wait('ready', timeout=10)
+                    window[(kwargs["text"])].wait('active', timeout=10)
+                    window[(kwargs["text"])].right_click_input()
+                    break
+        else:
+            logger.info('Clicking element %s.' % kwargs)
+            window.window(**kwargs).wait('ready', timeout=10)
+            window.window(**kwargs).wait('active', timeout=10)
+            window.window(**kwargs).right_click_input()
+
 
     @keyword(name='Close application')
     def Close_application(self):

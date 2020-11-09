@@ -72,6 +72,8 @@ QAutoRobot uses the following libraries:
 
 **pycryptodome**
 
+**tika**
+
 **NOTE:** If you have installed [QAutomate tool](https://qautomate.fi/qautomate/), the libraries required by QAutoRobot should already be installed.
 
 #### Selenium
@@ -153,6 +155,16 @@ pip install pycryptodome
 ```
 
 More information at: https://pypi.org/project/pycryptodome/
+
+#### Tika
+
+Install Tika using pip:
+
+```
+pip install tika
+```
+
+More information at: https://pypi.org/project/tika/
 
 ### PythonOCR Dependencies
 

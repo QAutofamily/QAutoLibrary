@@ -60,6 +60,8 @@ QAutoRobot modules require the following library installations:
 
 [pycryptodome](https://pypi.org/project/pycryptodome/): ```pip install pycryptodome```
 
+[Tika](https://pypi.org/project/tika/): ```pip install tika```
+
 #### PythonOCR Dependencies
 
 **NOTE:** See on INSTRUCTIONS.md file, in [PythonOCR Dependencies](INSTRUCTIONS.md#pythonocr-dependencies)-section, for PythonOCR dependencies' installation instructions.
