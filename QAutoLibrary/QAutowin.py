@@ -17,6 +17,7 @@ from robot.api.deco import keyword
 from robot.api import logger
 import time
 import os
+import sys
 from PIL import ImageGrab
 import subprocess
 import pygetwindow as gw
@@ -30,19 +31,77 @@ class QAutowin(object):
         self.app = pywinauto.application.Application(backend=backend)
         self.backend = backend
 
+    def __find_application__(self, application):
+        """
+        **Finds directories containing a specified application**
+        Searches the application in C:/Users/<USER>/AppData/Roaming/, C:/Users/<USER>/AppData/Local/,
+        and in C:/Program Files/, C:/Program Files (x86)/.
+
+        :param application: Name of the specified application. Can contain file ending.
+        :type application: str
+
+        :return: List of the found file paths for the application.
+        :rtype: list
+        """
+        environments_to_search = ['APPDATA', 'LOCALAPPDATA', 'PROGRAMFILES', 'PROGRAMFILES(X86)']
+        results = []
+
+        environments_to_search = [os.getenv(environment) for environment in environments_to_search
+                                  if os.getenv(environment)]
+        for environment in environments_to_search:
+            logger.info(f"Searching application '{application}' in environment '{environment}'...")
+            for root, dirs, files in os.walk(environment):
+                if application in files:
+                    results.append(os.path.join(root, application))
+                    logger.info(f"Application '{application}' found in '{environment}'!")
+        return results
+
     @keyword(name='Open Application')
     def Open_Application(self, appname, **kwargs):  # arg=application, arg2=backend Win32 API or MS UI Automation
         # timeout=None, retry_interval=None, create_new_console=False, wait_for_idle=True, work_dir=None
         """
         **Opens application**
+        Attempts to open a specified application by the provided name or command. If unable to start
+        the application directly, attempts to search for the application's location and start it by
+        the found file path.
 
+        Searches the application in AppData, Program Files, and Program Files (x86) directories
+        if necessary. Providing file ending may help in finding the correct file, such as '.exe' file.
+        Providing command line parameters may hinder the search.
+
+        Optional parameters:
+          timeout=None - Time in seconds before Application.Start() quits.
+          retry_interval=None - Interval in seconds between Application.Start() retries.
+          work_dir=None - Provide working directory for the application.
+        Optional parameters are used for Pywinauto.Application.Start() function. See pywinauto
+        module for further details: https://pypi.org/project/pywinauto/
+
+        :param appname: Application name, or console command, to start it. Can include file path and file ending.
+        :type appname: str
+
+        -------------
         :Example:
-            | Open application  notepad.exe
+            | Open application  |  notepad.exe
+            | Open application  |  C:\\Program Files\\Spotify\\Spotify.exe
+            | Open application  |  C:\\Program Files\\Notepad++\\notepad++.exe --help
+            | Open application  |  git-bash.exe  |  timeout=10  |  retry_interval=2  |  work_dir=C:\\MyProject
         """
         print(kwargs)
-        if appname != "":
+        try:
             self.app.start(appname, **kwargs)
-            logger.info('Opening application %s.' % appname)
+            logger.info(f"Application '{appname}' started directly.")
+        except:
+            logger.info(f"Could not start application '{appname}' directly. Searching for the application...")
+            found_applications = []
+            found_applications.extend(self.__find_application__(appname))
+            if len(found_applications) >= 1:
+                self.app.start(found_applications[0], **kwargs)
+                if len(found_applications) > 1:
+                    logger.warn(f"Found application in {len(found_applications)} locations: {found_applications}")
+
+        if not self.app.is_process_running():
+            raise Exception(f"Could not open application '{appname}'!")
+        logger.info(f"Opened application '{appname}'.")
 
     @keyword(name='Connect Application')
     def Connect_Application(self, **kwargs):  # arg=application, arg2=backend Win32 API or MS UI Automation
@@ -113,6 +172,63 @@ class QAutowin(object):
 
         return windows
 
+    @keyword(name='Find Window')
+    def Find_Window(self, **kwargs):
+        """
+        **Finds pywinauto window**
+
+        :param kwargs: auto_id, class_name, class_name_re, title, title_re, control_type
+        --------------
+        :Example:
+            | ${window}=  Find window  title=File
+            | ${var}=   Call Method    ${window}    click_input
+        """
+        print("TEST PRINT: QAutowin.py has been modified.")
+        print("TEST PRINT; AppData/Roaming: " + os.getenv('APPDATA'))
+        windows = self.find_connected_app_windows()
+        timeout = 10
+        if "timeout" in kwargs:
+            timeout = kwargs["timeout"]
+            del(kwargs["timeout"])
+
+        for window in windows:
+            try:
+                if "parent" in kwargs:
+                    if type(kwargs["parent"]) == list:
+                        for parent in kwargs["parent"]:
+                            if "text" in parent:
+                                logger.info('Finding window %s.' % parent)
+                                window = window[(parent["text"])]
+                                window.wait('exists', timeout=timeout)
+                                pass
+                            else:
+                                logger.info('Finding window %s.' % parent)
+                                window = window.window(**parent)
+                                window.wait('exists', timeout=timeout)
+                    else:
+                        logger.info('Finding window %s.' % kwargs["parent"])
+                        window = window.window(**kwargs["parent"])
+                        window.wait('exists', timeout=timeout)
+                    del (kwargs["parent"])
+
+                if "text" in kwargs:
+                    logger.info('Finding window %s.' % kwargs["text"])
+                    window = window[kwargs["text"]]
+                    window.wait('exists', timeout=timeout)
+                else:
+                    logger.info('Finding window %s.' % kwargs)
+                    window = window.window(**kwargs)
+                    window.wait('exists', timeout=timeout)
+
+                window.wait('ready', timeout=timeout)
+                window.wait('active', timeout=timeout)
+                return window
+            except Exception as e:
+                error = e
+                logger.info(str(e))
+
+        raise error
+
     @keyword(name='Click Element')
     def Click_Element(self, **kwargs):
         """
@@ -123,29 +239,13 @@ class QAutowin(object):
         :Example:
             | Click element  title=File
         """
-        windows = self.find_connected_app_windows()
-        error = None
-        for window in windows:
-            try:
-                if "text" in kwargs:
-                    logger.info('Clicking element %s.' % kwargs)
-                    for kwarg in kwargs.keys():
-                        if kwarg == "text":
-                            window[(kwargs["text"])].wait('visible', timeout=10)
-                            window[(kwargs["text"])].click_input()
-                            break
-                elif 'x' in kwargs and 'y' in kwargs:
-                    logger.info('Clicking at coordinates %s.' % kwargs)
-                    self.Click_Coordinates(**kwargs)
-                else:
-                    logger.info('Clicking element %s.' % kwargs)
-                    window.child_window(**kwargs).wait('visible', timeout=10)
-                    window.child_window(**kwargs).click_input()
-                return True
-            except Exception as e:
-                error = e
-                logger.info(str(e))
-        raise error
+        if 'x' in kwargs and 'y' in kwargs:
+            logger.info('Clicking at coordinates %s.' % kwargs)
+            self.Click_Coordinates(**kwargs)
+
+        window = self.Find_Window(**kwargs)
+        logger.info('Clicking element %s.' % kwargs)
+        window.click_input()
 
     @keyword(name='Send Keywords')  # Send input data. Useful for text fields, that "Input text" does not recognize. Also, you can send keyboard actions, for example like ~ for Enter
     # https://pywinauto.readthedocs.io/en/latest/code/pywinauto.keyboard.html
@@ -170,20 +270,10 @@ class QAutowin(object):
         :Example:
             | Input Text  text  title=File
         """
-        window = self.find_connected_app_window()
-        # Input text by: auto_id, class_name, class_name_re, title, title_re, control_type
-        if "text" in kwargs:
-            logger.info('Input text %s element %s.' % (user_input, kwargs))
-            for kwarg in kwargs.keys():
-                if kwarg == "text":
-                    window[(kwargs["text"])].wait('visible', timeout=10)
-                    window[(kwargs["text"])].type_keys(user_input, with_spaces=True, with_tabs=True)
-                    break
-        else:
-            logger.info('Input text %s element %s.' % (user_input, kwargs))
-            window.child_window(**kwargs).wait('visible', timeout=10)
-            window.child_window(**kwargs).set_text("")
-            window.child_window(**kwargs).type_keys(user_input, with_spaces=True, with_tabs=True)
+        window = self.Find_Window(**kwargs)
+        logger.info('Input text %s element %s.' % (user_input, kwargs))
+        window.set_text("")
+        window.type_keys(user_input, with_spaces=True, with_tabs=True)
 
     @keyword(name='Click Coordinates')
     def Click_Coordinates(self, **kwargs):
@@ -206,7 +296,6 @@ class QAutowin(object):
         time.sleep(1)
         window.click_input(coords=((int(x)), (int(y))))
 
-
     @keyword(name="Verify Text")
     def Verify_text(self, user_input, **kwargs):
         """
@@ -224,7 +313,6 @@ class QAutowin(object):
             pass
         else:
             self.fail("%s is not equal to %s" % (text, user_input))
-
 
     @keyword(name="Verify Text Contains")
     def Verify_text_contains(self, user_input, **kwargs):
@@ -245,7 +333,6 @@ class QAutowin(object):
         else:
             self.fail("%s does not contain %s" % (text, user_input))
 
-
     @keyword(name="Get Text")
     def Get_text(self, **kwargs):
         """
@@ -256,16 +343,10 @@ class QAutowin(object):
         :Example:
             | {text}=  Get text  title=File
         """
-        window = self.find_connected_app_window()
-        if "text" in kwargs:
-            for kwarg in kwargs.keys():
-                if kwarg == "text":
-                    text = window[(kwargs["text"])].iface_value.CurrentValue
-                    return text
-        else:
-            text = window.child_window(**kwargs).iface_value.CurrentValue
-            return text
 
+        window = self.Find_Window(**kwargs)
+        text = window.child_window(**kwargs).iface_value.CurrentValue
+        return text
 
     @keyword(name='Right click element')
     def Right_click_element(self, **kwargs):
@@ -277,19 +358,9 @@ class QAutowin(object):
         :Example:
             | Right click element  title=File
         """
-        window = self.find_connected_app_window()
-        if "text" in kwargs:
-            logger.info('Clicking element %s.' % kwargs)
-            for kwarg in kwargs.keys():
-                if kwarg == "text":
-                    window[(kwargs["text"])].wait('visible', timeout=10)
-                    window[(kwargs["text"])].right_click_input()
-                    break
-        else:
-            logger.info('Clicking element %s.' % kwargs)
-            window.window(**kwargs).wait('visible', timeout=10)
-            window.window(**kwargs).right_click_input()
-
+        window = self.Find_Window(**kwargs)
+        logger.info('Double clicking element %s.' % kwargs)
+        window.window(**kwargs).right_click_input()
 
     @keyword(name='Close application')
     def Close_application(self):
@@ -300,7 +371,6 @@ class QAutowin(object):
             | Close application
         """
         self.app.kill()
-
 
     @keyword(name='Take screenshot')
     def Take_screenshot(self, error_image_folder):
@@ -314,7 +384,6 @@ class QAutowin(object):
         image = ImageGrab.grab()
         image.save(error_image_folder)
         logger.error('Something went wrong. Screenshot taken')
-
 
     def Close_cmd_process(self, cmd_process):
         """
@@ -337,7 +406,6 @@ class QAutowin(object):
         if pid == "":
             print("No process found: ", cmd_process)
 
-
     @keyword(name='Launch bat')
     def Launch_bat(self, directory, bat_name):
         """
@@ -356,4 +424,3 @@ class QAutowin(object):
             os.chdir(dir)
             print(e)
         time.sleep(3)
-
