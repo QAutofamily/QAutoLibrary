@@ -17,7 +17,6 @@ from robot.api.deco import keyword
 from robot.api import logger
 import time
 import os
-import sys
 from PIL import ImageGrab
 import subprocess
 import pygetwindow as gw
