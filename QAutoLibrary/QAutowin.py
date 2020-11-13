@@ -30,19 +30,77 @@ class QAutowin(object):
         self.app = pywinauto.application.Application(backend=backend)
         self.backend = backend
 
+    def __find_application__(self, application):
+        """
+        **Finds directories containing a specified application**
+        Searches the application in C:/Users/<USER>/AppData/Roaming/, C:/Users/<USER>/AppData/Local/,
+        and in C:/Program Files/, C:/Program Files (x86)/.
+
+        :param application: Name of the specified application. Can contain file ending.
+        :type application: str
+
+        :return: List of the found file paths for the application.
+        :rtype: list
+        """
+        environments_to_search = ['APPDATA', 'LOCALAPPDATA', 'PROGRAMFILES', 'PROGRAMFILES(X86)']
+        results = []
+
+        environments_to_search = [os.getenv(environment) for environment in environments_to_search
+                                  if os.getenv(environment)]
+        for environment in environments_to_search:
+            logger.info(f"Searching application '{application}' in environment '{environment}'...")
+            for root, dirs, files in os.walk(environment):
+                if application in files:
+                    results.append(os.path.join(root, application))
+                    logger.info(f"Application '{application}' found in '{environment}'!")
+        return results
+
     @keyword(name='Open Application')
     def Open_Application(self, appname, **kwargs):  # arg=application, arg2=backend Win32 API or MS UI Automation
         # timeout=None, retry_interval=None, create_new_console=False, wait_for_idle=True, work_dir=None
         """
         **Opens application**
+        Attempts to open a specified application by the provided name or command. If unable to start
+        the application directly, attempts to search for the application's location and start it by
+        the found file path.
 
+        Searches the application in AppData, Program Files, and Program Files (x86) directories
+        if necessary. Providing file ending may help in finding the correct file, such as '.exe' file.
+        Providing command line parameters may hinder the search.
+
+        Optional parameters:
+          timeout=None - Time in seconds before Application.Start() quits.
+          retry_interval=None - Interval in seconds between Application.Start() retries.
+          work_dir=None - Provide working directory for the application.
+        Optional parameters are used for Pywinauto.Application.Start() function. See pywinauto
+        module for further details: https://pypi.org/project/pywinauto/
+
+        :param appname: Application name, or console command, to start it. Can include file path and file ending.
+        :type appname: str
+
+        -------------
         :Example:
-            | Open application  notepad.exe
+            | Open application  |  notepad.exe
+            | Open application  |  C:\\Program Files\\Spotify\\Spotify.exe
+            | Open application  |  C:\\Program Files\\Notepad++\\notepad++.exe --help
+            | Open application  |  git-bash.exe  |  timeout=10  |  retry_interval=2  |  work_dir=C:\\MyProject
         """
         print(kwargs)
-        if appname != "":
+        try:
             self.app.start(appname, **kwargs)
-            logger.info('Opening application %s.' % appname)
+            logger.info(f"Application '{appname}' started directly.")
+        except:
+            logger.info(f"Could not start application '{appname}' directly. Searching for the application...")
+            found_applications = []
+            found_applications.extend(self.__find_application__(appname))
+            if len(found_applications) >= 1:
+                self.app.start(found_applications[0], **kwargs)
+                if len(found_applications) > 1:
+                    logger.warn(f"Found application in {len(found_applications)} locations: {found_applications}")
+
+        if not self.app.is_process_running():
+            raise Exception(f"Could not open application '{appname}'!")
+        logger.info(f"Opened application '{appname}'.")
 
     @keyword(name='Connect Application')
     def Connect_Application(self, **kwargs):  # arg=application, arg2=backend Win32 API or MS UI Automation
@@ -124,6 +182,8 @@ class QAutowin(object):
             | ${window}=  Find window  title=File
             | ${var}=   Call Method    ${window}    click_input
         """
+        print("TEST PRINT: QAutowin.py has been modified.")
+        print("TEST PRINT; AppData/Roaming: " + os.getenv('APPDATA'))
         windows = self.find_connected_app_windows()
         timeout = 10
         if "timeout" in kwargs:
