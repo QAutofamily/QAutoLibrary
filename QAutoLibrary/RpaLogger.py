@@ -415,12 +415,12 @@ class RpaLogger():
         try:
             self.filename
         except AttributeError:
-            self.warning("RPA logger file missing. Call rpa_logger_init first.")
+            self.warning("RPA logger file missing. Make sure that rpa logger init keyword is called in test setup.")
             return True
 
         if self.filename == None:
-            DebugLog.log("RPA logger file missing. Call rpa_logger_init first.")
-            self.fail("RPA logger file missing. Call rpa_logger_init first.")
+            DebugLog.log("RPA logger file missing. Make sure that rpa logger init keyword is called in test setup.")
+            self.fail("RPA logger file missing. Make sure that rpa logger init keyword is called in test setup.")
 
         message = ""
         sectionname = ""
