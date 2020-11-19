@@ -258,7 +258,7 @@ More information at: https://pypi.org/project/pytesseract/
 
 **Permission Error (Linux):**
 
-If the attempt to install pytesseract on Linux resulted in Permission error, you can attempt to install pytesseract on access-level where you have persmissions.
+If the attempt to install pytesseract on Linux resulted in Permission error, you can attempt to install pytesseract on access-level where you have permissions.
 
 To install to a user-specific directory, use ```--user``` flag. For example, to install pytesseract to user-specific directory as Python 3.7 module:
 
