@@ -110,8 +110,7 @@ def _validate_file(file_path, output_path):
     each page into its own image file. Returns image(s). Internal function.
 
     :param file_path: Required. Image or PDF file path.
-    :param output_path: Output directory for image files converted from the PDF file. Not required if processing
-                        image files. By default, current project directory.
+    :param output_path: Output directory for image files converted from the PDF file. Not required if processing image files. By default, current project directory.
 
     :return: A list of image files.
     """
@@ -153,14 +152,16 @@ def click_word(word, save_screenshot_as="", index=-1):
 
     If able to find a single instance of the word, retrieves its coordinates and clicks the location with mouse,
     using pyautogui. If multiple instances of the word are found, a specific one can be selected to be clicked by
-    its index. By default, does not click any found word, if multiple instances are found.
+    its index.
+    By default, does not click any found word, if multiple instances are found.
 
     :param word: Required. The specified word. Upper and lowercase sensitive!
     :type word: str
-    :param save_screenshot_as: Optional. File name for saved screenshot. File type, such as .jog or .png, MUST be
-                               included in the file name! Argument can include absolute path or relative directory
-                               path to current project folder, where screenshot is saved at, in addition to the
-                               file name. By default, or if empty, screenshot is not saved.
+    :param save_screenshot_as: Optional. File name for saved screenshot.
+                               MUST include valid file type ending, such as '.jpg' or '.png'. Additionally, may include
+                               absolute path or relative directory path to current project folder, where the screenshot
+                               is saved at. Provided directory path MUST pre-exist!
+                               By default, or if empty, screenshot is not saved.
     :type save_screenshot_as: str
     :param index: Optional. Index of a specific found word. First found instance of the word is at position 0 (zero).
                   By default, or if less than 0, no instance will be chosen and none of the multiple found words will
@@ -222,7 +223,8 @@ def find_words(word, file_path, output_path="./"):
     :param file_path: Required. Image or PDF file path. Can be absolute or relative to the current project directory.
     :type file_path: str
     :param output_path: Output directory for image files converted from the PDF file. Not required if processing
-                        image files. By default, current project directory.
+                        image files. Provided directory path MUST pre-exist!
+                        By default, current project directory.
     :type output_path: str
 
     :return: A list of found instances of the specified word as a list of dictionaries. Each dictionary consisting of:
@@ -277,7 +279,8 @@ def find_coordinates(word, file_path, output_path="./"):
     :type word: str
     :param file_path: Required. Image or PDF file path. Can be absolute or relative to the current project directory.
     :type file_path: str
-    :param output_path: Optional. Output directory for image files converted from the PDF file.
+    :param output_path: Optional. Output directory for image files converted from the PDF file. Provided directory
+                        path MUST pre-exist!
                         By default, current project directory.
     :type output_path: str
 
@@ -313,6 +316,48 @@ def find_coordinates(word, file_path, output_path="./"):
         results.extend(_get_word_coordinates_from_data(word, image_data, page_number))
         page_number += 1
     return results
+
+
+def get_file_data(file_path, output_path="./"):
+    """
+    **Returns OCR-data found in the specified file.** Able to process '.jpg',
+    '.jpeg', '.png', and '.pdf' files.
+
+    :param file_path: Required. Image or PDF file path. Can be absolute or relative to the current project directory.
+    :type file_path: str
+    :param output_path: Optional. Output directory for image files converted from the PDF file. Provided directory
+                        path MUST pre-exist!
+                        By default, current project directory.
+    :type output_path: str
+
+    :return: OCR-data found by pytesseract. List of images, if the given file was '.pdf' and contained multiple pages. Within this list, there are dictionaries which contain lists for each found text instance.
+    :rtype: list
+
+    -------------
+    :Example:
+        | *Returns the found OCR-data from file ('image_file.png').*
+        | ``get_file_data("Python", "image_file.png")``
+        | *Returns the found OCR-data from file located in folder
+          ('project_files') in the project directory. Converted images are saved to folder ('output_folder') in the
+          project directory.*
+        | ``get_file_data("./project_files/pdf_file.pdf", "./output_folder")``
+        | *Data usage:*
+        | ``data = pythonocr.get_file_data(...)``
+        | ``data[<image>][<dictionary>][<index>]``
+        | *Access first image's second recognized text's 'text'-data.*
+        | ``data[0]["text"][1]``
+        | *Access third image's first recognized text's X-coordinate data ('left').*
+        | ``data[2]["left"][0]``
+    """
+    image_list = _validate_file(file_path, output_path)
+    results = []
+
+    for image in image_list:
+        image_data = pytesseract.image_to_data(image, lang="eng+fin", output_type=Output.DICT)
+
+        results.append(image_data)
+    return results
+
 
 
 def verify_word(word, image_path):
