@@ -232,9 +232,11 @@ More information at: https://github.com/tesseract-ocr/tessdoc
 
 **Windows:**
 
-Install Google Tesseract OCR and include Finnish. **Add Tesseract-OCR to PATH.**
+1. Download Tesseract OCR: https://github.com/UB-Mannheim/tesseract/wiki
 
-Download Tesseract OCR: https://github.com/UB-Mannheim/tesseract/wiki
+2. Install Google Tesseract OCR and include Additional language data.
+
+3. Include Tesseract OCR as a SYSTEM PATH environment variable.
 
 **Linux:**
 
@@ -381,6 +383,8 @@ PythonOCR functions can be used in both Python code or robot.
 
 **Main functions** of the PythonOCR are as follows:
 
+```get_file_data()``` reads and returns OCR-data from a specified file. Specifically, returns a list for images, containing dictionaries for data, which contain lists for each found text instance.
+
 ```click_word()``` takes a screenshot, searches for a word on screen and clicks the location of a found instance.
 
 ```find_words()``` searches for all instances of a specified word in an image or PDF file, and returns results.
@@ -390,6 +394,8 @@ PythonOCR functions can be used in both Python code or robot.
 ```verify_word()``` searches for any instance of a specified word in an image file, and returns True or False whether an instance was found.
 
 **Parameters** of each of the main functions are as follows:
+
+```get_file_data(file_path, output_path)``` with ```output_path``` being optional; used when processing PDF files.
 
 ```click_word(word, save_screenshot_as, index)``` with ```save_screenshot_as``` and ```index``` being optional.
 
@@ -422,6 +428,23 @@ PythonOCR.<function>(<parameter1>, <parameter2>,...)
 ```
 
 #### Examples (Python)
+
+**get_file_data()**
+
+```get_file_data("image_file.png")``` Returns found data from file.
+
+```get_file_data("./project_files/pdf_file.pdf", "./output")``` Return found data from the file located in folder 'project_files' in current working directory. Images from '.pdf' file are saved to folder 'output' in the current project directory.
+
+Returned data usage:
+
+```
+data = pythonocr.get_file_data(...)
+data[<image>][<dictionary>][<index>]
+```
+
+```data[0]["text"][1]``` Access first image's second recognized text's 'text'-data.
+
+```data[2]["left"][0]``` Access third image's first recognized text's X-coordinate data ('left').
 
 **click_word()**
 
@@ -501,6 +524,23 @@ PythonOCR functions can then be used as keywords:
 ```
 
 #### Examples (Robot)
+
+**get_file_data()**
+
+```Get File Data  |  image_file.png``` Returns found data from file.
+
+```Get File Data  |  ./project_files/pdf_file.pdf  |  ./output``` Return found data from the file located in folder 'project_files' in current working directory. Images from '.pdf' file are saved to folder 'output' in the current project directory.
+
+Returned data usage:
+
+```
+@{data} =  |  Get File Data  |  ...
+${data}[<image>][<dictionary>][<index>]
+```
+
+```${data}[0][text][1]``` Access first image's second recognized text's 'text'-data.
+
+```${data}[2][left][0]``` Access third image's first recognized text's X-coordinate data ('left').
 
 **click_word()**
 

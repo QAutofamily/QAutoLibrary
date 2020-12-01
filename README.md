@@ -10,7 +10,7 @@ QAutoLibrary is an extension for RobotFramework and Python, providing automation
 
 **PythonOCR**, Python library of functions for finding and locating words on screen, in image files or PDF files using OCR (Optical Character Recognition).
 
-**NOTE:** PythonOCR is unreliable at best when finding words in files, and should only be used as an assistance to process files. Usage of other confirmation methods (such as manual labor) is adviced, when processing important files!
+**NOTE:** PythonOCR is unreliable at best when finding words in files, and should only be used as an assistance to process files. Usage of other confirmation methods (such as manual reviewing) is adviced, when processing important files!
 
 ## Getting Started
 
