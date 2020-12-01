@@ -56,7 +56,8 @@ def _get_word_coordinates_from_data(word, image_data, page_number=1):
     :param word: Required. The specified word.
     :param image_data: Required. Given image data, such as data retrieved by pytesseract.
                        Must be a dictionary of lists.
-    :param page_number: Optional. Page number to be included with the returned data. By default, 1.
+    :param page_number: Optional. Page number to be included with the returned data.
+                        By default, 1.
 
     :return: Found instances of the word and their coordinates in image.
              A list of dictionaries, each dictionary consisting of: {"text": found text, "left": left coordinates (X),
@@ -134,7 +135,8 @@ def _click_coordinates(data_list, element_index=0):
                       "left": left coordinates (X), "top": top coordinates (Y), "width": text width, "height": text
                       height, "page": page number (Optional)}
     :type data_list: list
-    :param element_index: Optional. Index of the data element. By default, 0 (zero; first element).
+    :param element_index: Optional. Index of the data element.
+                          By default, 0 (zero; first element).
     :type element_index: int
     """
     # Element in 'data_list' consists of: (text, left coordinates (X), top coordinates (Y), text width, text height)
