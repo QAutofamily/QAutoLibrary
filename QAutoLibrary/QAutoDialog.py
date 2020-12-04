@@ -4,7 +4,15 @@ from functools import partial
 dialog_y=None
 dialog_x=None
 class __Dialog(tkinter.Toplevel):
-    def __init__(self, message, buttons:list = None, choices: list = None, inputfield: bool = False):
+    def __init__(self, message, buttons:list = None, choices: list = None, **kwargs):
+        """
+
+        ,
+                 inputfield: bool = False, loginfield: bool = False
+        inputfield = False
+        loginfield = False
+        hiddenfield = False
+        """
         global dialog_x, dialog_y
         self.__root = tkinter.Tk()
 
@@ -32,6 +40,7 @@ class __Dialog(tkinter.Toplevel):
         self.__result = None
         self.__dropdownmenu=None
         self.__input_field = None
+        self.__password_field = None
 
         frame = tkinter.Frame(self)
         frame.grid(column=0, row=0)
@@ -39,38 +48,59 @@ class __Dialog(tkinter.Toplevel):
         frame.bind('<ButtonPress-1>', self.__start_move)
         frame.bind('<ButtonRelease-1>', self.__stop_move)
         frame.bind('<B1-Motion>', self.__move_dialog)
-        frame.bind('<Escape>', self.__close) #TODO: FIX
+        self.bind_all('<Escape>', self.__close)
 
-        sarakkeita = len(buttons) if buttons else 2
-        self.__riveja = round(len(message) / 25) if len(message)>25 else 1
+
+        self.__extra_rows = round(len(message) / 25) if len(message) > 25 else 1
+        self.__colspan = len(buttons) if buttons else 2
 
         if '\n' in message:
             num = message.find('\n')
             message = [ message[start:start+num]+'\n' for start in range(0, len(message), num) ]
             message = ''.join(message)
 
+        self.__current_row = 1
         messagelabel = tkinter.Label(frame, text=message, width=40)
-        messagelabel.grid(row=1,column=1,columnspan=sarakkeita,rowspan=self.__riveja)
-
+        messagelabel.grid(row=self.__current_row, column=1, columnspan=self.__colspan, rowspan=self.__extra_rows)
+        self.__current_row += self.__extra_rows +1
 
         if choices:
 
             self.__dropdown_selection = tkinter.StringVar(self.__root)
             self.__dropdownmenu = tkinter.OptionMenu(frame, self.__dropdown_selection, *choices)
-            self.__dropdownmenu.grid(row=2+self.__riveja,column=1, columnspan=len(buttons) if buttons else 2, sticky='ew')
+            self.__dropdownmenu.grid(row=self.__current_row, column=1, columnspan=self.__colspan, sticky='ew')
             self.__dropdown_selection.set(choices[0])
+            self.__current_row += 1
 
-        if inputfield:
-            # Not working
-            self.__input_field = tkinter.Entry(self.__root)
-            self.__input_field.grid(row=2+self.__riveja,column=1, sticky='ew')
+        if 'inputfield' in kwargs:
+            self.__input_field = tkinter.Entry(frame, show=None, font=('Arial', 14))
+            self.__input_field.grid(row=self.__current_row, column=1, columnspan=self.__colspan, sticky='ew')
+            self.__current_row += 1
 
+        if 'loginfield' in kwargs:
+            L1 = tkinter.Label(frame, text="Login")
+            L2 = tkinter.Label(frame, text="Password")
+            L1.grid(row=self.__current_row, column=1, sticky='w')
+            L2.grid(row=self.__current_row+1, column=1, sticky='w')
+            self.__input_field = tkinter.Entry(frame, show=None, font=('Arial', 14))
+            self.__input_field.grid(row=self.__current_row, column=2, columnspan=self.__colspan, sticky='ew')
+            self.__password_field = tkinter.Entry(frame, show='*', font=('Arial', 14))
+            self.__password_field.grid(row=self.__current_row+1, column=2, columnspan=self.__colspan, sticky='ew')
+            self.__current_row += 2
+
+
+        if 'hiddeninputfield' in kwargs:
+            L1 = tkinter.Label(frame, text="Input")
+            L1.grid(row=self.__current_row, column=1, sticky='w')
+            self.__input_field = tkinter.Entry(frame, show='*', font=('Arial', 14))
+            self.__input_field.grid(row=self.__current_row, column=2, columnspan=self.__colspan, sticky='ew')
+            self.__current_row += 1
 
         if buttons:
-            self.__button_factory(frame, buttons)
+            bindenter = 'field' in kwargs
+            self.__button_factory(frame, buttons, bindenter)
 
         frame.pack(padx=5, pady=5, expand=1)
-
 
     def label_callback(self, label: str):
         truelist = ['yes','ok','pass', 'continue']
@@ -80,24 +110,30 @@ class __Dialog(tkinter.Toplevel):
         elif label.lower() in falselist:
             self.__result = False
         else:
-            if self.__input_field:
+            if self.__password_field:
+                self.__result = self.__input_field.get(), self.__password_field.get()
+            elif self.__input_field:
                 self.__result = self.__input_field.get()
             else:
                 self.__result = label
 
         self.__root.destroy()
 
-    def __button_factory(self,frame, buttons):
+    def __button_factory(self,frame, buttons, bindenter: bool = False):
         count = 1
         for b in buttons:
             size = len(b)+2 if len(b)+2 > 10 else 10
             button = tkinter.Button(frame, text=b, width=size, command=partial(self.label_callback, b))
-            button.grid(row=3+self.__riveja,column=count)
-            count += 1
+            #if bindenter:
+            #    self.bind_all('<Enter>', lambda event
 
+            button.grid(row=self.__current_row, column=count)
+            count += 1
+        self.__current_row += 1
 
 
     def __close(self, event=None):
+        self.__result = False
         self.__root.destroy()
 
     def show(self):
@@ -166,15 +202,22 @@ class QAutoDropdownDialog(__Dialog):
 
 class QAutoUserinputDialog(__Dialog):
     def __init__(self, message: str, button_labels: list = None):
-        """
-        ---- NOT IMPLEMENTED ----
-        :param message:
-        :param button_labels:
-        """
-        raise NotImplemented('Not yet')
+
         if not button_labels :
             button_labels = ['Set', 'Cancel']
         super().__init__(message=message,buttons=button_labels,inputfield=True)
+
+class QAutoHiddeninputDialog(__Dialog):
+    def __init__(self, message: str, button_labels: list = None):
+        if not button_labels :
+            button_labels = ['Set', 'Cancel']
+        super().__init__(message=message,buttons=button_labels,hiddeninputfield=True)
+
+class QAutoLoginDialog(__Dialog):
+    def __init__(self, message: str, button_labels: list = None):
+        if not button_labels:
+            button_labels = ['Set', 'Cancel']
+        super().__init__(message=message, buttons=button_labels, loginfield=True)
 
 """
 Example functions
