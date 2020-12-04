@@ -127,7 +127,7 @@ class __Dialog(tkinter.Toplevel):
         dialog_x = self.winfo_x() + deltax
         dialog_y = self.winfo_y() + deltay
 
-        self.geometry(f"+{dialog_x}+{y}")
+        self.geometry(f"+{dialog_x}+{dialog_y}")
 
 class QAutoButtonDialog(__Dialog):
     def __init__(self, message: str, button_labels: list):
