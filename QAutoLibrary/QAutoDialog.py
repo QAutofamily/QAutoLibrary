@@ -1,14 +1,17 @@
 import tkinter
 from functools import partial
 
+# TODO wrap .show() somehow
+# TODO bind Enter to input dialogs
+# TODO limit width properly
+# TODO split message properly
+
 dialog_y=None
 dialog_x=None
 class __Dialog(tkinter.Toplevel):
     def __init__(self, message, buttons:list = None, choices: list = None, **kwargs):
         """
-
-        ,
-                 inputfield: bool = False, loginfield: bool = False
+        inputfield: bool = False, loginfield: bool = False
         inputfield = False
         loginfield = False
         hiddenfield = False
@@ -54,7 +57,19 @@ class __Dialog(tkinter.Toplevel):
         self.__extra_rows = round(len(message) / 25) if len(message) > 25 else 1
         self.__colspan = len(buttons) if buttons else 2
 
-        if '\n' in message:
+        # Hacky way to set max text length, because there's not enough hours in a workday
+        #
+        # TODO: Split the sentences with spaces, closest space below charlimit
+        # This is only a temporal solution to handle overlapping strings
+        if not '\n' in message:
+            if len(message) > 25:
+                num = message.find(' ',20)
+                period = message.find('.',20)+1
+                num = num if num < period else period
+
+                message =[ message[start:start+num]+'\n' for start in range(0, len(message), num) ]
+                message = ''.join(message)
+        else:
             num = message.find('\n')
             message = [ message[start:start+num]+'\n' for start in range(0, len(message), num) ]
             message = ''.join(message)
@@ -124,6 +139,7 @@ class __Dialog(tkinter.Toplevel):
         for b in buttons:
             size = len(b)+2 if len(b)+2 > 10 else 10
             button = tkinter.Button(frame, text=b, width=size, command=partial(self.label_callback, b))
+            #TODO: Enter for input dialogs
             #if bindenter:
             #    self.bind_all('<Enter>', lambda event
 
@@ -145,7 +161,9 @@ class __Dialog(tkinter.Toplevel):
         self.wait_window(self)
 
         if self.__dropdownmenu:
-            return self.__result, self.__dropdown_selection.get()
+            if self.__result:
+                return self.__dropdown_selection.get()
+
         return self.__result
 
     def __start_move(self, event):
@@ -221,7 +239,7 @@ class QAutoLoginDialog(__Dialog):
 
 """
 Example functions
-
+Going to get rid of these soon, because wrappers don't belong in a library file
 """
 def pause(message: str = "Resume by clicking Continue"):
     """
@@ -243,7 +261,7 @@ def dropdownmenu(message: str, list_of_choices: list, list_of_buttons: list=None
         list_of_buttons = ['Ok', 'Cancel']
     return QAutoDropdownDialog(message=message, button_labels=list_of_buttons, choices=list_of_choices).show()
 
-def buttons(message: str, list_of_buttons: list):
+def buttondialog(message: str, list_of_buttons: list):
     """
     Pauses the script and displays a message with a selection of buttons
     :param message: Message to display
