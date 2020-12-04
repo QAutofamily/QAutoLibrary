@@ -61,18 +61,17 @@ class __Dialog(tkinter.Toplevel):
         #
         # TODO: Split the sentences with spaces, closest space below charlimit
         # This is only a temporal solution to handle overlapping strings
-        if not '\n' in message:
-            if len(message) > 25:
-                num = message.find(' ',20)
-                period = message.find('.',20)+1
-                num = num if num < period else period
-
-                message =[ message[start:start+num]+'\n' for start in range(0, len(message), num) ]
-                message = ''.join(message)
-        else:
-            num = message.find('\n')
-            message = [ message[start:start+num]+'\n' for start in range(0, len(message), num) ]
-            message = ''.join(message)
+        message_limit = 40
+        
+        if len(message) > message_limit:
+            temp = []
+            num = message.rfind(' ',message_limit-10,message_limit)
+            while len(message) > message_limit:
+                temp.append(message[0:num] + '\n')
+                message = message[num:]
+                num = message.rfind(' ', message_limit-10, message_limit)
+            temp.append(message)
+            message = ''.join(temp)
 
         self.__current_row = 1
         messagelabel = tkinter.Label(frame, text=message, width=40)
