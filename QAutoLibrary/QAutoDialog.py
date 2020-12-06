@@ -62,7 +62,7 @@ class __Dialog(tkinter.Toplevel):
         # TODO: Split the sentences with spaces, closest space below charlimit
         # This is only a temporal solution to handle overlapping strings
         message_limit = 40
-        
+
         if len(message) > message_limit:
             temp = []
             num = message.rfind(' ',message_limit-10,message_limit)
@@ -124,12 +124,12 @@ class __Dialog(tkinter.Toplevel):
         elif label.lower() in falselist:
             self.__result = False
         else:
-            if self.__password_field:
-                self.__result = self.__input_field.get(), self.__password_field.get()
-            elif self.__input_field:
-                self.__result = self.__input_field.get()
-            else:
-                self.__result = label
+            self.__result = label
+
+        if self.__password_field and label.lower() not in falselist:
+            self.__result = self.__input_field.get(), self.__password_field.get()
+        elif self.__input_field and label.lower() not in falselist:
+            self.__result = self.__input_field.get()
 
         self.__root.destroy()
 
@@ -236,10 +236,12 @@ class QAutoLoginDialog(__Dialog):
             button_labels = ['Set', 'Cancel']
         super().__init__(message=message, buttons=button_labels, loginfield=True)
 
+
 """
-Example functions
-Going to get rid of these soon, because wrappers don't belong in a library file
+Keyword functions for robots
 """
+
+
 def pause(message: str = "Resume by clicking Continue"):
     """
     Pauses the script until user clicks continue
@@ -248,7 +250,8 @@ def pause(message: str = "Resume by clicking Continue"):
     """
     return QAutoButtonDialog(message=message, button_labels=['Continue', 'Stop']).show()
 
-def dropdownmenu(message: str, list_of_choices: list, list_of_buttons: list=None):
+
+def dropdown_dialog(message: str, list_of_choices: list, buttons: list = None):
     """
     Pauses the script and displays a message, with a dropdown list of choices for the user
     :param message: Message to display
@@ -256,37 +259,45 @@ def dropdownmenu(message: str, list_of_choices: list, list_of_buttons: list=None
     :param list_of_buttons: List of buttons, defaults to Ok,Cancel
     :return: QAutoDropdownDialog, which returns tuple of (button value, str chosen)
     """
-    if not list_of_buttons:
-        list_of_buttons = ['Ok', 'Cancel']
-    return QAutoDropdownDialog(message=message, button_labels=list_of_buttons, choices=list_of_choices).show()
+    if not buttons:
+        buttons = ['Ok', 'Cancel']
+    return QAutoDropdownDialog(message=message, button_labels=buttons, choices=list_of_choices).show()
 
-def buttondialog(message: str, list_of_buttons: list):
+
+def button_dialog(message: str, buttons: list = None):
     """
     Pauses the script and displays a message with a selection of buttons
     :param message: Message to display
     :param list_of_buttons: List of buttons in string format
     :return: QAutoButtonDialog, which returns str or boolean, based on button
     """
-    return QAutoButtonDialog(message=message, button_labels=list_of_buttons).show()
+    if not buttons:
+        buttons = ['Ok', 'Cancel']
+    return QAutoButtonDialog(message=message, button_labels=buttons).show()
 
-'''
 
-# Another example function that displays an use case for a possible choice between step-by-step execution,
-# a continuous execution or stopping the execution
+def userinput_dialog(message: str, buttons: list = None):
+    """
+    Dialog with a user input field
+    """
+    if not buttons:
+        buttons = ['Ok', 'Cancel']
+    return QAutoUserinputDialog(message, buttons).show()
 
-def multibutton():
-    state = None
-    napit = [
-        'Continue',
-        'Stop',
-        'Continue without pause'
-    ]
-    for i in range(0, 10):
-        if not state:
-            retval = QAutoButtonDialog('Select one of the options:\n', napit)
-            if retval == 'Stop':
-                break
-            elif retval == 'Continue without pause':
-                state = True
-        print('Round ->', i)
-'''
+
+def hiddeninput_dialog(message: str, buttons: list = None):
+    """
+    Dialog with a hidden input field
+    """
+    if not buttons:
+        buttons = ['Ok', 'Cancel']
+    return QAutoHiddeninputDialog(message, buttons).show()
+
+
+def login_dialog(message: str, buttons: list = None):
+    """
+    Dialog with a Username input field and Password hidden input field
+    """
+    if not buttons:
+        buttons = ['Ok', 'Cancel']
+    return QAutoLoginDialog(message, buttons).show()
