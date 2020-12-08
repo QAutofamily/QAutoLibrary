@@ -481,6 +481,12 @@ class CommonMethods(object):
 
     def _click_element(self, element, to_print=True):
         web_element = self.find_element_if_not_webelement(element)
+
+        # Sometimes checkboxes are behind label etc. so they appear as 'not visible' to webdriver. They can still often be clicked with javascript.
+        if web_element.tag_name == "input" and web_element.get_attribute('type') == "checkbox":
+            if self.click_checkbox_with_javascript(element):
+                return True
+
         if not self.is_visible(web_element):
             DebugLog.log(f"* Element '{element}' is not visible!")
             return False
@@ -511,6 +517,24 @@ class CommonMethods(object):
         if to_print:
             DebugLog.log(printout)
         return True
+
+    def click_checkbox_with_javascript(self, element):
+        if element.locator[0] == "id":
+            js_element = f"document.getElementById('{element.locator[1]}')"
+        elif element.locator[0] == "xpath":
+            xpath = element.locator[1].replace("'", "\"")
+            js_element = f"""document.evaluate('{xpath}', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue"""
+        else:
+            return False
+
+        # Check if checkbox state changed with javascript click
+        before = self.execute_javascript(f"return {js_element}.checked")
+        self.execute_javascript(f"{js_element}.click()")
+        after = self.execute_javascript(f"return {js_element}.checked")
+
+        if before != after:
+            DebugLog.log("Javascript Checkbox click")
+            return True
 
     def double_click_element(self, element, to_print=True):
         """
