@@ -36,6 +36,7 @@ from pytesseract import Output
 #      _validate_file()
 #      _click_coordinates()
 #  Main functions:
+#      get_file_data()
 #      click_word()
 #      find_words()
 #      find_coordinates()
@@ -56,8 +57,7 @@ def _get_word_coordinates_from_data(word, image_data, page_number=1):
     :param word: Required. The specified word.
     :param image_data: Required. Given image data, such as data retrieved by pytesseract.
                        Must be a dictionary of lists.
-    :param page_number: Optional. Page number to be included with the returned data.
-                        By default, 1.
+    :param page_number: Optional. Page number to be included with the returned data. By default, 1.
 
     :return: Found instances of the word and their coordinates in image.
              A list of dictionaries, each dictionary consisting of: {"text": found text, "left": left coordinates (X),
@@ -111,8 +111,7 @@ def _validate_file(file_path, output_path):
     each page into its own image file. Returns image(s). Internal function.
 
     :param file_path: Required. Image or PDF file path.
-    :param output_path: Output directory for image files converted from the PDF file. Not required if processing
-                        image files.
+    :param output_path: Output directory for image files converted from the PDF file. Not required if processing image files.
                         By default, current project directory.
 
     :return: A list of image files.
@@ -137,8 +136,7 @@ def _click_coordinates(data_list, element_index=0):
                       "left": left coordinates (X), "top": top coordinates (Y), "width": text width, "height": text
                       height, "page": page number (Optional)}
     :type data_list: list
-    :param element_index: Optional. Index of the data element.
-                          By default, 0 (zero; first element).
+    :param element_index: Optional. Index of the data element. By default, 0 (zero; first element).
     :type element_index: int
     """
     # Element in 'data_list' consists of: (text, left coordinates (X), top coordinates (Y), text width, text height)
@@ -149,6 +147,47 @@ def _click_coordinates(data_list, element_index=0):
 
 
 # MAIN FUNCTIONS:
+def get_file_data(file_path, output_path="./"):
+    """
+    **Returns OCR-data found in the specified file.** Able to process '.jpg',
+    '.jpeg', '.png', and '.pdf' files.
+
+    :param file_path: Required. Image or PDF file path. Can be absolute or relative to the current project directory.
+    :type file_path: str
+    :param output_path: Optional. Output directory for image files converted from the PDF file. Provided directory path MUST pre-exist!
+                        By default, current project directory.
+    :type output_path: str
+
+    :return: OCR-data found by pytesseract. List of images, if the given file was '.pdf' and contained multiple pages.
+             Within this list, there are dictionaries which contain lists for each found text instance.
+    :rtype: list
+
+    -------------
+    :Example:
+        | *Returns the found OCR-data from file ('image_file.png').*
+        | ``get_file_data("Python", "image_file.png")``
+        | *Returns the found OCR-data from file located in folder
+          ('project_files') in the project directory. Converted images are saved to folder ('output_folder') in the
+          project directory.*
+        | ``get_file_data("./project_files/pdf_file.pdf", "./output_folder")``
+        | *Data usage:*
+        | ``data = pythonocr.get_file_data(...)``
+        | ``data[<image>][<dictionary>][<index>]``
+        | *Access first image's second recognized text's 'text'-data.*
+        | ``data[0]["text"][1]``
+        | *Access third image's first recognized text's X-coordinate data ('left').*
+        | ``data[2]["left"][0]``
+    """
+    image_list = _validate_file(file_path, output_path)
+    results = []
+
+    for image in image_list:
+        image_data = pytesseract.image_to_data(image, lang="eng+fin", output_type=Output.DICT)
+
+        results.append(image_data)
+    return results
+
+
 def click_word(word, save_screenshot_as="", index=-1):
     """
     **Searches for a specified word on screen and clicks the word's location.** Takes a screenshot using pyautogui
@@ -168,8 +207,7 @@ def click_word(word, save_screenshot_as="", index=-1):
                                By default, or if empty, screenshot is not saved.
     :type save_screenshot_as: str
     :param index: Optional. Index of a specific found word. First found instance of the word is at position 0 (zero).
-                  By default, or if less than 0, no instance will be chosen and none of the multiple found words will
-                  be clicked.
+                  By default, or if less than 0, no instance will be chosen and none of the multiple found words will be clicked.
     :type index: int
 
     -------------
@@ -320,48 +358,6 @@ def find_coordinates(word, file_path, output_path="./"):
         results.extend(_get_word_coordinates_from_data(word, image_data, page_number))
         page_number += 1
     return results
-
-
-def get_file_data(file_path, output_path="./"):
-    """
-    **Returns OCR-data found in the specified file.** Able to process '.jpg',
-    '.jpeg', '.png', and '.pdf' files.
-
-    :param file_path: Required. Image or PDF file path. Can be absolute or relative to the current project directory.
-    :type file_path: str
-    :param output_path: Optional. Output directory for image files converted from the PDF file. Provided directory
-                        path MUST pre-exist!
-                        By default, current project directory.
-    :type output_path: str
-
-    :return: OCR-data found by pytesseract. List of images, if the given file was '.pdf' and contained multiple pages. Within this list, there are dictionaries which contain lists for each found text instance.
-    :rtype: list
-
-    -------------
-    :Example:
-        | *Returns the found OCR-data from file ('image_file.png').*
-        | ``get_file_data("Python", "image_file.png")``
-        | *Returns the found OCR-data from file located in folder
-          ('project_files') in the project directory. Converted images are saved to folder ('output_folder') in the
-          project directory.*
-        | ``get_file_data("./project_files/pdf_file.pdf", "./output_folder")``
-        | *Data usage:*
-        | ``data = pythonocr.get_file_data(...)``
-        | ``data[<image>][<dictionary>][<index>]``
-        | *Access first image's second recognized text's 'text'-data.*
-        | ``data[0]["text"][1]``
-        | *Access third image's first recognized text's X-coordinate data ('left').*
-        | ``data[2]["left"][0]``
-    """
-    image_list = _validate_file(file_path, output_path)
-    results = []
-
-    for image in image_list:
-        image_data = pytesseract.image_to_data(image, lang="eng+fin", output_type=Output.DICT)
-
-        results.append(image_data)
-    return results
-
 
 
 def verify_word(word, image_path):
