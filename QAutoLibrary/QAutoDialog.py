@@ -19,6 +19,7 @@ class __Dialog(tkinter.Toplevel):
         global dialog_x, dialog_y
         self.__root = tkinter.Tk()
 
+        #TODO: Icon to pip package
         # Icon won't work with borderless, it needs to be set in a column.
         #self.icon = tkinter.PhotoImage('qautorpa.ico')
         #self.__root.wm_iconbitmap(True, self.icon)
@@ -36,8 +37,10 @@ class __Dialog(tkinter.Toplevel):
             dialog_x = int(w/2)
         self.geometry(f'+{dialog_x}+{dialog_y}')
 
+        #TODO: better grip before
         #Borderless, no icon
-        self.overrideredirect(1)
+        #self.overrideredirect(1)
+
         self.attributes("-topmost", 1)
 
         self.__result = None
@@ -87,7 +90,7 @@ class __Dialog(tkinter.Toplevel):
             self.__current_row += 1
 
         if 'inputfield' in kwargs:
-            self.__input_field = tkinter.Entry(frame, show=None, font=('Arial', 14))
+            self.__input_field = tkinter.Entry(frame, show=None, font=('Arial', 10))
             self.__input_field.grid(row=self.__current_row, column=1, columnspan=self.__colspan, sticky='ew')
             self.__current_row += 1
 
@@ -142,7 +145,7 @@ class __Dialog(tkinter.Toplevel):
             #if bindenter:
             #    self.bind_all('<Enter>', lambda event
 
-            button.grid(row=self.__current_row, column=count)
+            button.grid(row=self.__current_row, column=count,pady=7)
             count += 1
         self.__current_row += 1
 
