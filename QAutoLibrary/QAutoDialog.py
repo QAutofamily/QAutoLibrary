@@ -259,7 +259,7 @@ def dropdown_dialog(message: str, list_of_choices: list, buttons: list = None):
     Pauses the script and displays a message, with a dropdown list of choices for the user
     :param message: Message to display
     :param list_of_choices: List of choices in string format
-    :param list_of_buttons: List of buttons, defaults to Ok,Cancel
+    :param buttons: List of buttons, defaults to Ok,Cancel
     :return: QAutoDropdownDialog, which returns tuple of (button value, str chosen)
     """
     if not buttons:
@@ -271,7 +271,7 @@ def button_dialog(message: str, buttons: list = None):
     """
     Pauses the script and displays a message with a selection of buttons
     :param message: Message to display
-    :param list_of_buttons: List of buttons in string format
+    :param buttons: List of buttons in string format
     :return: QAutoButtonDialog, which returns str or boolean, based on button
     """
     if not buttons:
