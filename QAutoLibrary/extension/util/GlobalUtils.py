@@ -19,6 +19,8 @@ from sys import platform as _platform
 
 
 # TODO: Pathlib. This is the way. -The Mandalorian, 2020
+from QAutoLibrary.FileOperations import get_file_lines_without_newlines, save_content_to_file
+
 
 def throw_error(error_msg):
     """
@@ -56,7 +58,13 @@ class GlobalUtils(object):
     PY = ".py"
     XML = ".xml"
     PNG = ".png"
+    CSV = ".csv"
+    PYC = ".pyc"
+    JSON = ".json"
+    JSON_ENC = ".json.enc"
     ROBOT = ".robot"
+    EXTENSION_LIST = [PY, PNG]
+
 
     # Testing script TESTDATA variable
     TESTDATA = "TESTDATA"
@@ -90,8 +98,6 @@ class GlobalUtils(object):
     DRAG_DROP_HELPER = os.path.join(JS_HELPERS_PATH, "drag_and_drop_helper.js")
     JQUERY_LOADER_HELPER = os.path.join(JS_HELPERS_PATH, "jquery_load_helper.js")
 
-    SCREENSHOTS_XML_FILE = "screenshots.xml"
-
     # QAutoLibrary testing project directory's
     PM_FOLDER_NAME = "pagemodel"
     TESTS_FOLDER_NAME = "tests"
@@ -101,7 +107,11 @@ class GlobalUtils(object):
     MEASUREMENTS_FOLDER_NAME = "measurements"
     COMMON_LIB_FOLDER_NAME = "common_lib"
 
-    TOOL_CACHE = "tool_cache"
+    if getattr(sys, 'frozen', False):
+        TOOL_CACHE_PATH = os.path.abspath(os.path.join(sys._MEIPASS, "tool_cache"))
+        TOOL_CACHE = os.path.abspath(os.path.join(sys._MEIPASS, "tool_cache"))
+    else:
+        TOOL_CACHE = "tool_cache"
     GECKODRIVER_LOG = os.path.join(TOOL_CACHE, "geckodriver.log")
     COMPARE_SCREENSHOT = os.path.join(TOOL_CACHE, "compare_screenshot.png")
     CURRENT_SCREENSHOT = os.path.join(TOOL_CACHE, "current_screenshot.png")
@@ -170,7 +180,26 @@ class GlobalUtils(object):
     WEBFRAMEWORK_PATH = os.path.abspath(os.path.join(QAUTOROBOT_PATH, 'webframework'))
     RESOURCES_PATH = os.path.abspath(os.path.join(WEBFRAMEWORK_PATH, "resources"))
 
+
+    USED_DIRS_FILE = "working_dir.cfg"
+
     GLOBAL_SETTINGS_FILE = "global_settings.xml"
+    SCREENSHOTS_XML_FILE = "screenshots.xml"
+    CANVAS_ELEMENTS_FILE = "canvas_elements.xml"
+    AUTOGEN_PARAMETERS = "autogen_parameters.xml"
+
+    URLS_FILE = "saved_urls.txt"
+    TEST_SET_SETUP_AND_TEARDOWN_METHODS = ["setUp", "tearDown", "tearDownTestSet", "setUpTestSet"]
+
+    home_dir = os.path.expanduser("~")
+    if os.path.isdir(os.path.join(home_dir, "qautomate")):
+        home_dir = os.path.join(home_dir, "qautomate")
+
+    TECHILA_SETTINGS_FILE = os.path.join(home_dir, "techila.json")
+
+    GLOBAL_SETTINGS_FILE = "global_settings.xml"
+
+
 
     SUPPORT_EMAIL = "support@qautomate.fi"
     TERMS_PAGE_URL = "https://qautomate.fi/qautomate-privacy-policy"
@@ -180,7 +209,6 @@ class GlobalUtils(object):
     TEAM_LICENSE_PAGE = "teamLicense.html"
     UPDATE_INFO_PAGE = "getLatestQautorobotUpdate.html"
     PURCHASE_PAGE_URL = "https://qautomate.fi/purchase/"
-    TOOL_HOME_PAGE = "file:///" + os.path.join(RESOURCES_PATH, "startpage", "start.html")
 
     _ICON16 = os.path.join(RESOURCES_PATH, "icons", "icon_16x16.png")
     _ICON32 = os.path.join(RESOURCES_PATH, "icons", "icon_32x32.png")
@@ -206,13 +234,41 @@ class GlobalUtils(object):
     # Will take a while to find them all, since they are a bit rare.
     if getattr(sys, 'frozen', False):
         TOOL_CACHE_PATH = os.path.abspath(os.path.join(sys._MEIPASS, "tool_cache"))
+        TOOL_CACHE = os.path.abspath(os.path.join(sys._MEIPASS, "tool_cache"))
+        FLOW_EXTENSION_PATH = os.path.abspath(os.path.join(sys._MEIPASS, "src", "extension"))
         _LICENSE_TEAM_FILE = os.path.join(os.getcwd(), "alive_host")
+        _ICON16 = os.path.join(sys._MEIPASS, 'webframework', 'resources', "icons", "icon_16x16.png")
+        _ICON32 = os.path.join(sys._MEIPASS, 'webframework', 'resources', "icons", "icon_32x32.png")
+        _ICON48 = os.path.join(sys._MEIPASS, 'webframework', 'resources', "icons", "icon_48x48.png")
+        _ICON128 = os.path.join(sys._MEIPASS, 'webframework', 'resources', "icons", "icon_128x128.png")
+        _ICON256 = os.path.join(sys._MEIPASS, 'webframework', 'resources', "icons", "icon_256x256.png")
+
+        _BROWSER_CONFIG_FILE_FRAMEWORK = os.path.join(os.getcwd(), "config", "browser_config.xml")
+        _EDITOR_FONT_SETTINGS = os.path.join(os.getcwd(), "config", "editor_font_settings.ini")
+        TOOL_HOME_PAGE = "file:///" + os.path.join(sys._MEIPASS, 'webframework','resources', "startpage", "start.html")
     else:
+
+        _BROWSER_CONFIG_FILE_FRAMEWORK = os.path.join(WEBFRAMEWORK_PATH, "config", "browser_config.xml")
+        _EDITOR_FONT_SETTINGS = os.path.join(WEBFRAMEWORK_PATH, "config", "editor_font_settings.ini")
         _LICENSE_TEAM_FILE = os.path.join(RESOURCES_PATH, "alive_host")
         TOOL_CACHE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "tool_cache"))
+        TOOL_HOME_PAGE = "file:///" + os.path.join(RESOURCES_PATH, "startpage", "start.html")
+
+    REPORT_DOCUMENTATION_INDEX = os.path.join("test_reports", "report.html")
+
+    COMPARE_SCREENSHOT = os.path.join(TOOL_CACHE, "compare_screenshot.png")
+    CURRENT_SCREENSHOT = os.path.join(TOOL_CACHE, "current_screenshot.png")
+    SCREENSHOT = os.path.join(TOOL_CACHE, "screenshot.png")
+    TEMP_FRAME_SCREENSHOT = os.path.join(TOOL_CACHE, "temp_frame_screenshot.png")
 
     _BY_TYPES = ['id', 'link_text', 'class_name', 'css_selector', 'xpath']
 
+    USED_TEST_SET_FILES = os.path.join(TOOL_CACHE, "test_set.txt")
+    USED_TEST_FLOW_FILES = os.path.join(TOOL_CACHE, "test_flow.txt")
+    USED_PAGEMODEL_FILES = os.path.join(TOOL_CACHE, "pagemodel.txt")
+    TRACEBACK_FILE = os.path.join(TOOL_CACHE, "traceback.txt")
+    LATEST_WORKING_DIR = os.path.join(TOOL_CACHE, "latest_working_dir.zip")
+    GECKODRIVER_LOG = os.path.join(TOOL_CACHE, "geckodriver.log")
     # data
     _DATA_FOLDER_NAME = "data"
     _COMMON_PARAMETERS_FOLDER_NAME = os.path.join(_DATA_FOLDER_NAME, "common_parameters")
@@ -385,6 +441,32 @@ class GlobalUtils(object):
     @classmethod
     def get_root_model_method_name(cls):
         return cls._ROOT_MODEL_METHOD_NAME
+
+    @classmethod
+    def update_used_working_dir(cls, used_dir_file, used_dir):
+        # save_content_to_file(used_dir, used_dir_file)
+        remembered_dirs = 10
+        dir_list = []
+        update_needed = True
+        try:
+            dir_list = [x for x in get_file_lines_without_newlines(used_dir_file)
+                        if os.path.isdir(os.path.join(x, cls.PM_FOLDER_NAME))]
+            if used_dir in dir_list:
+                if dir_list.index(used_dir) > 0:
+                    dir_list.remove(used_dir)
+                    dir_list.insert(0, used_dir)
+                else:
+                    update_needed = False
+            elif len(dir_list) == remembered_dirs:
+                dir_list.pop()
+                dir_list.insert(0, used_dir)
+            else:
+                dir_list.insert(0, used_dir)
+        except:
+            dir_list.insert(0, used_dir)
+
+        if update_needed:
+            save_content_to_file("\n".join(dir_list), used_dir_file)
     ###############
     # /QAutoRobot #
     ###############
