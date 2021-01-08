@@ -1,3 +1,4 @@
+import os
 import tkinter
 from functools import partial
 
@@ -21,8 +22,8 @@ class __Dialog(tkinter.Toplevel):
 
         #TODO: Icon to pip package
         # Icon won't work with borderless, it needs to be set in a column.
-        #self.icon = tkinter.PhotoImage('qautorpa.ico')
-        #self.__root.wm_iconbitmap(True, self.icon)
+        self.icon = tkinter.PhotoImage(os.path.join(os.path.dirname(__file__), 'qautorpa.ico'))
+        self.__root.wm_iconbitmap(True, self.icon)
         self.__root.withdraw()
 
         tkinter.Toplevel.__init__(self, self.__root)
