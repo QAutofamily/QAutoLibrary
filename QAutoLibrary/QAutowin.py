@@ -182,8 +182,6 @@ class QAutowin(object):
             | ${window}=  Find window  title=File
             | ${var}=   Call Method    ${window}    click_input
         """
-        print("TEST PRINT: QAutowin.py has been modified.")
-        print("TEST PRINT; AppData/Roaming: " + os.getenv('APPDATA'))
         windows = self.find_connected_app_windows()
         timeout = 10
         if "timeout" in kwargs:
@@ -241,10 +239,28 @@ class QAutowin(object):
         if 'x' in kwargs and 'y' in kwargs:
             logger.info('Clicking at coordinates %s.' % kwargs)
             self.Click_Coordinates(**kwargs)
+        else:
+            window = self.Find_Window(**kwargs)
+            logger.info('Clicking element %s.' % kwargs)
+            window.click_input()
 
-        window = self.Find_Window(**kwargs)
-        logger.info('Clicking element %s.' % kwargs)
-        window.click_input()
+    @keyword(name='Double Click Element')
+    def Double_Click_Element(self, **kwargs):
+        """
+        **Clicks at element**
+
+        :kwargs: auto_id, class_name, class_name_re, title, title_re, control_type
+        --------------
+        :Example:
+            | Click element  title=File
+        """
+        if 'x' in kwargs and 'y' in kwargs:
+            logger.info('Double clicking at coordinates %s.' % kwargs)
+            self.Double_Click_Coordinates(**kwargs)
+        else:
+            window = self.Find_Window(**kwargs)
+            logger.info('Double clicking element %s.' % kwargs)
+            window.click_input(double=True)
 
     @keyword(name='Send Keywords')  # Send input data. Useful for text fields, that "Input text" does not recognize. Also, you can send keyboard actions, for example like ~ for Enter
     # https://pywinauto.readthedocs.io/en/latest/code/pywinauto.keyboard.html
@@ -294,6 +310,27 @@ class QAutowin(object):
         window.maximize()
         time.sleep(1)
         window.click_input(coords=((int(x)), (int(y))))
+
+    @keyword(name='Double Click Coordinates')
+    def Double_Click_Coordinates(self, **kwargs):
+        """
+        **Clicks at element using coordinates**
+
+        :Example:
+            | Click element  x=500    y=300
+        """
+        window = self.find_connected_app_window()
+        for kwarg in kwargs.keys():
+            # application_title = (apptitle)
+            # "File"
+            if kwarg == "x":
+                x = kwargs["x"]
+            if kwarg == "y":
+                y = kwargs["y"]
+
+        window.maximize()
+        time.sleep(1)
+        window.click_input(double=True, coords=((int(x)), (int(y))))
 
     @keyword(name="Verify Text")
     def Verify_text(self, user_input, **kwargs):
