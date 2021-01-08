@@ -1,11 +1,6 @@
-import os
 import tkinter
 from functools import partial
-
-# TODO wrap .show() somehow
-# TODO bind Enter to input dialogs
-# TODO limit width properly
-# TODO split message properly
+from pathlib import Path
 
 dialog_y=None
 dialog_x=None
@@ -20,9 +15,8 @@ class __Dialog(tkinter.Toplevel):
         global dialog_x, dialog_y
         self.__root = tkinter.Tk()
 
-        #TODO: Icon to pip package
-        # Icon won't work with borderless, it needs to be set in a column.
-        self.icon = tkinter.PhotoImage(os.path.join(os.path.dirname(__file__), 'qautorpa.ico'))
+        icon = Path(__file__).parent / 'qautorpa.ico'
+        self.icon = tkinter.PhotoImage(str(icon))
         self.__root.wm_iconbitmap(True, self.icon)
         self.__root.withdraw()
 
@@ -30,6 +24,7 @@ class __Dialog(tkinter.Toplevel):
 
         self.title("QAutomate")
 
+        # TODO dialog limit width properly
         self.minsize(250,50)
         w = self.__root.winfo_screenwidth()
         h = self.__root.winfo_screenheight()
@@ -38,8 +33,9 @@ class __Dialog(tkinter.Toplevel):
             dialog_x = int(w/2)
         self.geometry(f'+{dialog_x}+{dialog_y}')
 
-        #TODO: better grip before
-        #Borderless, no icon
+        # TODO: better grip before
+        #   To enable borderless remove dash
+        #   Add icon cell and proper dragarea before enabling. (frame.grid?)
         #self.overrideredirect(1)
 
         self.attributes("-topmost", 1)
@@ -62,8 +58,8 @@ class __Dialog(tkinter.Toplevel):
         self.__colspan = len(buttons) if buttons else 2
 
         # Hacky way to set max text length, because there's not enough hours in a workday
-        #
-        # TODO: Split the sentences with spaces, closest space below charlimit
+        # TODO: split messages properly
+        # TODO: Split the sentences with spaces, closest space below charlimit/calculate width..?
         # This is only a temporal solution to handle overlapping strings
         message_limit = 40
 
@@ -118,6 +114,7 @@ class __Dialog(tkinter.Toplevel):
             bindenter = 'field' in kwargs
             self.__button_factory(frame, buttons, bindenter)
 
+
         frame.pack(padx=5, pady=5, expand=1)
 
     def label_callback(self, label: str):
@@ -142,7 +139,7 @@ class __Dialog(tkinter.Toplevel):
         for b in buttons:
             size = len(b)+2 if len(b)+2 > 10 else 10
             button = tkinter.Button(frame, text=b, width=size, command=partial(self.label_callback, b))
-            #TODO: Enter for input dialogs
+            # TODO bind Enter to input dialogs
             #if bindenter:
             #    self.bind_all('<Enter>', lambda event
 
@@ -155,6 +152,7 @@ class __Dialog(tkinter.Toplevel):
         self.__result = False
         self.__root.destroy()
 
+    # TODO wrap .show() somehow, so Dialogs don't need to be started after construction.
     def show(self):
         '''
         # for debugging
