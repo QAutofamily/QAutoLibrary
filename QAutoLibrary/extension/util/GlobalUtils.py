@@ -74,7 +74,7 @@ class GlobalUtils(object):
 
     # QAutoLibrary project directory paths
     SITE_PACKAGES_QAUTOLIBRARY_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-    WEBDRIVERS_PATH = os.path.join(SITE_PACKAGES_QAUTOLIBRARY_PATH, "webdrivers")
+    WEBDRIVERS_PATH = os.path.join(Path.home(), "webdrivers") #os.path.join(SITE_PACKAGES_QAUTOLIBRARY_PATH, "webdrivers")
 
     QAUTOLIBRARY_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     CONFIG_PATH = os.path.join(QAUTOLIBRARY_PATH, "config")
@@ -467,6 +467,50 @@ class GlobalUtils(object):
 
         if update_needed:
             save_content_to_file("\n".join(dir_list), used_dir_file)
+
+    @staticmethod
+    def event_is_ctrl(event):
+        return event.ControlDown()
+
+    @staticmethod
+    def event_is_ctrl_shift(event):
+        return event.ControlDown() and event.ShiftDown()
+
+    @staticmethod
+    def event_is_ctrl_w(event):
+        return ((event.ControlDown() or event.CmdDown()) and event.GetUnicodeKey() == 87)
+
+    @staticmethod
+    def event_is_ctrl_space(event):
+        return ((event.ControlDown() or event.CmdDown()) and event.GetUnicodeKey() == 32)
+
+    @staticmethod
+    def event_is_ctrl_f(event):
+        return ((event.ControlDown() or event.CmdDown()) and event.GetUnicodeKey() == 70)
+
+    @staticmethod
+    def event_is_ctrl_q(event):
+        return ((event.ControlDown() or event.CmdDown()) and event.GetUnicodeKey() == 81)
+
+    @staticmethod
+    def event_is_ctrl_e(event):
+        return ((event.ControlDown() or event.CmdDown()) and event.GetUnicodeKey() == 69)
+
+    @staticmethod
+    def event_is_ctrl_r(event):
+        return ((event.ControlDown() or event.CmdDown()) and event.GetUnicodeKey() == 82)
+
+    @staticmethod
+    def event_is_ctrl_s(event):
+        return ((event.ControlDown() or event.CmdDown()) and event.GetUnicodeKey() == 83)
+
+    @classmethod
+    def is_id_in_bloclist(cls, _id):
+        for id_block in cls._ID_BLOCK_LIST:
+            if id_block in _id:
+                # id is in blocklist
+                return True
+        return False
     ###############
     # /QAutoRobot #
     ###############
