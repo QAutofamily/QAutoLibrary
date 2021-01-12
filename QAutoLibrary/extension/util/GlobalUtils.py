@@ -174,11 +174,16 @@ class GlobalUtils(object):
     ############################
     # QAutoRobot functionality #
     ############################
-    QAUTOROBOT_PATH = os.getcwd()
     COMMON_RESOURCES_FILENAME = "common_resources.robot"
     COMMON_RESOURCES_PATH = Path(os.getcwd()) / "resources" / COMMON_RESOURCES_FILENAME
-    WEBFRAMEWORK_PATH = os.path.abspath(os.path.join(QAUTOROBOT_PATH, 'webframework'))
-    RESOURCES_PATH = os.path.abspath(os.path.join(WEBFRAMEWORK_PATH, "resources"))
+    if getattr(sys, 'frozen', False):
+        QAUTOROBOT_PATH = os.getcwd()
+        WEBFRAMEWORK_PATH = os.path.abspath(os.path.join(QAUTOROBOT_PATH, 'webframework'))
+        RESOURCES_PATH = os.path.abspath(os.path.join(WEBFRAMEWORK_PATH, "resources"))
+    else:
+        QAUTOROBOT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        WEBFRAMEWORK_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        RESOURCES_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "resources"))
 
 
     USED_DIRS_FILE = "working_dir.cfg"
@@ -421,6 +426,24 @@ class GlobalUtils(object):
         </script>
     </body>
     </html>"""
+
+    @classmethod
+    def reload_paths(cls):
+        """
+        Reloads resource paths based on valued set in RESOURCES_PATH and WEBFRAMEWORK_PATH
+
+        Required when running utilities in non frozen state.
+        """
+        cls._ICON16 = str(Path(cls.RESOURCES_PATH) / "icons" / "icon_16x16.png")
+        cls._ICON32 = str(Path(cls.RESOURCES_PATH) / "icons" / "icon_32x32.png")
+        cls._ICON48 = str(Path(cls.RESOURCES_PATH) / "icons" / "icon_48x48.png")
+        cls._ICON128 = str(Path(cls.RESOURCES_PATH) / "icons" / "icon_128x128.png")
+        cls._ICON256 = str(Path(cls.RESOURCES_PATH) / "icons" / "icon_256x256.png")
+        cls._BROWSER_CONFIG_FILE_FRAMEWORK = str(Path(cls.WEBFRAMEWORK_PATH) / "config" / "browser_config.xml")
+        cls._EDITOR_FONT_SETTINGS = str(Path(cls.WEBFRAMEWORK_PATH) / "config" / "editor_font_settings.ini")
+        cls._LICENSE_TEAM_FILE = str(Path(cls.RESOURCES_PATH) / "alive_host")
+        cls.TOOL_HOME_PAGE = "file:///" + str(Path(cls.RESOURCES_PATH) / "startpage" / "start.html")
+        cls.DOCUMENTATION_TEMPLATE_PATH = str(Path(cls.RESOURCES_PATH) / "templates" / "documentation_template.md")
 
 
     # Returns path to license file (user directory)
