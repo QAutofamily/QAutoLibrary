@@ -1,9 +1,9 @@
-import setuptools
+from setuptools import setup, find_packages
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+setup(
     name="QAutoLibrary",
     version="0.0.4",
     author="QAutomate",
@@ -12,7 +12,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/QAutofamily/QAutoLibrary",
-    packages=setuptools.find_packages(),
+    packages=find_packages(),
     include_package_data=True,
     install_requires=[
         'selenium',
@@ -26,10 +26,12 @@ setuptools.setup(
         'tika'
     ],
     package_data={'QAutoLibrary.config': ['*.xml', '*.ini', '*.txt*']},
-    classifiers=(
+    license='Apache License 2.0',
+    classifiers=[
         "Programming Language :: Python :: 3.7",
-        "License :: OSI Approved :: Apache License 2.0",
+        "License :: OSI Approved :: Apache Software License", #"License :: OSI Approved :: Apache License 2.0" ei toimi
         "Operating System :: OS Independent",
-    ),
+    ],
+    python_requires='>=3.7',
     entry_points = {'console_scripts': ['WebDriverUpdater = QAutoLibrary.WebDriverUpdater.check_and_update_drivers:main']}
 )
