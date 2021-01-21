@@ -181,9 +181,9 @@ class GlobalUtils(object):
         WEBFRAMEWORK_PATH = os.path.abspath(os.path.join(QAUTOROBOT_PATH, 'webframework'))
         RESOURCES_PATH = os.path.abspath(os.path.join(WEBFRAMEWORK_PATH, "resources"))
     else:
-        QAUTOROBOT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-        WEBFRAMEWORK_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-        RESOURCES_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "resources"))
+        QAUTOROBOT_PATH = os.getcwd()
+        WEBFRAMEWORK_PATH = os.path.abspath(os.path.join(QAUTOROBOT_PATH, 'resources'))
+        RESOURCES_PATH = WEBFRAMEWORK_PATH
 
 
     USED_DIRS_FILE = "working_dir.cfg"
@@ -242,21 +242,16 @@ class GlobalUtils(object):
         TOOL_CACHE = os.path.abspath(os.path.join(sys._MEIPASS, "tool_cache"))
         FLOW_EXTENSION_PATH = os.path.abspath(os.path.join(sys._MEIPASS, "src", "extension"))
         _LICENSE_TEAM_FILE = os.path.join(os.getcwd(), "alive_host")
-        _ICON16 = os.path.join(sys._MEIPASS, 'webframework', 'resources', "icons", "icon_16x16.png")
-        _ICON32 = os.path.join(sys._MEIPASS, 'webframework', 'resources', "icons", "icon_32x32.png")
-        _ICON48 = os.path.join(sys._MEIPASS, 'webframework', 'resources', "icons", "icon_48x48.png")
-        _ICON128 = os.path.join(sys._MEIPASS, 'webframework', 'resources', "icons", "icon_128x128.png")
-        _ICON256 = os.path.join(sys._MEIPASS, 'webframework', 'resources', "icons", "icon_256x256.png")
 
         _BROWSER_CONFIG_FILE_FRAMEWORK = os.path.join(os.getcwd(), "config", "browser_config.xml")
         _EDITOR_FONT_SETTINGS = os.path.join(os.getcwd(), "config", "editor_font_settings.ini")
         TOOL_HOME_PAGE = "file:///" + os.path.join(sys._MEIPASS, 'webframework','resources', "startpage", "start.html")
     else:
-
+        FLOW_EXTENSION_PATH = os.path.abspath(os.path.join(QAUTOROBOT_PATH, 'src', 'extension'))
         _BROWSER_CONFIG_FILE_FRAMEWORK = os.path.join(WEBFRAMEWORK_PATH, "config", "browser_config.xml")
         _EDITOR_FONT_SETTINGS = os.path.join(WEBFRAMEWORK_PATH, "config", "editor_font_settings.ini")
         _LICENSE_TEAM_FILE = os.path.join(RESOURCES_PATH, "alive_host")
-        TOOL_CACHE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "tool_cache"))
+        TOOL_CACHE_PATH = os.path.abspath(os.path.join(QAUTOROBOT_PATH, 'tool_cache'))
         TOOL_HOME_PAGE = "file:///" + os.path.join(RESOURCES_PATH, "startpage", "start.html")
 
     REPORT_DOCUMENTATION_INDEX = os.path.join("test_reports", "report.html")
