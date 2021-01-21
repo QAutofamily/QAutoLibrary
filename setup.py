@@ -26,10 +26,9 @@ setup(
         'tika'
     ],
     package_data={'QAutoLibrary.config': ['*.xml', '*.ini', '*.txt*']},
-    license='Apache License 2.0',
+    license='Apache Software License 2.0',
     classifiers=[
-        "Programming Language :: Python :: 3.7",
-        "License :: OSI Approved :: Apache Software License", #"License :: OSI Approved :: Apache License 2.0" ei toimi
+        "Programming Language :: Python :: 3.7", # Add license as classifier once pypi fixes things...
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.7',
