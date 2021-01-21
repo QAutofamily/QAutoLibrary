@@ -178,8 +178,8 @@ class GlobalUtils(object):
     COMMON_RESOURCES_PATH = Path(os.getcwd()) / "resources" / COMMON_RESOURCES_FILENAME
     if getattr(sys, 'frozen', False):
         QAUTOROBOT_PATH = os.getcwd()
-        WEBFRAMEWORK_PATH = os.path.abspath(os.path.join(QAUTOROBOT_PATH, 'webframework'))
-        RESOURCES_PATH = os.path.abspath(os.path.join(WEBFRAMEWORK_PATH, "resources"))
+        WEBFRAMEWORK_PATH = os.path.abspath(os.path.join(QAUTOROBOT_PATH, 'resources'))
+        RESOURCES_PATH = WEBFRAMEWORK_PATH
     else:
         QAUTOROBOT_PATH = os.getcwd()
         WEBFRAMEWORK_PATH = os.path.abspath(os.path.join(QAUTOROBOT_PATH, 'resources'))
@@ -238,14 +238,13 @@ class GlobalUtils(object):
     # TODO: These are not the only ones that need to be changed.
     # Will take a while to find them all, since they are a bit rare.
     if getattr(sys, 'frozen', False):
-        TOOL_CACHE_PATH = os.path.abspath(os.path.join(sys._MEIPASS, "tool_cache"))
-        TOOL_CACHE = os.path.abspath(os.path.join(sys._MEIPASS, "tool_cache"))
         FLOW_EXTENSION_PATH = os.path.abspath(os.path.join(sys._MEIPASS, "src", "extension"))
-        _LICENSE_TEAM_FILE = os.path.join(os.getcwd(), "alive_host")
-
         _BROWSER_CONFIG_FILE_FRAMEWORK = os.path.join(os.getcwd(), "config", "browser_config.xml")
         _EDITOR_FONT_SETTINGS = os.path.join(os.getcwd(), "config", "editor_font_settings.ini")
-        TOOL_HOME_PAGE = "file:///" + os.path.join(sys._MEIPASS, 'webframework','resources', "startpage", "start.html")
+        _LICENSE_TEAM_FILE = os.path.join(os.getcwd(), "alive_host")
+        TOOL_HOME_PAGE = "file:///" + os.path.join(RESOURCES_PATH, "startpage", "start.html")
+        TOOL_CACHE_PATH = os.path.abspath(os.path.join(sys._MEIPASS, "tool_cache"))
+        TOOL_CACHE = os.path.abspath(os.path.join(sys._MEIPASS, "tool_cache"))
     else:
         FLOW_EXTENSION_PATH = os.path.abspath(os.path.join(QAUTOROBOT_PATH, 'src', 'extension'))
         _BROWSER_CONFIG_FILE_FRAMEWORK = os.path.join(WEBFRAMEWORK_PATH, "config", "browser_config.xml")
