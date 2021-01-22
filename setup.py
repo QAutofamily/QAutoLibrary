@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="QAutoLibrary",
-    version="0.0.4a",
+    version="0.0.5",
     author="QAutomate",
     author_email="contact@qautomate.fi",
     description="QAutofamily testing framework library",
@@ -28,8 +28,10 @@ setup(
     package_data={'QAutoLibrary.config': ['*.xml', '*.ini', '*.txt*']},
     license='Apache Software License 2.0',
     classifiers=[
-        "Programming Language :: Python :: 3.7", # Add license as classifier once pypi fixes things...
+        "Programming Language :: Python :: 3.7",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
+
     ],
     python_requires='>=3.7',
     entry_points = {'console_scripts': ['WebDriverUpdater = QAutoLibrary.WebDriverUpdater.check_and_update_drivers:main']}
