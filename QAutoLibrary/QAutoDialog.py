@@ -15,7 +15,7 @@ class __Dialog(tkinter.Toplevel):
         global dialog_x, dialog_y
         self.__root = tkinter.Tk()
 
-        icon = Path(__file__).parent / 'qautorpa.ico'
+        icon = Path(__file__).parent / 'qautomate.ico'
         self.icon = tkinter.PhotoImage(str(icon))
         self.__root.wm_iconbitmap(True, self.icon)
         self.__root.withdraw()

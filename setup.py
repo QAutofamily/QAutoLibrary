@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="QAutoLibrary",
-    version="0.0.5",
+    version="0.0.6",
     author="QAutomate",
     author_email="contact@qautomate.fi",
     description="QAutofamily testing framework library",
@@ -15,15 +15,15 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        'selenium',
-        'robotframework>=3.2.1',
-        'requests',
-        'Pillow',
-        'lxml',
-        'simplejson',
-        'pymongo',
-        'pycryptodome',
-        'tika'
+        'selenium==3.141.0',
+        'robotframework==3.2.1',
+        'requests==2.25.0',
+        'Pillow==7.2.0',
+        'lxml==4.3.2',
+        'simplejson==3.17.2',
+        'pymongo==3.9.0',
+        'pycryptodome==3.9.8',
+        'tika==1.24'
     ],
     package_data={'QAutoLibrary.config': ['*.xml', '*.ini', '*.txt*']},
     license='Apache Software License 2.0',
