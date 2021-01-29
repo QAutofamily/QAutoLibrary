@@ -1178,6 +1178,22 @@ class CommonMethods(object):
     def get_current_window_handle(self):
         return self.driver.current_window_handle
 
+    def open_remote_chrome_driver(self, port=9321):
+        """
+        Creates a driver to a remote debugging chrome instance
+
+        :param port: Port specified when Chrome instance was created.
+        """
+        from selenium import webdriver
+        chromeoptions = webdriver.ChromeOptions()
+        chromeoptions.experimental_options["debuggerAddress"] = f"127.0.0.1:{port}"
+        driver = webdriver.Chrome(chrome_options=chromeoptions)
+        self.driver_cache.register(driver)
+        selenium_library = BuiltIn().get_library_instance("SeleniumLibrary")
+        selenium_library.register_driver(driver, "default_gc")
+
+
+
     def open_browser(self, browser_name=None, url=None, alias=None, size=None):
         """
         **Open specified browser with url**
