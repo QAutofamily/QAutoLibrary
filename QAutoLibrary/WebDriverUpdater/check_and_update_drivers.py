@@ -1,3 +1,4 @@
+from pathlib import Path
 from sys import platform as _platform
 from lxml import html
 import platform
@@ -600,13 +601,18 @@ class BrowserDriverControl():
             self.download_operaDriver()
 
 if __name__ == '__main__':
+    driverpath = os.path.join(Path.home(), "webdrivers")
     driver_checker = BrowserDriverControl()
     #driver_checker.check_operating_system()
-    driver_checker.choose_driver_based_on_browser(args.path, args.browser)
+    #driver_checker.choose_driver_based_on_browser(args.path, args.browser)
+    driver_checker.choose_driver_based_on_browser(driverpath, args.browser)
 
 def main():
+
+    driverpath = os.path.join(Path.home(), "webdrivers")
     driver_checker = BrowserDriverControl()
-    driver_checker.choose_driver_based_on_browser(args.path, args.browser)
+    #driver_checker.choose_driver_based_on_browser(args.path, args.browser)
+    driver_checker.choose_driver_based_on_browser(driverpath, args.browser)
 
 
 

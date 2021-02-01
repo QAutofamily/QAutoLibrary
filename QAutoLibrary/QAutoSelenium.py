@@ -113,6 +113,7 @@ class CommonMethods(object):
         self.screenshot_parser = None
         self.last_element = None
         self.selenium_speed = 0
+        self.driver = None
 
     def set_speed(self, timeout):
         """
@@ -1174,6 +1175,25 @@ class CommonMethods(object):
         dom_count = self.execute_javascript("return document.getElementsByTagName('*').length;", log)
         return dom_count
 
+    def get_current_window_handle(self):
+        return self.driver.current_window_handle
+
+    def open_remote_chrome_driver(self, port=9321):
+        """
+        Creates a driver to a remote debugging chrome instance
+
+        :param port: Port specified when Chrome instance was created.
+        """
+        from selenium import webdriver
+        chromeoptions = webdriver.ChromeOptions()
+        chromeoptions.experimental_options["debuggerAddress"] = f"127.0.0.1:{port}"
+        driver = webdriver.Chrome(chrome_options=chromeoptions)
+        self.driver_cache.register(driver)
+        selenium_library = BuiltIn().get_library_instance("SeleniumLibrary")
+        selenium_library.register_driver(driver, "default_gc")
+
+
+
     def open_browser(self, browser_name=None, url=None, alias=None, size=None):
         """
         **Open specified browser with url**
@@ -1196,6 +1216,7 @@ class CommonMethods(object):
         else:
             DebugLog.log(f"* Opening browser '{browser_name}'")
         driver = create_driver(browser_name)
+        self.driver = driver
 
         # register driver and get id
         _id = self.driver_cache.register(driver, browser_name, alias)

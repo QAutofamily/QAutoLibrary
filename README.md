@@ -188,6 +188,10 @@ Detailed instructions on how to create and use custom Python modules with QAutoR
 ## Contributing
 
 TBA later.
+* python setup.py sdist bdist_wheel
+* python -m twine upload --repository testpypi dist/*
+* User: __token__
+* Password: token from pypi
 
 ## Authors
 

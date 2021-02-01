@@ -23,6 +23,7 @@ READING_MODE = 'rb'
 WRITING_MODE = 'wb'
 APPENDING_MODE = 'ab'
 
+# TODO: Migrate to Python 3.X and start using io.open
 
 def __open(path_to_file, mode):
     """
