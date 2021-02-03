@@ -1189,9 +1189,11 @@ class CommonMethods(object):
         chromeoptions.experimental_options["debuggerAddress"] = f"127.0.0.1:{port}"
         driver = webdriver.Chrome(chrome_options=chromeoptions)
         self.driver_cache.register(driver)
-        selenium_library = BuiltIn().get_library_instance("SeleniumLibrary")
-        selenium_library.register_driver(driver, "default_gc")
-
+        # Let's try and get rid of selenium imports from Robot side
+        # TODO: Clean if no problems occur.
+        #selenium_library = BuiltIn().get_library_instance("SeleniumLibrary")
+        #selenium_library.register_driver(driver, "default_gc")
+        self.driver = driver
 
 
     def open_browser(self, browser_name=None, url=None, alias=None, size=None):
