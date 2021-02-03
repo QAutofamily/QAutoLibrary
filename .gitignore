@@ -1,2 +1,5 @@
 
 .idea/*
+build/*
+dist/*
+QAutoLibrary.egg-info/*
