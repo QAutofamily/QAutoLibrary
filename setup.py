@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="QAutoLibrary",
-    version="0.0.9",
+    version="0.0.10",
     author="QAutomate",
     author_email="contact@qautomate.fi",
     description="QAutofamily testing framework library",
@@ -25,7 +25,7 @@ setup(
         'pycryptodome>=3.9.8',
         'tika>=1.24'
     ],
-    package_data={'QAutoLibrary.config': ['*.xml', '*.ini', '*.txt*']},
+    package_data={'QAutoLibrary.config': ['*.xml', '*.ini', '*.txt*'], 'QAutoLibrary': ['*.ico']},
     license='Apache Software License 2.0',
     classifiers=[
         "Programming Language :: Python :: 3.7",
