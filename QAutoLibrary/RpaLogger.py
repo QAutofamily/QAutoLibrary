@@ -1,5 +1,5 @@
 # encoding: utf-8+
-"""
+
 #    QAutomate Ltd 2020. All rights reserved.
 #
 #    Copyright and all other rights including without limitation all intellectual property rights and title in or
@@ -10,7 +10,7 @@
 #
 #    Distributed with QAutomate license.
 #    All rights reserved, see LICENSE for details.
-"""
+
 
 from QAutoLibrary.QAutoElement import QAutoElement
 from QAutoLibrary.extension.util.common_methods_helpers import DebugLog

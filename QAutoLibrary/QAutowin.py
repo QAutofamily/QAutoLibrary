@@ -1,4 +1,3 @@
-"""
 #    QAutomate Ltd 2020. All rights reserved.
 #
 #    Copyright and all other rights including without limitation all intellectual property rights and title in or
@@ -9,7 +8,7 @@
 #
 #    Distributed with QAutomate license.
 #    All rights reserved, see LICENSE for details.
-"""
+
 
 import pywinauto
 from pywinauto.keyboard import send_keys
