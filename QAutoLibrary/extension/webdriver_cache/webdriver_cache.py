@@ -1,4 +1,3 @@
-"""
 #    QAutomate Ltd 2018. All rights reserved.
 #
 #    Copyright and all other rights including without limitation all intellectual property rights and title in or
@@ -9,7 +8,7 @@
 #
 #    Distributed with QAutomate license.
 #    All rights reserved, see LICENSE for details.
-"""
+
 from QAutoLibrary.extension.util.common_methods_helpers import DebugLog
 from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils, Singleton
 from QAutoLibrary.extension.webdriver_cache.browser import reset_protected_mode, Browsers
