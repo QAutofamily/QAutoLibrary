@@ -1,3 +1,4 @@
+"""
 #    QAutomate Ltd 2020. All rights reserved.
 #
 #    Copyright and all other rights including without limitation all intellectual property rights and title in or
@@ -8,7 +9,12 @@
 #
 #    Distributed with QAutomate license.
 #    All rights reserved, see LICENSE for details.
-
+"""
+try:
+    from RPA.Desktop.Windows import Windows
+    from RPA.Desktop import Desktop
+except:
+    print("RPA not installed")
 
 import pywinauto
 from pywinauto.keyboard import send_keys
@@ -18,8 +24,8 @@ import time
 import os
 from PIL import ImageGrab
 import subprocess
-import pygetwindow as gw
-import win32api
+
+import pyscreenshot as ImageGrab
 
 
 class QAutowin(object):
@@ -28,6 +34,60 @@ class QAutowin(object):
     def __init__(self, backend="uia"):
         self.app = pywinauto.application.Application(backend=backend)
         self.backend = backend
+        try:
+            self.win = Windows()
+            self.desktop = Desktop()
+        except:
+            pass
+
+    def __highlight_image_element(self, locator):
+        """
+        **Helper function for highlighting element with image**
+
+        :param locator: string parameter for rpa desktop
+        :return: None
+        """
+        self.desktop.highlight_elements(locator)
+
+    def __click_element_with_image(self, image, timeout=40):
+        """
+        **Helper function for clicking element with image**
+
+        :param image: Image path
+        :param timeout: Timeout for wait
+        :return: None
+        """
+        self.__wait_for_element_with_image(image, timeout)
+
+        search_image = self.desktop.find_element(f'image:{image}')
+        self.__highlight_image_element(search_image)
+        self.desktop.click(search_image)
+
+    def __input_element_with_image(self, input, image, timeout=40):
+        """
+        **Helper function for inputing element with image**
+
+        :param input: Text to input
+        :param image: Image path
+        :param timeout: Timeout for wait
+        :return: None
+        """
+        self.__wait_for_element_with_image(image, timeout)
+        search_image = self.desktop.find_element(f'image:{image}')
+        self.__highlight_image_element(search_image)
+        self.desktop.click(search_image)
+        time.sleep(0.5)
+        self.win.send_keys(input)
+
+    def __wait_for_element_with_image(self, image, timeout=40):
+        """
+        **Helper function for waiting element with image**
+
+        :param image: Image path
+        :param timeout: Timeout for wait
+        :return:
+        """
+        self.desktop.wait_for_element(f'image:{image}', timeout)
 
     def __find_application__(self, application):
         """
@@ -230,12 +290,16 @@ class QAutowin(object):
         """
         **Clicks at element**
 
-        :kwargs: auto_id, class_name, class_name_re, title, title_re, control_type
+        :kwargs: auto_id, class_name, class_name_re, title, title_re, control_type, image, timeout
         --------------
         :Example:
             | Click element  title=File
+            | Click element  image=rpa_images//test.png
         """
-        if 'x' in kwargs and 'y' in kwargs:
+        if "image" in kwargs:
+            logger.info('Clicking element with image' % kwargs)
+            self.__click_element_with_image(**kwargs)
+        elif 'x' in kwargs and 'y' in kwargs:
             logger.info('Clicking at coordinates %s.' % kwargs)
             self.Click_Coordinates(**kwargs)
         else:
@@ -251,7 +315,7 @@ class QAutowin(object):
         :kwargs: auto_id, class_name, class_name_re, title, title_re, control_type
         --------------
         :Example:
-            | Click element  title=File
+            | Double click element  title=File
         """
         if 'x' in kwargs and 'y' in kwargs:
             logger.info('Double clicking at coordinates %s.' % kwargs)
@@ -279,15 +343,20 @@ class QAutowin(object):
         """
         **Input text to element**
 
-        :kwargs: auto_id, class_name, class_name_re, title, title_re, control_type
+        :kwargs: auto_id, class_name, class_name_re, title, title_re, control_type, image, timeout
         --------------
         :Example:
             | Input Text  text  title=File
+            | Input Text  text  image=rpa_images//test.png
         """
-        window = self.Find_Window(**kwargs)
-        logger.info('Input text %s element %s.' % (user_input, kwargs))
-        window.set_text("")
-        window.type_keys(user_input, with_spaces=True, with_tabs=True)
+        if "image" in kwargs:
+            logger.info('Input text %s element %s.' % (user_input, kwargs))
+            self.__input_element_with_image(user_input, **kwargs)
+        else:
+            window = self.Find_Window(**kwargs)
+            logger.info('Input text %s element %s.' % (user_input, kwargs))
+            window.set_text("")
+            window.type_keys(user_input, with_spaces=True, with_tabs=True)
 
     @keyword(name='Click Coordinates')
     def Click_Coordinates(self, **kwargs):
@@ -459,3 +528,4 @@ class QAutowin(object):
             os.chdir(dir)
             print(e)
         time.sleep(3)
+
