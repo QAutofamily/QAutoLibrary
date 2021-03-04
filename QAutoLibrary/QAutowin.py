@@ -25,8 +25,6 @@ import os
 from PIL import ImageGrab
 import subprocess
 
-import pyscreenshot as ImageGrab
-
 
 class QAutowin(object):
     ROBOT_LIBRARY_SCOPE = "TEST CASE"
