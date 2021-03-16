@@ -10,21 +10,16 @@
 #    Distributed with QAutomate license.
 #    All rights reserved, see LICENSE for details.
 """
-try:
-    from RPA.Desktop.Windows import Windows
-    from RPA.Desktop import Desktop
-except:
-    print("RPA not installed")
-
 import pywinauto
+import time
+import os
+import subprocess
+
 from pywinauto.keyboard import send_keys
 from robot.api.deco import keyword
 from robot.api import logger
-import time
-import os
 from PIL import ImageGrab
-import subprocess
-
+from QAutoLibrary.QAutoRPAImage import QAutoRPAImage
 
 class QAutowin(object):
     ROBOT_LIBRARY_SCOPE = "TEST CASE"
@@ -32,60 +27,6 @@ class QAutowin(object):
     def __init__(self, backend="uia"):
         self.app = pywinauto.application.Application(backend=backend)
         self.backend = backend
-        try:
-            self.win = Windows()
-            self.desktop = Desktop()
-        except:
-            pass
-
-    def __highlight_image_element(self, locator):
-        """
-        **Helper function for highlighting element with image**
-
-        :param locator: string parameter for rpa desktop
-        :return: None
-        """
-        self.desktop.highlight_elements(locator)
-
-    def __click_element_with_image(self, image, timeout=40):
-        """
-        **Helper function for clicking element with image**
-
-        :param image: Image path
-        :param timeout: Timeout for wait
-        :return: None
-        """
-        self.__wait_for_element_with_image(image, timeout)
-
-        search_image = self.desktop.find_element(f'image:{image}')
-        self.__highlight_image_element(search_image)
-        self.desktop.click(search_image)
-
-    def __input_element_with_image(self, input, image, timeout=40):
-        """
-        **Helper function for inputing element with image**
-
-        :param input: Text to input
-        :param image: Image path
-        :param timeout: Timeout for wait
-        :return: None
-        """
-        self.__wait_for_element_with_image(image, timeout)
-        search_image = self.desktop.find_element(f'image:{image}')
-        self.__highlight_image_element(search_image)
-        self.desktop.click(search_image)
-        time.sleep(0.5)
-        self.win.send_keys(input)
-
-    def __wait_for_element_with_image(self, image, timeout=40):
-        """
-        **Helper function for waiting element with image**
-
-        :param image: Image path
-        :param timeout: Timeout for wait
-        :return:
-        """
-        self.desktop.wait_for_element(f'image:{image}', timeout)
 
     def __find_application__(self, application):
         """
@@ -296,7 +237,7 @@ class QAutowin(object):
         """
         if "image" in kwargs:
             logger.info('Clicking element with image' % kwargs)
-            self.__click_element_with_image(**kwargs)
+            self.Click_element_with_image(**kwargs)
         elif 'x' in kwargs and 'y' in kwargs:
             logger.info('Clicking at coordinates %s.' % kwargs)
             self.Click_Coordinates(**kwargs)
@@ -304,6 +245,50 @@ class QAutowin(object):
             window = self.Find_Window(**kwargs)
             logger.info('Clicking element %s.' % kwargs)
             window.click_input()
+
+    @keyword(name='Click element with image')
+    def Click_element_with_image(self, **kwargs):
+        """
+        **Click with image**
+
+        :kwargs: image, timeout, right, double
+        --------------
+        :Example:
+            | Click element with image  image=rpa_images//image.png
+            | Click element with image  image=rpa_images//image.png  timeout=30
+            | Click element with image  image=rpa_images//image.png  timeout=30  right=True
+            | Click element with image  image=rpa_images//image.png  timeout=30  double=True
+        """
+        timeout = 30
+        if "timeout" in kwargs:
+            timeout = kwargs["timeout"]
+        image_path = kwargs["image"]
+        if "double" in kwargs:
+            QAutoRPAImage.double_click_image(image_path, timeout)
+        if "right" in kwargs:
+            QAutoRPAImage.right_click_image(image_path, timeout)
+        else:
+            QAutoRPAImage.click_image(image_path, timeout)
+
+    @keyword(name='Input element with image')
+    def Input_element_with_image(self, text, **kwargs):
+        """
+        **Inputs text with image**
+
+        :args: text
+        :kwargs: image, timeout
+        --------------
+        :Example:
+            | Input element with image  text  image=rpa_images//image.png
+            | Input element with image  text  image=rpa_images//image.png  timeout=30
+        """
+        timeout = 30
+        if "timeout" in kwargs:
+            timeout = kwargs["timeout"]
+        image_path = kwargs["image"]
+        QAutoRPAImage.click_image(image_path, timeout)
+        time.sleep(0.5)
+        self.Send_Keywords(text)
 
     @keyword(name='Double Click Element')
     def Double_Click_Element(self, **kwargs):
@@ -315,7 +300,11 @@ class QAutowin(object):
         :Example:
             | Double click element  title=File
         """
-        if 'x' in kwargs and 'y' in kwargs:
+        if "image" in kwargs:
+            logger.info('Clicking element with image' % kwargs)
+            kwargs["double"] = True
+            self.Click_element_with_image(**kwargs)
+        elif 'x' in kwargs and 'y' in kwargs:
             logger.info('Double clicking at coordinates %s.' % kwargs)
             self.Double_Click_Coordinates(**kwargs)
         else:
@@ -349,7 +338,7 @@ class QAutowin(object):
         """
         if "image" in kwargs:
             logger.info('Input text %s element %s.' % (user_input, kwargs))
-            self.__input_element_with_image(user_input, **kwargs)
+            self.Input_element_with_image(user_input, **kwargs)
         else:
             window = self.Find_Window(**kwargs)
             logger.info('Input text %s element %s.' % (user_input, kwargs))
@@ -460,9 +449,13 @@ class QAutowin(object):
         :Example:
             | Right click element  title=File
         """
-        window = self.Find_Window(**kwargs)
-        logger.info('Double clicking element %s.' % kwargs)
-        window.window(**kwargs).right_click_input()
+        logger.info('Right clicking element %s.' % kwargs)
+        if "image" in kwargs:
+            kwargs["right"] = True
+            self.Click_element_with_image(**kwargs)
+        else:
+            window = self.Find_Window(**kwargs)
+            window.window(**kwargs).right_click_input()
 
     @keyword(name='Close application')
     def Close_application(self):
