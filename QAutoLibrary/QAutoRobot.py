@@ -81,7 +81,6 @@ class QAutoRobot(CommonUtils, JsonLogger, RpaLogger, TikaParser):
             except Exception as e:
                 print(e)
 
-
     def find_keyword_file_and_line(self, kw):
         pm_kw = "def " + kw.rpartition('.')[2].replace(" ", "_").lower()
         for folder, dirs, files in os.walk(os.getcwd()):

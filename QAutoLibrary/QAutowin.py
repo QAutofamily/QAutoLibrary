@@ -11,47 +11,15 @@
 #    All rights reserved, see LICENSE for details.
 """
 import pywinauto
+import time
+import os
+import subprocess
+
 from pywinauto.keyboard import send_keys
 from robot.api.deco import keyword
 from robot.api import logger
-import time
-import os
 from PIL import ImageGrab
-import subprocess, tempfile
-from typing import Union, List
-from pathlib import Path
-import cv2, win32gui, win32con, numpy as np
-
-
-class Point2D:
-    def __init__(self, x: int, y: int):
-        self.x = x
-        self.y = y
-
-    def to_tuple(self) -> tuple:
-        return (self.x,self.y)
-
-
-class Region:
-    def __init__(self, x: int, y: int, x2: int, y2: int):
-        self.x = x
-        self.y = y
-        self.x2 = x2
-        self.y2 = y2
-
-    def to_tuple(self) -> tuple:
-        return (self.x, self.y, self.x2, self.y2)
-
-
-class RGB:
-    def __init__(self, red: int, green: int, blue:int):
-        self.r = red
-        self.g = green
-        self.b = blue
-
-    def to_color_ref(self) -> int:
-        return int('%02x%02x%02x' % (self.b,self.g,self.r), 16)
-
+from QAutoLibrary.QAutoRPAImage import QAutoRPAImage
 
 class QAutowin(object):
     ROBOT_LIBRARY_SCOPE = "TEST CASE"
@@ -59,151 +27,6 @@ class QAutowin(object):
     def __init__(self, backend="uia"):
         self.app = pywinauto.application.Application(backend=backend)
         self.backend = backend
-
-    def find_image(self, path_to_image: Union[Path,str]) -> Union[Region, None]:
-        """[summary]
-
-        Args:
-            path_to_image (Union[Path,str]): [description]
-
-        Returns:
-            Union[Region, None]: [description]
-        """
-        outline = None
-
-        # Tempfile, koska en keksinyt miten tehdä muokkaukset binäärinä
-        tmpfile = tempfile.NamedTemporaryFile(suffix='.png')
-        tmpfile.close()
-
-        # Screenshot. Tän voinee tehdä myös binäärinä ilman tallennusta...
-        scrshot = ImageGrab.grab()
-        tmp = cv2.cvtColor(np.array(scrshot), cv2.COLOR_RGB2BGR)
-        cv2.imwrite(tmpfile.name, tmp)
-
-        img_rgb = cv2.imread(tmpfile.name, cv2.IMREAD_GRAYSCALE)
-        template = cv2.imread(path_to_image, cv2.IMREAD_GRAYSCALE)
-
-        w, h = template.shape[::-1]
-
-        result = cv2.matchTemplate(img_rgb, template, cv2.TM_CCOEFF_NORMED)
-        loc = np.where(result >= 0.9)
-
-        if len(list(zip(*loc))) <= 0:
-            return None
-
-        # Jos nyt koitetaan eka vaan yhdellä.
-        for pt in zip(*loc[::-1]):
-            outline = Region(pt[0], pt[1], pt[0] + w, pt[1] + h)
-            break
-
-        self.draw_rectangle(outline)
-
-        Path(tmpfile.name).unlink()
-        return outline
-
-    # For clicking and stuff...
-    def get_center_point(self, outline: Region) -> Point2D:
-        """[summary]
-
-        Args:
-            outline (Region): [description]
-
-        Returns:
-            Point2D: [description]
-        """
-        return Point2D(int((outline.x + outline.x2) / 2), int((outline.y + outline.y2) / 2))
-
-    def draw_line(self, points: List[Point2D], color: RGB = None) -> None:
-        """[summary]
-
-        Args:
-            points (List[Point2D]): [description]
-            color (RGB, optional): [description]. Defaults to None.
-        """
-        if not color:
-            color = RGB(0, 255, 0)
-
-        # GetDC(hwnd), jos haluaa nimenomaan tietylle ikkunalle...
-        dc = win32gui.GetDC(0)
-        pen = win32gui.CreatePen(win32con.PS_SOLID, 2, color.to_color_ref())
-        win32gui.SelectObject(dc, pen)
-
-        lista = [p.to_tuple() for p in points]
-        win32gui.Polyline(dc, lista)
-
-        win32gui.DeleteObject(pen)
-        win32gui.DeleteDC(dc)
-
-    def draw_rectangle(self, region: Region, color: RGB = None) -> None:
-        """Draws a colour bordered transparent rectangle around given region 
-
-        Args:
-            region (Region): [description]
-            color (RGB, optional): [description]. Defaults to None.
-        """
-        if not color:
-            color = RGB(0, 255, 0)
-        dc = win32gui.GetDC(0)
-
-        pen = win32gui.CreatePen(win32con.PS_SOLID, 2, color.to_color_ref())
-        brush = win32gui.CreateBrushIndirect({'Style': win32con.BS_NULL, 'Color': -1, 'Hatch': win32con.HS_DIAGCROSS})
-        win32gui.SelectObject(dc, pen)
-        win32gui.SelectObject(dc, brush)
-        win32gui.Rectangle(dc, *region.to_tuple())
-
-        win32gui.DeleteObject(pen)
-        win32gui.DeleteObject(brush)
-        win32gui.DeleteDC(dc)
-
-    def draw_focus_rectangle(self, region: Region) -> None:
-        """Draw a highlight region around given region
-
-        Args:
-            region (Region): [description]
-        """
-        dc = win32gui.GetDC(0)
-        pen = win32gui.CreatePen(win32con.PS_SOLID, 2, 0)
-        win32gui.DrawFocusRect(dc, region.to_tuple())
-        win32gui.SelectObject(dc, pen)
-        win32gui.DeleteDC(dc)
-
-    def draw_ellipse(self, region: Region, color: RGB = None) -> None:
-        """Draws a colored ellipse around given region
-
-        Args:
-            region (Region): [description]
-            color (RGB, optional): [description]. Defaults to None.
-        """
-        if not color:
-            color = RGB(0, 255, 0)
-        dc = win32gui.GetDC(0)
-
-        pen = win32gui.CreatePen(win32con.PS_SOLID, 2, color.to_color_ref())
-        brush = win32gui.CreateBrushIndirect({'Style': win32con.BS_NULL, 'Color': -1, 'Hatch': win32con.HS_DIAGCROSS})
-        win32gui.SelectObject(dc, pen)
-        win32gui.SelectObject(dc, brush)
-        win32gui.Ellipse(dc, *region.to_tuple())
-
-        win32gui.DeleteObject(pen)
-        win32gui.DeleteObject(brush)
-        win32gui.DeleteDC(dc)
-
-    def wait_for_image(self, path_to_image: Union[Path, str], timeout: int = 30):
-        """Waits for image to appear until either timeout hits or image appears.
-
-        Args:
-            path_to_image (Union[Path, str]): Path to image to wait for.
-            timeout (int, optional): [description]. Defaults to 30.
-
-        Returns:
-            [type]: [description]
-        """
-        start = time.time()
-        while self.find_image(path_to_image) is None:
-            time.sleep(0.5)
-            if time.time() - start >= timeout:
-                return False
-        return True
 
     def __find_application__(self, application):
         """
@@ -414,7 +237,7 @@ class QAutowin(object):
         """
         if "image" in kwargs:
             logger.info('Clicking element with image' % kwargs)
-            self.__click_element_with_image(**kwargs)
+            self.Click_element_with_image(**kwargs)
         elif 'x' in kwargs and 'y' in kwargs:
             logger.info('Clicking at coordinates %s.' % kwargs)
             self.Click_Coordinates(**kwargs)
@@ -422,6 +245,50 @@ class QAutowin(object):
             window = self.Find_Window(**kwargs)
             logger.info('Clicking element %s.' % kwargs)
             window.click_input()
+
+    @keyword(name='Click element with image')
+    def Click_element_with_image(self, **kwargs):
+        """
+        **Click with image**
+
+        :kwargs: image, timeout, right, double
+        --------------
+        :Example:
+            | Click element with image  image=rpa_images//image.png
+            | Click element with image  image=rpa_images//image.png  timeout=30
+            | Click element with image  image=rpa_images//image.png  timeout=30  right=True
+            | Click element with image  image=rpa_images//image.png  timeout=30  double=True
+        """
+        timeout = 30
+        if "timeout" in kwargs:
+            timeout = kwargs["timeout"]
+        image_path = kwargs["image"]
+        if "double" in kwargs:
+            QAutoRPAImage.double_click_image(image_path, timeout)
+        if "right" in kwargs:
+            QAutoRPAImage.right_click_image(image_path, timeout)
+        else:
+            QAutoRPAImage.click_image(image_path, timeout)
+
+    @keyword(name='Input element with image')
+    def Input_element_with_image(self, text, **kwargs):
+        """
+        **Inputs text with image**
+
+        :args: text
+        :kwargs: image, timeout
+        --------------
+        :Example:
+            | Input element with image  text  image=rpa_images//image.png
+            | Input element with image  text  image=rpa_images//image.png  timeout=30
+        """
+        timeout = 30
+        if "timeout" in kwargs:
+            timeout = kwargs["timeout"]
+        image_path = kwargs["image"]
+        QAutoRPAImage.click_image(image_path, timeout)
+        time.sleep(0.5)
+        self.Send_Keywords(text)
 
     @keyword(name='Double Click Element')
     def Double_Click_Element(self, **kwargs):
@@ -433,7 +300,11 @@ class QAutowin(object):
         :Example:
             | Double click element  title=File
         """
-        if 'x' in kwargs and 'y' in kwargs:
+        if "image" in kwargs:
+            logger.info('Clicking element with image' % kwargs)
+            kwargs["double"] = True
+            self.Click_element_with_image(**kwargs)
+        elif 'x' in kwargs and 'y' in kwargs:
             logger.info('Double clicking at coordinates %s.' % kwargs)
             self.Double_Click_Coordinates(**kwargs)
         else:
@@ -467,7 +338,7 @@ class QAutowin(object):
         """
         if "image" in kwargs:
             logger.info('Input text %s element %s.' % (user_input, kwargs))
-            self.__input_element_with_image(user_input, **kwargs)
+            self.Input_element_with_image(user_input, **kwargs)
         else:
             window = self.Find_Window(**kwargs)
             logger.info('Input text %s element %s.' % (user_input, kwargs))
@@ -578,9 +449,13 @@ class QAutowin(object):
         :Example:
             | Right click element  title=File
         """
-        window = self.Find_Window(**kwargs)
-        logger.info('Double clicking element %s.' % kwargs)
-        window.window(**kwargs).right_click_input()
+        logger.info('Right clicking element %s.' % kwargs)
+        if "image" in kwargs:
+            kwargs["right"] = True
+            self.Click_element_with_image(**kwargs)
+        else:
+            window = self.Find_Window(**kwargs)
+            window.window(**kwargs).right_click_input()
 
     @keyword(name='Close application')
     def Close_application(self):
