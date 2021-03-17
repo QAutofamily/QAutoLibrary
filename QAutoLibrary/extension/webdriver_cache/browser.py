@@ -17,6 +17,7 @@ from urllib.parse import urlparse
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from msedge.selenium_tools import Edge, EdgeOptions
 
 from QAutoLibrary.extension.util.GlobalUtils import GlobalUtils, throw_error
 from QAutoLibrary.extension.config import get_config_value
@@ -294,21 +295,22 @@ def create_driver(browser_name):
         capabilities = _get_browser_options_from_project_xml("default",
                                                              GlobalUtils.BROWSER_FULL_NAMES[GlobalUtils.BROWSER_NAMES[Browsers.EDGE]],
                                                              "capabilities")
+        options = EdgeOptions()
 
-        edge_capabilities = DesiredCapabilities.EDGE
         for arg in capabilities:
-            edge_capabilities[arg["option"]] = eval(arg["text"])
+            options.set_capability(arg["option"], eval(arg["text"]))
 
+        options.use_chromium = True
+        
         # Adding driver to path
+        print("Using EdgeWebDriver")
         if not GlobalUtils.is_linux():
-            print("Using EdgeWebDriver")
-            if not os.path.join(GlobalUtils.RESOURCES_EDGE_PATH) in os.environ["PATH"]:
-                print("Adding MicrosoftWebDriver to path")
-                os.environ["PATH"] += os.pathsep + os.path.join(GlobalUtils.RESOURCES_EDGE_PATH)
+            options.set_capability("platform", "WINDOWS")
         else:
-            raise Exception("Linux can't use EdqeWebDriver")
+            options.set_capability("platform", "LINUX")
 
-        _driver = webdriver.Edge(capabilities=edge_capabilities, executable_path='msedgedriver.exe')
+
+        _driver = Edge(options=options)
         return _driver
 
     elif browser_name == GlobalUtils.BROWSER_NAMES[Browsers.SAFARI]:
