@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="QAutoLibrary",
-    version="0.0.15",
+    version="0.0.16",
     author="QAutomate",
     author_email="contact@qautomate.fi",
     description="QAutofamily testing framework library",
