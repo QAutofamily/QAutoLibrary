@@ -1,11 +1,12 @@
 from setuptools import setup, find_packages
+import platform
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
     name="QAutoLibrary",
-    version="0.0.16",
+    version="0.0.19",
     author="QAutomate",
     author_email="contact@qautomate.fi",
     description="QAutofamily testing framework library",
@@ -27,7 +28,8 @@ setup(
         'pyautogui>=0.9',
         'opencv-python>=4.5.1',
         'numpy',
-        'pywin32'
+        'msedge-selenium-tools',
+        'pywin32; platform_system == "Windows"'
     ],
     package_data={'QAutoLibrary.config': ['*.xml', '*.ini', '*.txt*'], 'QAutoLibrary': ['*.ico']},
     license='Apache Software License 2.0',

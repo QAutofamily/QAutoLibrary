@@ -187,10 +187,17 @@ Detailed instructions on how to create and use custom Python modules with QAutoR
 
 ## Contributing
 
+### Adding dependencies
+Add new dependencies to setup.py and if it's a library for a specific OS, add that aswell.
+
+ie. 'pywin32; platform_system == "Windows"'
+
+### Creating a testpypi package
+
 TBA later.
 * python setup.py sdist bdist_wheel
 * python -m twine upload --repository testpypi dist/*
-* User: __token__
+* User: \__token\__ 
 * Password: token from pypi
 
 ## Authors
