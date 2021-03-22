@@ -14,6 +14,8 @@ import pywinauto
 import time
 import os
 import subprocess
+import re
+import sys
 
 from pywinauto.keyboard import send_keys
 from robot.api.deco import keyword
@@ -224,6 +226,123 @@ class QAutowin(object):
 
         raise error
 
+    @staticmethod
+    def __get_click_positions(rectangle):
+        """
+        Helper function for GetElementInfoFromCoords
+
+        :param rectangle: Element rectangle
+        :return:  app_x, app_y, app_x2, app_y2, size
+        """
+        app_x = str(rectangle).split(",")[0].strip()[2:]
+        app_y = str(rectangle).split(",")[1].strip()[1:]
+        app_x2 = str(rectangle).split(",")[2].strip()[1:]
+        app_y2 = str(rectangle).split(",")[3].strip()[1:].replace(")","")
+
+        app_width = int(str(rectangle).split(",")[2].strip()[1:])-int(app_x)
+        app_height = int(str(rectangle).split(",")[3].strip()[1:].replace(")",""))-int(app_y)
+        app_middle_x = int(app_width)/2
+        app_middle_y = int(app_height)/2
+        size = app_width * app_height
+
+        return app_x, app_y, app_x2, app_y2, size
+
+    @staticmethod
+    def __check_if_inside_rectangle(x1, y1, x2, y2, x, y):
+        """
+        Helper function for GetElementInfoFromCoords
+
+        :param x1: Rectangle x1
+        :param y1: Rectangle y1
+        :param x2: Rectangle x2
+        :param y2: Rectangle y2
+        :param x: x coordinate to confirm
+        :param y: y coordinate to confirm
+        :return: True or False
+        """
+        if (x > x1 and x < x2 and y > y1 and y < y2):
+            return True
+        else:
+            return False
+
+    @keyword(name='Get Element Info From Coords')
+    def GetElementInfoFromCoords(self, x, y):
+        """
+        **Gets information from element at coordinates**
+
+        :kwargs: x, y
+        --------------
+        :Example:
+            | Click element  image=rpa_images//test.png
+        """
+        windows_and_descendants = []
+        for x in range(5):
+            window_count = len(self.app.windows())
+            if window_count > x + 1:
+                window = self.app.window(found_index=(window_count - x + 1))
+                descendants = window.descendants()
+                windows_and_descendants.append((descendants, window))
+
+        window = self.app.top_window()
+        descendants = window.descendants()
+        windows_and_descendants.append((descendants, window))
+
+        clist = []
+        elements = ""
+        windows = []
+        for win_and_dec in windows_and_descendants:
+            for ctrl in win_and_dec[0]:
+                elements += str(ctrl.rectangle())
+                clist.append((str(ctrl.rectangle()), ctrl))
+                windows.append(win_and_dec[1])
+
+        match_list = re.findall(r'[L,T,R,B]-?\d*\.{0,1}\d+(?=[,)])', elements)
+        rectangle_table = []
+        k = 0
+        for i in range(0, len(match_list), 4):
+            rectangle_table.append(
+                "(" + match_list[i] + ", " + match_list[i + 1] + ", " + match_list[i + 2] + ", " + match_list[
+                    i + 3] + ")")
+            k = k + 1
+
+        best_match = ""
+        sizeorig = sys.maxsize
+        for s in rectangle_table:
+            x1, y1, x2, y2, size = self.__get_click_positions(str(s))
+            if x == "" or y == "":
+                pass
+            elif self.__check_if_inside_rectangle(int(x1), int(y1), int(x2), int(y2), int(x), int(y)):
+                if size < sizeorig:
+                    sizeorig = size
+                    best_match = "(L" + x + ", T" + y + ", R" + str(x2) + ", B" + str(y2) + ")"
+
+        ctrl_match = [ctrl for (rect, ctrl) in clist if best_match in str(rect)]
+        if ctrl_match:
+            ctrl = ctrl_match[-1]
+            ctrllist = {}
+            ctrllist['rectangle'] = str(ctrl.rectangle())
+            ctrllist['name'] = str(ctrl.element_info.name)
+            ctrllist['auto_id'] = str(ctrl.element_info.automation_id)
+            ctrllist['control_id'] = str(ctrl.element_info.control_id)
+            ctrllist['control_type'] = str(ctrl.element_info.control_type)
+            ctrllist['rich_text'] = str(ctrl.element_info.rich_text)
+            ctrllist['class_name'] = str(ctrl.friendly_class_name())
+            ctrllist['coord'] = (x, y)
+            try:
+                ctrllist['value'] = str(ctrl.legacy_properties()['Value'])
+            except:
+                ctrllist['value'] = ""
+            try:
+                ctrllist['input_field_text'] = ctrl.window_text()
+            except:
+                ctrllist['input_field_text'] = ""
+            ctrllist['title'] = str(ctrl.element_info.name)
+            ctrllist['ctrl'] = type(ctrl)
+            print("ctrl_list", ctrllist)
+            return ctrllist
+        else:
+            raise Exception(f"Element not found from coords: x={x}, y={y}")
+
     @keyword(name='Click Element')
     def Click_Element(self, **kwargs):
         """
@@ -400,10 +519,9 @@ class QAutowin(object):
         """
         text = self.Get_text(**kwargs)
         if text == user_input:
-            logger.info("%s is equal to %s" % (text, user_input))
-            pass
+            logger.info(f'Element value: "{text}" is equal to "{user_input}" for {kwargs}')
         else:
-            self.fail("%s is not equal to %s" % (text, user_input))
+            raise Exception(f'Element value: "{text}" is not equal to "{user_input}" for {kwargs}')
 
     @keyword(name="Verify Text Contains")
     def Verify_text_contains(self, user_input, **kwargs):
@@ -419,10 +537,9 @@ class QAutowin(object):
         text = self.Get_text(**kwargs)
         print("Get_text:", text)
         if user_input in text:
-            logger.info("%s contains %s" % (text, user_input))
-            pass
+            logger.info(f'Element value: "{text}" contains "{user_input}" for {kwargs}')
         else:
-            self.fail("%s does not contain %s" % (text, user_input))
+            raise Exception(f'Element value: "{text}" does not contain "{user_input}" for {kwargs}')
 
     @keyword(name="Get Text")
     def Get_text(self, **kwargs):
@@ -434,9 +551,17 @@ class QAutowin(object):
         :Example:
             | {text}=  Get text  title=File
         """
-
-        window = self.Find_Window(**kwargs)
-        text = window.child_window(**kwargs).iface_value.CurrentValue
+        if "image" in kwargs:
+            timeout = 30
+            if "timeout" in kwargs:
+                timeout = kwargs["timeout"]
+            image_path = kwargs["image"]
+            x, y = QAutoRPAImage.get_image_coords(image_path, timeout)
+            ctrl_list = self.GetElementInfoFromCoords(x, y)
+            text = ctrl_list["value"]
+        else:
+            window = self.Find_Window(**kwargs)
+            text = window.child_window(**kwargs).iface_value.CurrentValue
         return text
 
     @keyword(name='Right click element')

@@ -187,6 +187,7 @@ class QAutoRPAImage():
             time.sleep(1)
             found_image = cls.find_image(image)
             if found_image is not None:
+                #print(found_image)
                 return cls.get_center_point(found_image)
         raise TimeoutError(f"Image: '{image}' was not found")
 
@@ -233,4 +234,10 @@ class QAutoRPAImage():
         win32api.SetCursorPos((x, y))
         win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN, x, y, 0, 0)
         win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTUP, x, y, 0, 0)
+
+    @classmethod
+    def get_image_coords(cls, image, timeout=30):
+        point = cls.wait_for_image(image, timeout)
+        x, y = point.x, point.y
+        return x, y
 
