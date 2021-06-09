@@ -9,10 +9,11 @@
 #    Distributed with QAutomate license.
 #    All rights reserved, see LICENSE for details.
 
-import os
+import os, sys
 import shutil
 from lxml import etree as ET
 from urllib.parse import urlparse
+from pathlib import Path
 
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
@@ -236,7 +237,11 @@ def create_driver(browser_name):
                 print("Adding 64bit linux chromedriver to path")
                 os.environ["PATH"] += os.pathsep + os.path.join(GlobalUtils.RESOURCES_LINUX_CHROME64_PATH)
 
-        _driver = webdriver.Chrome(chrome_options=options)
+        if getattr(sys, 'frozen', False):
+            options.binary_location = os.path.join(sys._MEIPASS, 'chromium', 'chrome.exe')
+            _driver = webdriver.Chrome(chrome_options=options, executable_path=os.path.join(sys._MEIPASS, 'chromium', 'chromedriver.exe'))
+        else:
+            _driver = webdriver.Chrome(chrome_options=options)
         try:
             selenium_library = BuiltIn().get_library_instance("SeleniumLibrary")
             selenium_library.register_driver(_driver, "default_gc")
