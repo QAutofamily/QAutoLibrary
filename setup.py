@@ -23,7 +23,7 @@ setup(
         'lxml>=4.3.2',
         'simplejson>=3.17.2',
         'pymongo>=3.9.0',
-        'pycryptodome>=3.9.8',
+        'pycryptodome>=3.10.1',
         'tika>=1.24',
         'pyautogui>=0.9',
         'opencv-python>=4.5.1',
