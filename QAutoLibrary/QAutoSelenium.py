@@ -750,7 +750,7 @@ class CommonMethods(object):
             | ``QAutoRobot.send_keys((By.ID, u'contact_first_name'), "this is value")``
 
         """
-        self.wait_until_element_is_visible(element)
+        self.wait_until_element_is_present(element)
         web_element = self.find_element_if_not_webelement(element)
         if to_print:
             try:
@@ -2688,7 +2688,7 @@ class WebMethods(CommonMethods):
         if len(handles) > 1:
             DebugLog.log("* Closing current window and focus to previous window")
             driver.close()
-            driver.switch_to_window(handles[-2])
+            driver.switch_to.window(handles[-2])
         else:
             DebugLog.log("* The only browser window cannot be closed.")
 
@@ -4507,7 +4507,7 @@ class CommonUtils(WebMethods, Asserts, Wrappers, CanvasMethods, CanvasWrappers):
         new_handles = driver.window_handles
         for handle in initial_handles:
             new_handles.remove(handle)
-        driver.switch_to_window(new_handles[0])
+        driver.switch_to.window(new_handles[0])
         try:
             DebugLog.log("* Switching to '%s' window" % driver.title)
         except:
